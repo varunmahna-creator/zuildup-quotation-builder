@@ -1,1814 +1,1354 @@
 {
   "_meta": {
-    "version": "1.0.0",
+    "version": "2.0.0",
     "built": "2026-04-28",
-    "source": "PPT canonical (Premium.pptx, Platinum_WIP.pptx, Royale.pptx); DOCX used only for paragraph descriptions on Platinum tier — Premium.docx and Royale.docx are tier-mislabeled per bugs.md.",
-    "currency": "INR",
-    "rate_unit_legend": {
-      "per_mt": "rupees per metric tonne",
-      "per_brick": "rupees per brick",
-      "per_bag": "rupees per cement bag",
-      "per_cubic_metre": "rupees per cubic metre",
-      "per_floor": "rupees per floor of the dwelling unit",
-      "per_fan": "rupees per ceiling fan",
-      "per_door": "rupees per door",
-      "per_kitchen": "rupees per modular kitchen unit",
-      "per_bathroom": "rupees per bathroom unit",
-      "per_sqft": "rupees per square foot",
-      "per_light": "rupees per light fixture",
-      "fixed": "no per-unit rate; cost rolled into per-sqft build rate",
-      "cap": "ceiling rate; final billed at actual on-site brand selection"
-    },
-    "scope_legend": {
-      "full": "applies to the full-build scope",
-      "structure_only": "applies when scope is structure-only (matches calculator's structure-only mode)"
-    },
-    "package_legend": {
-      "premium": "entry tier",
-      "platinum": "mid tier",
-      "royale": "top tier",
-      "custom": "runtime-only mode; team adds rows from this catalog and edits freely"
-    },
-    "totals": {
-      "items": 57,
-      "by_category": {
-        "steel": 1,
-        "structure": 4,
-        "cement": 2,
-        "waterproofing": 1,
-        "general": 7,
-        "water": 4,
-        "ceiling": 1,
-        "flooring": 7,
-        "electrical": 7,
-        "kitchen": 2,
-        "bathroom": 7,
-        "paint": 4,
-        "doors_windows": 9,
-        "parapet": 1
-      }
-    }
+    "source": "src_docx/Customer_Facing_Quote_Sheet.docx (Customer: Ms. Rajkumari Kamboj reference quote)",
+    "schema": "no-tier; single rate + single brands per item; team enters cost-per-sqft per quote",
+    "tier_system": "removed in Phase 2 P0.1",
+    "items_total": 87
   },
   "items": [
     {
-      "id": "steel",
-      "category": "steel",
-      "label": "Steel — TMT Reinforcement",
-      "rate": {
-        "premium": 55000,
-        "platinum": 55000,
-        "royale": 65000
-      },
-      "brands": {
-        "premium": [
-          "Rathi"
-        ],
-        "platinum": [
-          "Rathi"
-        ],
-        "royale": [
-          "Tata"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-11.png",
-        "platinum": "assets/lookbook/platinum/slide-11.png",
-        "royale": "assets/lookbook/royale/slide-11.png"
-      },
+      "id": "design_drawings.architectural_layout",
+      "category": "design_drawings",
+      "category_label": "Design & Drawings",
+      "label": "Architectural Layout",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
-        "full",
-        "structure_only"
+        "full"
       ],
-      "unit": "per_mt",
-      "description": "TMT 500FE reinforcement steel @ ~4–5 Kg per Sq Ft average; rate capped per tier."
+      "description": "Modern 3D Elevation / Façade Design Structural Design and Drawings\nAll construction work to be carried out as per approved plan"
     },
     {
-      "id": "bricks",
+      "id": "structure.structural_design_seismic_compliance",
       "category": "structure",
-      "label": "Bricks",
-      "rate": {
-        "premium": 5.5,
-        "platinum": 7.5,
-        "royale": 7.5
-      },
-      "brands": {
-        "premium": [
-          "Premium Quality Red Bricks"
-        ],
-        "platinum": [
-          "A Class Bricks"
-        ],
-        "royale": [
-          "A Class Baghpat UP Bricks"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-11.png",
-        "platinum": "assets/lookbook/platinum/slide-11.png",
-        "royale": "assets/lookbook/royale/slide-11.png"
-      },
+      "category_label": "Structure",
+      "label": "Structural Design & Seismic Compliance",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full",
         "structure_only"
       ],
-      "unit": "per_brick",
-      "description": "Walling bricks, capped at the per-brick rate per tier."
+      "description": "Structure shall be designed as per IS 456, IS 1893, and IS 13920 for seismic Zone IV, with ductile detailing for safety."
     },
     {
-      "id": "foundation",
+      "id": "structure.steel",
       "category": "structure",
-      "label": "Foundation",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Dr. Fixit",
-          "Sika"
-        ],
-        "platinum": [
-          "Dr. Fixit",
-          "Sika"
-        ],
-        "royale": [
-          "Dr. Fixit",
-          "Sika"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-11.png",
-        "platinum": "assets/lookbook/platinum/slide-11.png",
-        "royale": "assets/lookbook/royale/slide-11.png"
-      },
+      "category_label": "Structure",
+      "label": "Steel",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "per_sqft",
+      "brands": [
+        "Rathi Steel 500FE"
+      ],
       "scope": [
         "full",
         "structure_only"
       ],
-      "unit": "fixed",
-      "description": "1:3:6 cement-sand-aggregate concrete foundation as per drawing, with Dr. Fixit Pedicrete URP / Sika Latex waterproofing."
+      "description": "Any variation above and below 4.5kg is charged and refunded on pro rata basis."
     },
     {
-      "id": "basement-wall",
+      "id": "structure.cement",
       "category": "structure",
-      "label": "Basement Wall",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-11.png",
-        "platinum": "assets/lookbook/platinum/slide-11.png",
-        "royale": "assets/lookbook/royale/slide-11.png"
-      },
-      "scope": [
-        "full",
-        "structure_only"
-      ],
-      "unit": "fixed",
-      "description": "6\" RCC wall with Guniting waterproofing, covered by 4.5\" brick wall."
-    },
-    {
-      "id": "rmc-design-mix",
-      "category": "cement",
-      "label": "RMC Design Mix (M25)",
-      "rate": {
-        "premium": 3000,
-        "platinum": 5000,
-        "royale": 8000
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-12.png",
-        "platinum": "assets/lookbook/platinum/slide-12.png",
-        "royale": "assets/lookbook/royale/slide-12.png"
-      },
-      "scope": [
-        "full",
-        "structure_only"
-      ],
-      "unit": "per_cubic_metre",
-      "description": "M25 ready-mix concrete in 1:1:2 (cement:sand:aggregate) ratio, capped per cubic metre."
-    },
-    {
-      "id": "cement",
-      "category": "cement",
+      "category_label": "Structure",
       "label": "Cement",
-      "rate": {
-        "premium": 365,
-        "platinum": 380,
-        "royale": 390
-      },
-      "brands": {
-        "premium": [
-          "Shree",
-          "Ambuja",
-          "Dalmia"
-        ],
-        "platinum": [
-          "UltraTech",
-          "ACC"
-        ],
-        "royale": [
-          "UltraTech",
-          "ACC"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-12.png",
-        "platinum": "assets/lookbook/platinum/slide-12.png",
-        "royale": "assets/lookbook/royale/slide-12.png"
-      },
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Ultratech",
+        "ACC"
+      ],
       "scope": [
         "full",
         "structure_only"
       ],
-      "unit": "per_bag",
-      "description": "OPC/PPC cement, capped at per-bag rate per tier."
+      "description": "Same brand shall be used for all RCC, brickwork, and plastering works."
     },
     {
-      "id": "plaster-work",
+      "id": "structure.bricks",
       "category": "structure",
+      "category_label": "Structure",
+      "label": "Bricks",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "External walls shall be constructed using 9-inch thick brickwork and internal partition walls shall be 4.5-inch thick"
+    },
+    {
+      "id": "structure.plinth_floor_and_stilt_level",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Plinth, Floor and Stilt Level",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Floor to Ceiling Height (Clear Height) is 10 ft\nStilt height as per the government norms"
+    },
+    {
+      "id": "structure.aggregates_rodi",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Aggregates (Rodi)",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Most superior bluish color aggregates to be used in all concrete work."
+    },
+    {
+      "id": "structure.pcc_in_foundation_stilt_and_terrace",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "PCC in Foundation / Stilt and Terrace",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "PCC to be done below the foundation jal, in stilt area below the granite work and also in terrace below the terrace tile flooring"
+    },
+    {
+      "id": "structure.plaster_work",
+      "category": "structure",
+      "category_label": "Structure",
       "label": "Plaster Work",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-12.png",
-        "platinum": "assets/lookbook/platinum/slide-12.png",
-        "royale": "assets/lookbook/royale/slide-12.png"
-      },
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full",
         "structure_only"
       ],
-      "unit": "fixed",
-      "description": "Interior 12–15 mm cement plaster + POP wall punning for smooth finish; exterior weather-resistant cement plaster (12–15 mm)."
+      "description": "Single coat plaster of 8-10mm thick would be provided.\nExterior Plaster : 12-15mm thick with ratio of 1:2:2 (Cement:Coarse sand:Fine Sand)\nDouble coat plaster totalling to 12-15 mm would be provided for durability and strength"
     },
     {
-      "id": "waterproofing",
-      "category": "waterproofing",
+      "id": "structure.compound_wall",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Compound Wall",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "9 Inch thick compound wall will be provided with 6 ft height from the plinth level on open areas perimeter"
+    },
+    {
+      "id": "structure.parapet_wall",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Parapet Wall",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "9 inch thick wall with 3.3 ft will be provided on terrace on entire terrace perimeter."
+    },
+    {
+      "id": "structure.curing",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Curing",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Sika Antisol"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "All RCC and masonry works shall be properly cured using continuous water curing methods to maintain adequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14  days for brickwork and plaster twice a day\nColumns will be covered with jute bag during curing to retain water"
+    },
+    {
+      "id": "structure.waterproofing",
+      "category": "structure",
+      "category_label": "Structure",
       "label": "Waterproofing",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Sika",
-          "Dr. Fixit"
-        ],
-        "platinum": [
-          "Sika",
-          "Dr. Fixit"
-        ],
-        "royale": [
-          "Sika",
-          "Dr. Fixit"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-12.png",
-        "platinum": "assets/lookbook/platinum/slide-12.png",
-        "royale": "assets/lookbook/royale/slide-12.png"
-      },
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Sika",
+        "Dr. Fixit LW+"
+      ],
       "scope": [
         "full",
         "structure_only"
       ],
-      "unit": "fixed",
-      "description": "Multi-layer waterproofing using Sika or Dr. Fixit systems across foundation, sunken areas, terrace, and bathrooms."
+      "description": "Concrete used anywhere is infused with waterproofing crystalline compound\nWaterproofing coat is done in wet areas like balcony, bathrooms, underground sump\nGola is created on terrace on joint of slab and parapat wall\nWaterproofing compound is is added to external plaster"
     },
     {
-      "id": "termite-treatment",
-      "category": "general",
-      "label": "Termite Treatment & Pest Control",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Bayer",
-          "Terminator (Pidilite)"
-        ],
-        "platinum": [
-          "Bayer",
-          "Terminator (Pidilite)"
-        ],
-        "royale": [
-          "Bayer",
-          "Terminator (Pidilite)"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-12.png",
-        "platinum": "assets/lookbook/platinum/slide-12.png",
-        "royale": "assets/lookbook/royale/slide-12.png"
-      },
+      "id": "structure.anti_termite_treatment",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Anti-Termite Treatment",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Bayer",
+        "Terminator (Pidilite)"
+      ],
       "scope": [
         "full",
         "structure_only"
       ],
-      "unit": "fixed",
-      "description": "Pre-construction termite treatment at plinth level using Bayer & Terminator (Pidilite) anti-termite chemicals."
+      "description": "Termite soil treatment begins pre-construction for complete building.\nTo be done at plinth level with Bayer & Terminator (Pidilite) anti-termite chemical\nSystematic piping network for uniform distribution across the area. Designed for efficiency, durability, and leak-proof performance."
     },
     {
-      "id": "underground-water-tank",
-      "category": "water",
-      "label": "Underground Water Tank",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Dr. Fixit",
-          "Sika"
-        ],
-        "platinum": [
-          "Dr. Fixit",
-          "Sika"
-        ],
-        "royale": [
-          "Dr. Fixit",
-          "Sika"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-13.png",
-        "platinum": "assets/lookbook/platinum/slide-13.png",
-        "royale": "assets/lookbook/royale/slide-13.png"
-      },
+      "id": "structure.misc",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Misc",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full",
         "structure_only"
       ],
-      "unit": "fixed",
-      "description": "RCC underground water tank with tile lining and Dr. Fixit/Sika waterproofing — separate tank for every floor at 3,000 L per 1,500 sq ft of covered area."
+      "description": "Coverblock of appropriate thickness would be used"
     },
     {
-      "id": "overhead-water-tank",
-      "category": "water",
-      "label": "Overhead Water Tank",
-      "rate": {
-        "premium": 5000,
-        "platinum": 8500,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Triple Layer / SS"
-        ],
-        "platinum": [
-          "Astral",
-          "Triple Layer"
-        ],
-        "royale": [
-          "SS Insulated 7-Layer"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-13.png",
-        "platinum": "assets/lookbook/platinum/slide-13.png",
-        "royale": "assets/lookbook/royale/slide-13.png"
-      },
+      "id": "structure.assumptions",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Assumptions",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
-        "full"
+        "full",
+        "structure_only"
       ],
-      "unit": "per_floor",
-      "description": "1,000 L overhead water tank per dwelling unit. Premium: triple-layer/SS up to ₹5,000. Platinum: Astral or equivalent up to ₹8,500. Royale: SS-insulated 7-layer (rate as per design)."
+      "description": "Foundation is considered combination of isolated and combined footing 5 ft below the natural ground level"
     },
     {
-      "id": "water-motor",
-      "category": "water",
-      "label": "Water Motor",
-      "rate": {
-        "premium": 8500,
-        "platinum": 8500,
-        "royale": 8500
-      },
-      "brands": {
-        "premium": [
-          "Crompton Greaves"
-        ],
-        "platinum": [
-          "Crompton Greaves"
-        ],
-        "royale": [
-          "Crompton Greaves"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-13.png",
-        "platinum": "assets/lookbook/platinum/slide-13.png",
-        "royale": "assets/lookbook/royale/slide-13.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_floor",
-      "description": "Crompton Greaves water motor, capped at ₹8,500 per floor."
-    },
-    {
-      "id": "designer-pop-ceiling",
-      "category": "ceiling",
-      "label": "Designer POP Ceiling",
-      "rate": {
-        "premium": 100000,
-        "platinum": 225000,
-        "royale": 225000
-      },
-      "brands": {
-        "premium": [
-          "Sakarni"
-        ],
-        "platinum": [
-          "Sakarni"
-        ],
-        "royale": [
-          "Sakarni"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-13.png",
-        "platinum": "assets/lookbook/platinum/slide-13.png",
-        "royale": "assets/lookbook/royale/slide-13.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_floor",
-      "description": "Designer POP false-ceiling using Sakarni POP or equivalent."
-    },
-    {
-      "id": "plumbing-pipes",
-      "category": "water",
-      "label": "Plumbing Pipes (Fresh + Drainage)",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Astral",
-          "Supreme"
-        ],
-        "platinum": [
-          "Astral",
-          "Finolex",
-          "Supreme"
-        ],
-        "royale": [
-          "Astral",
-          "Finolex",
-          "Supreme"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-13.png",
-        "platinum": "assets/lookbook/platinum/slide-13.png",
-        "royale": "assets/lookbook/royale/slide-13.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "fixed",
-      "description": "CPVC for fresh water supply, PVC for sewage and drainage."
-    },
-    {
-      "id": "modern-elevation-design",
-      "category": "general",
-      "label": "Modern Elevation Design",
-      "rate": {
-        "premium": 100000,
-        "platinum": 350000,
-        "royale": 1000000
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-14.png",
-        "platinum": "assets/lookbook/platinum/slide-14.png",
-        "royale": "assets/lookbook/royale/slide-14.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "fixed",
-      "description": "Exterior elevation as per approved design, including marble/tile cladding, grooves, projections, and aesthetic detailing."
-    },
-    {
-      "id": "floor-flooring",
-      "category": "flooring",
-      "label": "Floor Flooring",
-      "rate": {
-        "premium": 50,
-        "platinum": 250,
-        "royale": 350
-      },
-      "brands": {
-        "premium": [
-          "Vitrified Tile"
-        ],
-        "platinum": [
-          "Italian Marble"
-        ],
-        "royale": [
-          "Italian Marble"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-14.png",
-        "platinum": "assets/lookbook/platinum/slide-14.png",
-        "royale": "assets/lookbook/royale/slide-14.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_sqft",
-      "description": "Main floor flooring. Premium: vitrified tile up to ₹50/sq ft. Platinum: Italian marble at ₹250/sq ft. Royale: Italian marble up to ₹350/sq ft."
-    },
-    {
-      "id": "balcony-flooring",
-      "category": "flooring",
-      "label": "Balcony Flooring",
-      "rate": {
-        "premium": 40,
-        "platinum": 100,
-        "royale": 125
-      },
-      "brands": {
-        "premium": [
-          "Tile"
-        ],
-        "platinum": [
-          "Granite Stone"
-        ],
-        "royale": [
-          "Granite Stone"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-14.png",
-        "platinum": "assets/lookbook/platinum/slide-14.png",
-        "royale": "assets/lookbook/royale/slide-14.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_sqft",
-      "description": "Balcony floor finish per tier."
-    },
-    {
-      "id": "staircase-flooring",
-      "category": "flooring",
-      "label": "Staircase Flooring",
-      "rate": {
-        "premium": 70,
-        "platinum": 100,
-        "royale": 125
-      },
-      "brands": {
-        "premium": [
-          "Granite Stone"
-        ],
-        "platinum": [
-          "Granite Stone"
-        ],
-        "royale": [
-          "Granite Stone"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-14.png",
-        "platinum": "assets/lookbook/platinum/slide-14.png",
-        "royale": "assets/lookbook/royale/slide-14.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_sqft",
-      "description": "Polished granite stone steps."
-    },
-    {
-      "id": "terrace-flooring",
-      "category": "flooring",
-      "label": "Terrace Flooring",
-      "rate": {
-        "premium": 25,
-        "platinum": 40,
-        "royale": 125
-      },
-      "brands": {
-        "premium": [
-          "Anti-Skid Tile"
-        ],
-        "platinum": [
-          "Anti-Skid Tile"
-        ],
-        "royale": [
-          "Anti-Skid Tile"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-14.png",
-        "platinum": "assets/lookbook/platinum/slide-14.png",
-        "royale": "assets/lookbook/royale/slide-14.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_sqft",
-      "description": "Anti-skid vitrified tile suitable for terrace exposure."
-    },
-    {
-      "id": "stilt-flooring",
-      "category": "flooring",
-      "label": "Stilt Flooring",
-      "rate": {
-        "premium": 70,
-        "platinum": 100,
-        "royale": 125
-      },
-      "brands": {
-        "premium": [
-          "Granite Stone"
-        ],
-        "platinum": [
-          "Granite Stone"
-        ],
-        "royale": [
-          "Granite Stone"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-14.png",
-        "platinum": "assets/lookbook/platinum/slide-14.png",
-        "royale": "assets/lookbook/royale/slide-14.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_sqft",
-      "description": "Polished granite floor for the stilt area."
-    },
-    {
-      "id": "basement-flooring",
-      "category": "flooring",
-      "label": "Basement Flooring",
-      "rate": {
-        "premium": 40,
-        "platinum": 100,
-        "royale": 300
-      },
-      "brands": {
-        "premium": [
-          "Tile"
-        ],
-        "platinum": [
-          "Granite Stone"
-        ],
-        "royale": [
-          "Italian Marble"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-14.png",
-        "platinum": "assets/lookbook/platinum/slide-14.png",
-        "royale": "assets/lookbook/royale/slide-14.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_sqft",
-      "description": "Basement floor finish per tier."
-    },
-    {
-      "id": "lift-facade",
-      "category": "flooring",
-      "label": "Lift Façade",
-      "rate": {
-        "premium": 0,
-        "platinum": 100,
-        "royale": 300
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [
-          "Tile / Stone / Wooden Look"
-        ],
-        "royale": [
-          "Italian Marble"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-14.png",
-        "platinum": "assets/lookbook/platinum/slide-14.png",
-        "royale": "assets/lookbook/royale/slide-14.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_sqft",
-      "description": "Lift shaft façade cladding (Premium tier does not include a lift façade finish line)."
-    },
-    {
-      "id": "electrical-wiring",
-      "category": "electrical",
-      "label": "Electrical Wiring",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Kalinga Wires"
-        ],
-        "platinum": [
-          "KEI"
-        ],
-        "royale": [
-          "Havells",
-          "Finolex"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-15.png",
-        "platinum": "assets/lookbook/platinum/slide-15.png",
-        "royale": "assets/lookbook/royale/slide-15.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "fixed",
-      "description": "Concealed copper electrical wiring with ISI-marked conduits and junction boxes."
-    },
-    {
-      "id": "switches-sockets",
-      "category": "electrical",
-      "label": "Switches & Sockets",
-      "rate": {
-        "premium": 15000,
-        "platinum": 50000,
-        "royale": 100000
-      },
-      "brands": {
-        "premium": [
-          "Anchor"
-        ],
-        "platinum": [
-          "Legrand"
-        ],
-        "royale": [
-          "Legrand",
-          "Schneider",
-          "ABB"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-15.png",
-        "platinum": "assets/lookbook/platinum/slide-15.png",
-        "royale": "assets/lookbook/royale/slide-15.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_floor",
-      "description": "Modular switches and sockets allocated per floor. Premium: Anchor white. Platinum: Legrand white & dark grey. Royale: Legrand/Schneider/ABB glass finish (black or white)."
-    },
-    {
-      "id": "ceiling-fans",
-      "category": "electrical",
-      "label": "Ceiling Fans",
-      "rate": {
-        "premium": 1300,
-        "platinum": 1800,
-        "royale": 3500
-      },
-      "brands": {
-        "premium": [
-          "Bajaj"
-        ],
-        "platinum": [
-          "Havells"
-        ],
-        "royale": [
-          "Crompton",
-          "Havells",
-          "Atomberg"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-15.png",
-        "platinum": "assets/lookbook/platinum/slide-15.png",
-        "royale": "assets/lookbook/royale/slide-15.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_fan",
-      "description": "Ceiling fan rate cap per fan, brand mix per tier."
-    },
-    {
-      "id": "downlighters",
-      "category": "electrical",
-      "label": "Downlighters & Track Lights",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Philips",
-          "Osram"
-        ],
-        "platinum": [
-          "Philips",
-          "Osram"
-        ],
-        "royale": [
-          "Philips",
-          "Osram"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-15.png",
-        "platinum": "assets/lookbook/platinum/slide-15.png",
-        "royale": "assets/lookbook/royale/slide-15.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "fixed",
-      "description": "Recessed LED downlighters and (Royale) track lights from Philips/Osram or equivalent."
-    },
-    {
-      "id": "cove-strip-lights",
-      "category": "electrical",
-      "label": "Cove Strip Lights",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Philips",
-          "Osram"
-        ],
-        "platinum": [
-          "Philips",
-          "Osram"
-        ],
-        "royale": [
-          "Philips",
-          "Osram"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-15.png",
-        "platinum": "assets/lookbook/platinum/slide-15.png",
-        "royale": "assets/lookbook/royale/slide-15.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "fixed",
-      "description": "Warm-white LED strip lighting in ceiling coves."
-    },
-    {
-      "id": "pillar-fancy-light",
-      "category": "electrical",
-      "label": "Pillar Fancy Light",
-      "rate": {
-        "premium": 1500,
-        "platinum": 2500,
-        "royale": 3500
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-15.png",
-        "platinum": "assets/lookbook/platinum/slide-15.png",
-        "royale": "assets/lookbook/royale/slide-15.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_light",
-      "description": "Decorative pillar-mounted exterior fancy light, rate cap per fixture."
-    },
-    {
-      "id": "split-ac-wiring",
-      "category": "electrical",
-      "label": "Split AC Wiring & Provision",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-15.png",
-        "platinum": "assets/lookbook/platinum/slide-15.png",
-        "royale": "assets/lookbook/royale/slide-15.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "fixed",
-      "description": "1 split-AC provision per bedroom, drawing room and lobby/kitchen — copper pipe up to 12 m/AC plus electrical wiring; outdoor unit on the same floor."
-    },
-    {
-      "id": "kitchen-wall-cladding",
-      "category": "kitchen",
-      "label": "Kitchen Wall Cladding",
-      "rate": {
-        "premium": 40,
-        "platinum": 70,
-        "royale": 200
-      },
-      "brands": {
-        "premium": [
-          "Designer Tile"
-        ],
-        "platinum": [
-          "Designer Vitrified Tile"
-        ],
-        "royale": [
-          "Italian Marble"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-15.png",
-        "platinum": "assets/lookbook/platinum/slide-15.png",
-        "royale": "assets/lookbook/royale/slide-15.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_sqft",
-      "description": "Kitchen wall cladding from floor to ceiling per tier."
-    },
-    {
-      "id": "modular-kitchen",
-      "category": "kitchen",
-      "label": "Modular Kitchen",
-      "rate": {
-        "premium": 100000,
-        "platinum": 250000,
-        "royale": 500000
-      },
-      "brands": {
-        "premium": [
-          "Any Indian Brand"
-        ],
-        "platinum": [
-          "Hettich",
-          "Hafele"
-        ],
-        "royale": [
-          "Hettich",
-          "Hafele"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-15.png",
-        "platinum": "assets/lookbook/platinum/slide-15.png",
-        "royale": "assets/lookbook/royale/slide-15.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_kitchen",
-      "description": "Premium: HDMR modular kitchen with laminate finish, hardware from any Indian brand. Platinum: factory-cut HDHMR with premium laminates, soft-close hardware from Hettich/Hafele. Royale: factory-cut HDHMR with premium acrylic laminates / fluted glass / PU finish, includes chimney + in-built hob, soft-close hardware from Hettich/Hafele."
-    },
-    {
-      "id": "bathroom-fittings-shower-set",
+      "id": "bathroom.sanitary_ware_and_cp_fitting",
       "category": "bathroom",
-      "label": "Bathroom Fittings — Handshower / Shower / Angle Valve / Drain",
-      "rate": {
-        "premium": 5000,
-        "platinum": 20000,
-        "royale": 40000
-      },
-      "brands": {
-        "premium": [
-          "Parryware",
-          "Hindware"
-        ],
-        "platinum": [
-          "Jaquar",
-          "Kohler"
-        ],
-        "royale": [
-          "Artize by Jaquar",
-          "Kohler",
-          "Villeroy & Boch"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
-      "scope": [
-        "full"
-      ],
+      "category_label": "Bathroom & Toilet",
+      "label": "Sanitary Ware and CP Fitting",
+      "rate": 35000,
+      "rate_text": "₹35,000 per bathroom",
       "unit": "per_bathroom",
-      "description": "Handshower, shower, angle valve and drain set per bathroom (Royale uses Villeroy & Boch — corrected from source typo 'Wilroy & Bosch')."
-    },
-    {
-      "id": "bathroom-fittings-sanitary-ware",
-      "category": "bathroom",
-      "label": "Bathroom Sanitary Ware — WC + Washbasin",
-      "rate": {
-        "premium": 10000,
-        "platinum": 40000,
-        "royale": 40000
-      },
-      "brands": {
-        "premium": [
-          "Parryware",
-          "Hindware"
-        ],
-        "platinum": [
-          "Jaquar",
-          "Kohler"
-        ],
-        "royale": [
-          "Artize by Jaquar",
-          "Kohler",
-          "Villeroy & Boch"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
+      "brands": [
+        "Jaquar",
+        "Hindware (Italian Collection)"
+      ],
       "scope": [
         "full"
       ],
-      "unit": "per_bathroom",
-      "description": "WC and washbasin sanitary ware per bathroom."
+      "description": "Premium quality sanitary ware including wall-mounted EWC, wash basin, shower head, and diverter from Jaquar / Hindware (Italian Collection) will be provided upto the specified value."
     },
     {
-      "id": "bathroom-cpvc-fittings",
+      "id": "bathroom.shower_partition_cubicles",
       "category": "bathroom",
-      "label": "Bathroom CPVC Fittings",
-      "rate": {
-        "premium": 10000,
-        "platinum": 20000,
-        "royale": 20000
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [
-          "Jaquar",
-          "Kohler"
-        ],
-        "royale": [
-          "Jaquar",
-          "Kohler"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
+      "category_label": "Bathroom & Toilet",
+      "label": "Shower Partition/Cubicles",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "per_bathroom",
-      "description": "Concealed CPVC fittings per bathroom (brand spec corrected from '|' separator typo in source)."
+      "description": "Elegant shower partition made of 6–8 mm toughened glass, ensuring durability and modern aesthetics."
     },
     {
-      "id": "bathroom-shower-partition",
+      "id": "bathroom.bathroom_accessories",
       "category": "bathroom",
-      "label": "Bathroom Shower Partition / Cubicle",
-      "rate": {
-        "premium": 0,
-        "platinum": 10000,
-        "royale": 20000
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_bathroom",
-      "description": "Glass shower partition or cubicle per bathroom (not included at Premium tier)."
-    },
-    {
-      "id": "bathroom-accessories",
-      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
       "label": "Bathroom Accessories",
-      "rate": {
-        "premium": 2000,
-        "platinum": 12000,
-        "royale": 15000
-      },
-      "brands": {
-        "premium": [
-          "Any Indian Brand"
-        ],
-        "platinum": [
-          "Jaquar"
-        ],
-        "royale": [
-          "Jaquar"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
+      "description": "Standard accessories including mirror, towel rod/ring, soap dish, etc., up to the specified value."
+    },
+    {
+      "id": "bathroom.bathroom_geyser",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Bathroom Geyser",
+      "rate": 0,
+      "rate_text": "",
       "unit": "per_bathroom",
-      "description": "Towel rails, soap dishes, paper holders, hooks per bathroom."
+      "brands": [
+        "Crompton",
+        "Bajaj"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "One geyser per bathroom from reputed brands like Crompton / Bajaj, within the defined budget."
     },
     {
-      "id": "bathroom-flooring",
+      "id": "bathroom.exhaust_fan",
       "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Exhaust Fan",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Havells"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Provision and installation of a wall-mounted exhaust fan (Havells make) for proper ventilation."
+    },
+    {
+      "id": "bathroom.bathroom_flooring",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
       "label": "Bathroom Flooring",
-      "rate": {
-        "premium": 25,
-        "platinum": 40,
-        "royale": 350
-      },
-      "brands": {
-        "premium": [
-          "Anti-Skid Tile"
-        ],
-        "platinum": [
-          "Anti-Skid Tile"
-        ],
-        "royale": [
-          "Italian Marble"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
+      "rate": 50,
+      "rate_text": "₹50 per sq.ft.",
+      "unit": "per_sqft",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "per_sqft",
-      "description": "Premium and Platinum: anti-skid floor tile. Royale: Italian marble (different material class — see bugs.md B3.4)."
+      "description": "Anti-skid floor tiles (sizes: 1’×1’ or 2’×2’) to ensure safety and durability."
     },
     {
-      "id": "bathroom-wall-cladding",
+      "id": "bathroom.bathroom_wall_cladding",
       "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
       "label": "Bathroom Wall Cladding",
-      "rate": {
-        "premium": 40,
-        "platinum": 70,
-        "royale": 300
-      },
-      "brands": {
-        "premium": [
-          "Designer Ceramic Tile"
-        ],
-        "platinum": [
-          "Designer Ceramic Tile"
-        ],
-        "royale": [
-          "Italian Marble"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "per_sqft",
-      "description": "Bathroom wall cladding from floor to ceiling per tier."
+      "description": "Wall tiling up to ceiling height (sizes: 1’×1.5’ or 2’×2’)providing a clean and moisture-resistant finish."
     },
     {
-      "id": "wall-paint-interior",
-      "category": "paint",
-      "label": "Wall Paint — Interior",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Tractor Emulsion"
-        ],
-        "platinum": [
-          "Apcolite Premium Emulsion (Asian Paints)"
-        ],
-        "royale": [
-          "Royale Luxury Emulsion (Asian Paints)"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
+      "id": "bathroom.cpvc_fittings",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "CPVC Fittings",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Astral",
+        "Supreme"
+      ],
       "scope": [
         "full"
       ],
-      "unit": "fixed",
-      "description": "Interior wall paint per tier."
+      "description": "Complete plumbing system using high-quality CPVC pipes and fittings from trusted brands to ensure longevity and leak-proof performance."
     },
     {
-      "id": "wall-paint-exterior",
-      "category": "paint",
-      "label": "Wall Paint — Exterior",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Weather-proof Exterior Paint"
-        ],
-        "platinum": [
-          "Weathercoat Glow (Berger)"
-        ],
-        "royale": [
-          "All-Weather (Asian Paints)"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
+      "id": "bathroom.granite_work",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Granite work",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "fixed",
-      "description": "Weather-resistant exterior wall paint."
+      "description": "Granite finishing will be provided on top of the concealed wall-mounted flush tank (EWC) and as a counter slab for the wash basin."
     },
     {
-      "id": "ceiling-paint",
-      "category": "paint",
-      "label": "Ceiling Paint",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Plastic Paint"
-        ],
-        "platinum": [
-          "Apcolite Premium Emulsion (Asian Paints)"
-        ],
-        "royale": [
-          "Royale Luxury Emulsion (Asian Paints)"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
+      "id": "kitchen.kitchen_wall_cladding_visible_areas",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Kitchen Wall Cladding (Visible Areas)",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "fixed",
-      "description": "Ceiling paint per tier."
+      "description": "Ceramic wall tiles shall be provided in all visible areas up to a height of 5 ft above the kitchen countertop."
     },
     {
-      "id": "polish",
-      "category": "paint",
-      "label": "Wood / Metal Polish",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [
-          "Melamine"
-        ],
-        "platinum": [
-          "Melamine"
-        ],
-        "royale": [
-          "Melamine"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-16.png",
-        "platinum": "assets/lookbook/platinum/slide-16.png",
-        "royale": "assets/lookbook/royale/slide-16.png"
-      },
+      "id": "kitchen.kitchen_wall_cladding_non_visible_areas",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Kitchen Wall Cladding (Non Visible Areas)",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "fixed",
-      "description": "Melamine polish in matte/glossy finish as per owner's choice."
+      "description": "Commercial / Waste tiles shall be provided behind kitchen cabinets (non-visible areas) to protect the cabinets from moisture."
     },
     {
-      "id": "main-entry-door",
+      "id": "kitchen.kitchen_counter_granite",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Kitchen Counter Granite",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Jet black polished granite (16–18 mm thick) shall be provided for the kitchen counter with double-layered nosing, mounted on a 4-inch RCC slab."
+    },
+    {
+      "id": "kitchen.sink_and_faucet",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Sink and Faucet",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Double-bowl stainless steel sink with faucet shall be provided within the specified budget."
+    },
+    {
+      "id": "kitchen.kitchen_geyser",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Kitchen Geyser",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "per_bathroom",
+      "brands": [
+        "Crompton",
+        "Bajaj"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "One geyser per bathroom from reputed ISI mark brands like Crompton / Bajaj, within the defined budget."
+    },
+    {
+      "id": "kitchen.exhaust_fan",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Exhaust Fan",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Havells"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Provision and installation of a wall-mounted exhaust fan (Havells make) for proper ventilation."
+    },
+    {
+      "id": "kitchen.cpvc_fittings",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "CPVC Fittings",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Astral",
+        "Supreme"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Complete plumbing system using high-quality CPVC pipes and fittings from trusted brands to ensure longevity and leak-proof performance."
+    },
+    {
+      "id": "kitchen.modular_kitchen",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Modular Kitchen",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Ozone"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Modular kitchen made of HDHMR with premium laminates, including soft close channels from ozone brand, with well-designed drawers and corner solutions."
+    },
+    {
+      "id": "kitchen.hob_and_chimney",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Hob and Chimney",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Faber",
+        "KAFF"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Built-in hob and chimney from Faber / KAFF shall be provided within the specified budget range."
+    },
+    {
+      "id": "kitchen.misc",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Misc",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "A bib cock shall be provided for the washing machine in the utility area or at a location as per the architectural drawings."
+    },
+    {
+      "id": "doors_windows.main_entry_door",
       "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
       "label": "Main Entry Door",
-      "rate": {
-        "premium": 8000,
-        "platinum": 20000,
-        "royale": 50000
-      },
-      "brands": {
-        "premium": [
-          "WPC"
-        ],
-        "platinum": [
-          "Teak Wood",
-          "Mikasa",
-          "Sumai"
-        ],
-        "royale": [
-          "Mikasa"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-17.png",
-        "platinum": "assets/lookbook/platinum/slide-17.png",
-        "royale": "assets/lookbook/royale/slide-17.png"
-      },
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "per_door",
-      "description": "Main entry door per tier."
+      "description": "44 mm thick premium teak wood / flush door shutter with polished/laminated finish, fixed on a seasoned hardwood frame (teak/sal wood), complete with SS 304 hinges, SS tower bolts , door stopper, handle, and all necessary fittings and hardware.."
     },
     {
-      "id": "other-doors",
+      "id": "doors_windows.main_door_lock",
       "category": "doors_windows",
-      "label": "Other Doors",
-      "rate": {
-        "premium": 5000,
-        "platinum": 15000,
-        "royale": 35000
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [
-          "Sumai"
-        ],
-        "royale": [
-          "Mikasa"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-17.png",
-        "platinum": "assets/lookbook/platinum/slide-17.png",
-        "royale": "assets/lookbook/royale/slide-17.png"
-      },
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Main Door Lock",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Godrej",
+        "Ozone",
+        "Yale"
+      ],
       "scope": [
         "full"
       ],
-      "unit": "per_door",
-      "description": "Internal flush doors per tier."
+      "description": "Premium quality door locks from Godrej / Ozone / Yale  make shall be provided, suitable for the main door ensuring durability, safety, and smooth operation."
     },
     {
-      "id": "terrace-door",
+      "id": "doors_windows.internal_and_bathroom_doors",
       "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Internal and Bathroom Doors",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Sumai"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Flush door shutters (Sumai or equivalent) with laminate/paint finish, installed on hardwood frames, complete with SS 304 hinges, SS tower bolts (where applicable), door stopper, handle, and all required fittings and hardware."
+    },
+    {
+      "id": "doors_windows.internal_and_bathroom_door_lock",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Internal and Bathroom Door Lock",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Godrej",
+        "Ozone",
+        "Yale"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Premium quality door locks from Godrej / Ozone / Yale or equivalent make shall be provided, suitable for internal and bathroom doors, ensuring durability, safety, and smooth operation."
+    },
+    {
+      "id": "doors_windows.terrace_door",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
       "label": "Terrace Door",
-      "rate": {
-        "premium": 5000,
-        "platinum": 26000,
-        "royale": 26000
-      },
-      "brands": {
-        "premium": [
-          "MS Handmade"
-        ],
-        "platinum": [
-          "Tata Parvesh (Galvanised Steel)"
-        ],
-        "royale": [
-          "Tata Parvesh (Galvanised Steel)"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-17.png",
-        "platinum": "assets/lookbook/platinum/slide-17.png",
-        "royale": "assets/lookbook/royale/slide-17.png"
-      },
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "per_door",
-      "description": "Terrace access door per tier."
+      "description": "Mild steel (MS) door with primer and paint finish, including necessary fittings and locking arrangement."
     },
     {
-      "id": "back-lane-door",
+      "id": "doors_windows.sliding_door_windows",
       "category": "doors_windows",
-      "label": "Back Lane Door",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 26000
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": [
-          "Tata Parvesh (Galvanised Steel)"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-17.png",
-        "platinum": "assets/lookbook/platinum/slide-17.png",
-        "royale": "assets/lookbook/royale/slide-17.png"
-      },
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Sliding Door/ Windows",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Prominence",
+        "EITI"
+      ],
       "scope": [
         "full"
       ],
-      "unit": "per_door",
-      "description": "Back-lane access door (Royale tier only)."
+      "description": "UPVC sliding doors/windows with 3-track system (2 glass panels and 1 mosquito mesh track) from Prominence / EITI or equivalent make, complete with all necessary fittings and hardware."
     },
     {
-      "id": "sliding-windows",
+      "id": "doors_windows.door_hinges_stopper",
       "category": "doors_windows",
-      "label": "Sliding Windows (Aluminium / UPVC)",
-      "rate": {
-        "premium": 450,
-        "platinum": 750,
-        "royale": 750
-      },
-      "brands": {
-        "premium": [
-          "Greentech (UPVC, 2-track)"
-        ],
-        "platinum": [
-          "Tostem (Aluminium, 3-track)"
-        ],
-        "royale": [
-          "Tostem",
-          "Fenesta"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-17.png",
-        "platinum": "assets/lookbook/platinum/slide-17.png",
-        "royale": "assets/lookbook/royale/slide-17.png"
-      },
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Door Hinges & Stopper",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "per_sqft",
-      "description": "Sliding windows with mosquito mesh per sq ft of opening — Premium: Greentech UPVC 2-track. Platinum: Tostem anodised aluminium 3-track. Royale: Tostem/Fenesta anodised aluminium 3-track."
+      "description": "4 Stainless Steel 304 hinges for each door"
     },
     {
-      "id": "door-lock-main",
+      "id": "doors_windows.door_height",
       "category": "doors_windows",
-      "label": "Wooden Door Lock — Main Door",
-      "rate": {
-        "premium": 3000,
-        "platinum": 12000,
-        "royale": 15000
-      },
-      "brands": {
-        "premium": [
-          "Jolly",
-          "Ozone"
-        ],
-        "platinum": [
-          "Ozone",
-          "Yale"
-        ],
-        "royale": [
-          "Yale"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-17.png",
-        "platinum": "assets/lookbook/platinum/slide-17.png",
-        "royale": "assets/lookbook/royale/slide-17.png"
-      },
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Door Height",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "per_door",
-      "description": "Main door lockset per tier."
+      "description": "7'6\" to 8' as per approved plan"
     },
     {
-      "id": "door-lock-other",
+      "id": "doors_windows.tower_bolt",
       "category": "doors_windows",
-      "label": "Wooden Door Lock — Internal",
-      "rate": {
-        "premium": 1000,
-        "platinum": 3000,
-        "royale": 6000
-      },
-      "brands": {
-        "premium": [
-          "Any Indian Brand"
-        ],
-        "platinum": [
-          "Godrej"
-        ],
-        "royale": [
-          "Godrej"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-17.png",
-        "platinum": "assets/lookbook/platinum/slide-17.png",
-        "royale": "assets/lookbook/royale/slide-17.png"
-      },
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Tower Bolt",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "SS"
+      ],
       "scope": [
         "full"
       ],
-      "unit": "per_door",
-      "description": "Internal door lockset per tier."
+      "description": "18-24 inch, SS/Brass Finish"
     },
     {
-      "id": "door-frame-wood",
+      "id": "doors_windows.modular_walkin_wardrobe",
       "category": "doors_windows",
-      "label": "Door Frame Wood",
-      "rate": {
-        "premium": 1350,
-        "platinum": 2050,
-        "royale": 2500
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [
-          "Teak Wood"
-        ],
-        "royale": [
-          "Ivory Coast Teak Wood"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-17.png",
-        "platinum": "assets/lookbook/platinum/slide-17.png",
-        "royale": "assets/lookbook/royale/slide-17.png"
-      },
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Modular/ WalkIn Wardrobe",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Godrej",
+        "Ozone"
+      ],
       "scope": [
         "full"
       ],
-      "unit": "per_cubic_metre",
-      "description": "Door frame timber per cubic metre."
+      "description": "External finish shall be in laminate finish only. Internal surfaces shall be finished in laminate / pre-laminated boards.\nHardware shall include soft-close hinges and telescopic drawer channels from reputed brands such as Godrej/Ozone or equivalent. Handles shall be standard SS / aluminium.\nThe wardrobe shall include basic internal layout comprising shelves, hanging rods, and 2 drawer units, designed for functional storage.\nLofts, fluted glass, acrylic/PU finish, premium accessories, and specialized fittings shall not be part of this scope."
     },
     {
-      "id": "modular-wardrobe",
-      "category": "doors_windows",
-      "label": "Modular Wardrobe",
-      "rate": {
-        "premium": 800,
-        "platinum": 1200,
-        "royale": 2000
-      },
-      "brands": {
-        "premium": [
-          "Laminate"
-        ],
-        "platinum": [
-          "Laminate"
-        ],
-        "royale": [
-          "PU",
-          "Glass",
-          "Acrylic Laminate"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-17.png",
-        "platinum": "assets/lookbook/platinum/slide-17.png",
-        "royale": "assets/lookbook/royale/slide-17.png"
-      },
+      "id": "flooring.floor_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Floor Flooring",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
-      "unit": "per_sqft",
-      "description": "Per-sqft wardrobe finish: 8H × 6W × 2D per bedroom (Premium)."
+      "description": "Large-format vitrified tiles (2’×4’) in living, dining, kitchen and all bedrooms, with cementitious grouting."
     },
     {
-      "id": "main-gate",
+      "id": "flooring.balcony_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Balcony Flooring",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Anti-skid tiles (2’×2’) for balconies, with cementitious grouting."
+    },
+    {
+      "id": "flooring.staircase_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Staircase Flooring",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "18mm Granite shall be provided on treads and risers, with proper edge nosing and chamfering"
+    },
+    {
+      "id": "flooring.terrace_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Terrace Flooring",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Anti-skid cool roof top tiles (2’×2’) for terrace, with cementitious grouting."
+    },
+    {
+      "id": "flooring.stilt_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Stilt Flooring",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "18mm Granite on treads and risers, with proper nosing and chamfering"
+    },
+    {
+      "id": "flooring.lift_fa_ade",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Lift Façade",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Lift façade cladding shall be finished with tiles or granite, as per design."
+    },
+    {
+      "id": "flooring.skirting",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Skirting",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "100 mm (4”) high skirting shall be provided along all wall edges in respective areas, matching the flooring material (vitrified tiles / granite). Skirting shall also be provided along staircase walls using matching granite, with proper edge finishing"
+    },
+    {
+      "id": "electrical.electrical_wire",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Electrical Wire",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Finolex",
+        "Polycab"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "FR grade copper wiring shall be provided with appropriate sizing for light, power, and AC circuits to ensure safe load handling."
+    },
+    {
+      "id": "electrical.electrical_wire_specification",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Electrical Wire Specification",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "10 sq. mm for main panels, 4 sq. mm for power and AC circuits, and 1.5 sq. mm for lighting circuits, ensuring safe load distribution without overloading."
+    },
+    {
+      "id": "electrical.conduit_pipes_boxes",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Conduit Pipes & Boxes",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Astral",
+        "AKG"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "ISI marked PVC conduits shall be provided, with heavy-duty conduits in slabs and medium-duty conduits in walls, with separate routing for light and power circuits."
+    },
+    {
+      "id": "electrical.switch_sockets",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Switch & Sockets",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Havells",
+        "Anchor"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Modular switches and sockets in white finish from Havells / Anchor equivalent make shall be provided. No. of switches and sockets will not be a constrain"
+    },
+    {
+      "id": "electrical.ceiling_fans",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Ceiling Fans",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Havells"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Ceiling fans from Havells or equivalent make shall be provided."
+    },
+    {
+      "id": "electrical.split_ac_provision",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Split AC Provision",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Copper piping (average up to 10 m per AC) along with necessary electrical wiring shall be provided. Outdoor units shall be placed on the respective floor."
+    },
+    {
+      "id": "electrical.downlighters",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Downlighters",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Philips",
+        "Osram"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Downlighters from Philips / Osram or equivalent make shall be provided."
+    },
+    {
+      "id": "electrical.cove_strip_lights",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Cove Strip Lights",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Philips",
+        "Osram"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "LED strip lights from Philips / Osram or equivalent make shall be provided in cove areas"
+    },
+    {
+      "id": "electrical.pillar_fancy_light",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Pillar Fancy Light",
+      "rate": 2000,
+      "rate_text": "₹2,000 per pillar",
+      "unit": "per_pillar",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Decorative pillar lights shall be provided for external areas. Maximum upto 4 pillers"
+    },
+    {
+      "id": "electrical.ups_wiring",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "UPS Wiring",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Provision for UPS wiring shall be provided for each floor."
+    },
+    {
+      "id": "electrical.ev_charging_point",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "EV Charging Point",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "per_floor",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Provision for one electric vehicle charging point shall be provided per floor."
+    },
+    {
+      "id": "electrical.solar_electrical_provision",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Solar Electrical Provision",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Provision for solar electrical system shall be included."
+    },
+    {
+      "id": "electrical.mcb_elcb",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "MCB/ELCB",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "MCB and ELCB protection shall be provided for each floor."
+    },
+    {
+      "id": "electrical.earthing",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Earthing",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Earthing shall be done using copper strip earthing for effective grounding and safety."
+    },
+    {
+      "id": "water.underground_water_tank",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Underground Water Tank",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "per_floor",
+      "brands": [
+        "Dr. Fixit",
+        "Sika"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "RCC underground sump shall be constructed for each floor as a separate unit, finished internally with commercial tiles. Waterproofing shall be carried out using approved systems from Dr. Fixit / Sika or equivalent."
+    },
+    {
+      "id": "water.overhead_water_tank",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Overhead Water Tank",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "per_floor",
+      "brands": [
+        "Astral"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Triple-layer overhead water tanks of 1,000 litres capacity shall be provided for each floor, with an additional 500 litres tank for the stilt level. Tanks shall be from Astral or equivalent make."
+    },
+    {
+      "id": "water.water_motor",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Water Motor",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Crompton Greaves"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "1.5 HP water pump shall be provided for each floor, connecting individual underground sump to corresponding overhead tank. Pumps shall be from Crompton Greaves or equivalent make."
+    },
+    {
+      "id": "water.rainwater_harvesting",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Rainwater Harvesting",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Rainwater harvesting pit shall be constructed as per applicable government norms"
+    },
+    {
+      "id": "water.discharge_pvc_pipe",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Discharge PVC Pipe",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "All necessary PVC discharge pipes and connections shall be provided for proper water flow, drainage, and system integration. High-grade PVC pipes of 4-inch or 6-inch diameter, as per site conditions and design requirements, shall be used."
+    },
+    {
+      "id": "ceiling.false_ceiling",
+      "category": "ceiling",
+      "category_label": "Ceiling & Elevation",
+      "label": "False Ceiling",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Sakarni POP"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "POP cove false ceiling shall be provided in living, dining, and all bedrooms using Sakarni POP or equivalent make, including base level ceiling. Any additional design elements or premium features shall be as per design."
+    },
+    {
+      "id": "ceiling.elevation",
+      "category": "ceiling",
+      "category_label": "Ceiling & Elevation",
+      "label": "Elevation",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Back side of the building shall be finished with chapai dana and roller finish."
+    },
+    {
+      "id": "safety.cctv_camera",
+      "category": "safety",
+      "category_label": "Safety & Security",
+      "label": "CCTV Camera",
+      "rate": 50000,
+      "rate_text": "₹50,000 (cap)",
+      "unit": "cap",
+      "brands": [
+        "CP Plus"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "CCTV camera system from CP Plus or equivalent make shall be provided, including necessary cameras, and basic wiring upto specified budget."
+    },
+    {
+      "id": "safety.video_door_phone",
+      "category": "safety",
+      "category_label": "Safety & Security",
+      "label": "Video Door Phone",
+      "rate": 50000,
+      "rate_text": "₹50,000 (cap)",
+      "unit": "cap",
+      "brands": [
+        "CP Plus",
+        "Alba"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Video door phone system from CP Plus / Alba or equivalent make shall be provided with indoor monitor for each floor and entrance panel control."
+    },
+    {
+      "id": "paint.internal_wall_paint",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Internal Wall Paint",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Asian Paints (Apcolite Premium Emulsion)"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Apcolite Premium Emulsion by Asian Paints"
+    },
+    {
+      "id": "paint.exterior_wall_paint",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Exterior Wall Paint",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Berger (Weathercoat Glow)"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Weathercoat glow Berger"
+    },
+    {
+      "id": "paint.ceiling_paint",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Ceiling Paint",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Asian Paints (Apcolite Premium Emulsion)"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Apcolite Premium Emulsion by Asian Paints"
+    },
+    {
+      "id": "paint.putty",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Putty",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "JK Birla"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "JK Birla Putty"
+    },
+    {
+      "id": "paint.polish",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Polish",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Melamine Polish in Matte/Glossy Finish as per owner's choice"
+    },
+    {
+      "id": "general.main_gate",
       "category": "general",
+      "category_label": "General Aspects",
       "label": "Main Gate",
-      "rate": {
-        "premium": 85000,
-        "platinum": 100000,
-        "royale": 250000
-      },
-      "brands": {
-        "premium": [
-          "Bifold MS"
-        ],
-        "platinum": [
-          "Bifold MS"
-        ],
-        "royale": [
-          "Bifold Designer MS"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-18.png",
-        "platinum": "assets/lookbook/platinum/slide-18.png",
-        "royale": "assets/lookbook/royale/slide-18.png"
-      },
+      "rate": 250000,
+      "rate_text": "₹2,50,000 (cap, includes side gate)",
+      "unit": "cap",
+      "brands": [],
       "scope": [
-        "full"
+        "full",
+        "structure_only"
       ],
-      "unit": "fixed",
-      "description": "Bifold MS main gate per tier."
+      "description": "Bifold MS Main Gate upto INR 2,50,000/- (Includes Main Gate and Side Gate)"
     },
     {
-      "id": "staircase-balcony-railing",
+      "id": "general.staircase_balcony_railing",
       "category": "general",
+      "category_label": "General Aspects",
       "label": "Staircase & Balcony Railing",
-      "rate": {
-        "premium": 280,
-        "platinum": 400,
-        "royale": 1000
-      },
-      "brands": {
-        "premium": [
-          "MS Railing"
-        ],
-        "platinum": [
-          "MS Steel"
-        ],
-        "royale": [
-          "Stainless Steel + Glass"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-18.png",
-        "platinum": "assets/lookbook/platinum/slide-18.png",
-        "royale": "assets/lookbook/royale/slide-18.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "per_sqft",
-      "description": "Staircase and balcony railing per sq ft of railing area."
-    },
-    {
-      "id": "solar-panel",
-      "category": "general",
-      "label": "Solar Panel",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 125000
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-18.png",
-        "platinum": "assets/lookbook/platinum/slide-18.png",
-        "royale": "assets/lookbook/royale/slide-18.png"
-      },
-      "scope": [
-        "full"
-      ],
-      "unit": "fixed",
-      "description": "Solar panel system up to ₹1,25,000 per dwelling unit (Royale tier only)."
-    },
-    {
-      "id": "structural-design",
-      "category": "general",
-      "label": "Earth-Quake Resistant Structural Design",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-18.png",
-        "platinum": "assets/lookbook/platinum/slide-18.png",
-        "royale": "assets/lookbook/royale/slide-18.png"
-      },
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full",
         "structure_only"
       ],
-      "unit": "fixed",
-      "description": "Framed structures with properly designed columns and beams per structural engineer's / architect's drawing; M-25 columns; vibrators used for proper consolidation."
+      "description": "Staircase Railing - MS Steel designer railing ; Balcony Railing as per design"
     },
     {
-      "id": "compound-wall-parapet",
-      "category": "parapet",
-      "label": "Compound Wall / Parapet",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [],
-        "royale": []
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-18.png",
-        "platinum": "assets/lookbook/platinum/slide-18.png",
-        "royale": "assets/lookbook/royale/slide-18.png"
-      },
+      "id": "general.concrete_mixing",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Concrete Mixing",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full",
         "structure_only"
       ],
-      "unit": "fixed",
-      "description": "Compound wall and parapet construction (also surfaced in structure-only scope)."
+      "description": "Done with concrete mixers. On Site mixing for Columns (M-25) i.e. (1:1:2)"
     },
     {
-      "id": "lift",
+      "id": "general.vibrators",
       "category": "general",
-      "label": "Lift",
-      "rate": {
-        "premium": 0,
-        "platinum": 0,
-        "royale": 0
-      },
-      "brands": {
-        "premium": [],
-        "platinum": [
-          "Schneider",
-          "Johnson"
-        ],
-        "royale": [
-          "Schneider",
-          "Johnson",
-          "Otis"
-        ]
-      },
-      "lookbook": {
-        "premium": "assets/lookbook/premium/slide-19.png",
-        "platinum": "assets/lookbook/platinum/slide-19.png",
-        "royale": "assets/lookbook/royale/slide-19.png"
-      },
+      "category_label": "General Aspects",
+      "label": "Vibrators",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
-        "full"
+        "full",
+        "structure_only"
       ],
-      "unit": "fixed",
-      "description": "Lift structure including all civil, electrical, paint, exhaust ventilation and earthing works (description corrected from 'exhausting' typo in source — see bugs.md B3.1)."
+      "description": "Used to consolidate layers in footings, columns, beams & roof slabs"
+    },
+    {
+      "id": "general.brickwork_mortar",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Brickwork Mortar",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "9\" brickwork not leaner than 1:6; 4½\" brickwork not leaner than 1:4"
+    },
+    {
+      "id": "general.soil_test",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Soil Test",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Soil Test to be done before construction"
+    },
+    {
+      "id": "general.lift_machine",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Lift Machine",
+      "rate": 1000000,
+      "rate_text": "₹10,00,000 (cap)",
+      "unit": "cap",
+      "brands": [
+        "Schindler",
+        "Kone"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Entry for all floors will be well designed with stone panelling\nLift Machine – Schindler/Kone equivalent\nThe cost of lift machine is capped at INR 10 Lacs"
     }
   ]
 }

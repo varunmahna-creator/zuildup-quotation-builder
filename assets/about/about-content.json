@@ -1,0 +1,165 @@
+{
+  "hero": {
+    "headline": "Tech Enabled Construction Quality A",
+    "subline": "Tech-enabled construction solutions delivering transparent pricing, assured quality, and on-time homes View our Projects Instant Estimate 124+ Projects 24+ Years 450+ Quality Checks 15+ Yr Warranty"
+  },
+  "about": {
+    "vision_mission": [
+      {
+        "title": "Our Vision",
+        "body": "To make home construction simple, transparent, and reliable for every land owner."
+      },
+      {
+        "title": "Our Mission",
+        "body": "To combine engineering excellence, top-grade materials, and customer-first service for the best construction experience. 24+ YEARS OF EXPERIENCE"
+      }
+    ]
+  },
+  "why_choose": [
+    {
+      "title": "24+ Years Excellence",
+      "body": "Award-winning architectural design and construction expertise."
+    },
+    {
+      "title": "450+ Quality Checks",
+      "body": "Comprehensive quality assurance at every stage ensuring exceptional standards."
+    },
+    {
+      "title": "On-Time Delivery",
+      "body": "98% of projects completed on schedule. We value your time and commitments."
+    },
+    {
+      "title": "Transparent Pricing",
+      "body": "No hidden costs. Complete cost breakdown provided upfront with detailed quotations."
+    },
+    {
+      "title": "Expert Team",
+      "body": "50+ skilled professionals including licensed architects and certified contractors."
+    },
+    {
+      "title": "Live Tracking",
+      "body": "Real-time construction updates enabling clients to monitor progress anytime."
+    }
+  ],
+  "process": [
+    {
+      "title": "Consultation & Planning",
+      "body": "We understand your vision, requirements, and budget. Free site visit and feasibility analysis included. 02 2-3 Week"
+    },
+    {
+      "title": "Design & Approvals",
+      "body": "Our architects prepare detailed plans and 3D views. Multiple optimized design options provided. 03 16-20 Week"
+    },
+    {
+      "title": "Foundation & Structure",
+      "body": "Construction begins with strong foundations and structural work using premium-grade materials. 04 24\u201330 Weeks"
+    },
+    {
+      "title": "Construction & Finishing",
+      "body": "MEP, interiors, flooring, painting, and fixtures completed as per approved specifications. 05 1\u20132 Weeks"
+    },
+    {
+      "title": "Final Handover",
+      "body": "Quality inspection, final walkthrough, documentation, and smooth handover of your home."
+    }
+  ],
+  "technology": [
+    {
+      "title": "Digital Planning Access",
+      "body": "Your vision, digitally enabled Live project timelines Online approvals 3D views 02"
+    },
+    {
+      "title": "Material & Labor Tracking",
+      "body": "Know onsite activities clearly Activity reports Material tracking Quality updates 03"
+    },
+    {
+      "title": "Live Site Updates",
+      "body": "See progress clearly daily Daily site updates Photos and videos Milestone alerts 04"
+    },
+    {
+      "title": "Smart Project Control",
+      "body": "Complete project transparency Smart system alerts Real-time progress Budget tracking 05"
+    },
+    {
+      "title": "Digital Handover Care",
+      "body": "Everything safely documented 24\u00d77 project access Digital records Lifetime support"
+    }
+  ],
+  "warranty": [
+    {
+      "title": "Structure Warranty",
+      "body": "Up to 15 Years Coverage on structural integrity"
+    },
+    {
+      "title": "Window Profiles",
+      "body": "Up to 10 Years Warranty on window frames & profiles"
+    },
+    {
+      "title": "Interiors & Finish",
+      "body": "Up to 5 Years Wardrobe, Modular Kitchen, Vanity & similar items"
+    },
+    {
+      "title": "Internal Doors",
+      "body": "Up to 5 Years Coverage on all internal door units"
+    },
+    {
+      "title": "Seepage Protection",
+      "body": "Up to 1 Year Extended warranty for seepage, electrical wiring & cracks in paint / plaster can be obtained at an additional cost of Rs 15 / Sq.ft / Annum"
+    },
+    {
+      "title": "Anti-Termite",
+      "body": "Up to 1 Year Treatment coverage against termites"
+    },
+    {
+      "title": "Electrical Wiring",
+      "body": "Up to 1 Year On all electrical wiring used by ZuildUp"
+    },
+    {
+      "title": "General & AMC",
+      "body": "Up to 1 Year Everything else done by ZuildUp + AMC"
+    },
+    {
+      "title": "3rd Party Products",
+      "body": "Up to Manufacturer As provided by the original manufacturer Warranty Terms & Conditions Warranty covers defects arising due to bad workmanship and/or use of wrong/defective material. If any defect is found, ZuildUp will repair it at its own cost during the warranty period. If repair isn't feasible, we will refund the value of the defected item. Warranties duration may differ based on the package selected. Warranties shall not be honoured if any appliance/item is detected to be faulty due to improper or unprescribed usage."
+    }
+  ],
+  "faq": [
+    {
+      "title": "What is included in turnkey home construction?",
+      "body": ""
+    },
+    {
+      "title": "Do you provide fixed pricing?",
+      "body": ""
+    },
+    {
+      "title": "How long does construction usually take?",
+      "body": ""
+    },
+    {
+      "title": "Can I customize the design?",
+      "body": ""
+    },
+    {
+      "title": "How can I track construction progress?",
+      "body": ""
+    },
+    {
+      "title": "What quality checks do you follow during construction?",
+      "body": ""
+    }
+  ],
+  "contact": {
+    "email": "info@zuildup.com",
+    "phone": "+919217263051",
+    "website": "https://www.zuildup.com"
+  },
+  "trust_strip": [
+    "24+ Years Excellence",
+    "450+ Quality Checks",
+    "On-Time Delivery",
+    "Transparent Pricing",
+    "Expert Team",
+    "Live Tracking"
+  ]
+}
