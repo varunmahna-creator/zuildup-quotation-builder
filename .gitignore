@@ -1,0 +1,11 @@
+.venv/
+node_modules/
+*.log
+/tmp/
+assets/lookbook/
+src_ppt/
+src_docx/
+__pycache__/
+*.pyc
+.DS_Store
+*.swp

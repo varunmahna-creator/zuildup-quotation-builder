@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ZuildUp Quotation Builder</title>
+<meta name="viewport" content="width=1280">
+<link rel="icon" href="/src_logo/favicon.svg">
+<style>
+:root {
+  --navy:#0A1F44; --gold:#C9A24D; --offwhite:#F9FAF7;
+  --ink:#1B1F2A; --muted:#5C6373; --rule:rgba(10,31,68,0.10);
+  --bg:#F0F2F5; --card:white;
+}
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+html,body{margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--bg);height:100%;}
+* { box-sizing: border-box; }
+body { display: grid; grid-template-columns: 480px 1fr; height: 100vh; }
+.left { background: white; border-right: 1px solid var(--rule); overflow-y: auto; padding: 28px 28px 80px; }
+.right { background: var(--bg); overflow-y: auto; }
+
+/* --- Header --- */
+.brand { display:flex; align-items:center; gap:10px; margin-bottom: 22px; }
+.brand svg { height: 26px; width: auto; }
+.brand .name { font-family:'Fraunces', serif; font-weight:600; font-size: 20px; color: var(--navy); letter-spacing:-.01em; }
+.brand .tag  { color: var(--muted); font-size: 11px; letter-spacing:.18em; text-transform:uppercase; margin-left: auto; }
+
+/* --- Form --- */
+fieldset { border: none; margin: 0 0 22px; padding: 0; }
+legend { font-size: 11px; letter-spacing: .22em; text-transform:uppercase; color: var(--gold); font-weight: 600; padding: 0; margin-bottom: 10px; }
+label { display:block; font-size: 12px; color: var(--muted); margin: 0 0 4px; font-weight: 500; }
+input[type=text], input[type=number], select, textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px;
+  font: inherit; color: var(--ink); background: white; outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(10,31,68,.08); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.full { margin-bottom: 12px; }
+
+/* --- Spec table --- */
+.specs-head { display:flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.specs-head .count { font-size: 11px; color: var(--muted); }
+.specs-head .actions button {
+  font: inherit; font-size: 11.5px; padding: 6px 12px; border: 1px solid var(--rule); background: white;
+  border-radius: 6px; cursor: pointer; color: var(--ink); margin-left: 6px;
+}
+.specs-head .actions button.primary { background: var(--navy); color:white; border-color: var(--navy); }
+.specs-head .actions button:hover { border-color: var(--navy); }
+.spec-list { margin-top: 10px; max-height: 100%; }
+.spec {
+  border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px;
+  margin-bottom: 8px; background: white;
+  display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center;
+}
+.spec .grip { color: var(--muted); cursor: grab; font-size: 12px; user-select: none; }
+.spec .head { display: flex; flex-direction: column; gap: 2px; }
+.spec .label { font-weight: 600; font-size: 13px; color: var(--navy); }
+.spec .meta  { font-size: 11px; color: var(--muted); }
+.spec .rate  { font-size: 12.5px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.spec .x { color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; user-select: none; }
+.spec.editing { padding: 14px; }
+.spec.editing .editor { grid-column: 1/-1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.spec.editing .editor .full { grid-column: 1/-1; }
+.spec.editing input, .spec.editing textarea { font-size: 12px; padding: 6px 8px; }
+
+/* --- Picker dialog (for adding rows) --- */
+.picker { display:none; position: fixed; inset: 0; background: rgba(10,31,68,0.35); z-index: 100; align-items: flex-start; justify-content: center; padding-top: 8vh; }
+.picker.open { display: flex; }
+.picker .panel { background: white; width: 720px; max-height: 80vh; border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,.18); overflow: hidden; display: flex; flex-direction: column; }
+.picker .panel header { padding: 16px 20px; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; }
+.picker .panel header h3 { font-family:'Fraunces',serif; font-size: 18px; font-weight: 500; margin: 0; color: var(--navy); }
+.picker .panel header input { width: 280px; }
+.picker .panel .body { flex: 1; overflow-y: auto; padding: 8px 12px; }
+.picker .panel .item { padding: 10px 12px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.picker .panel .item:hover { background: rgba(10,31,68,0.04); }
+.picker .panel .item.added { opacity: .4; pointer-events: none; }
+.picker .panel .item .l { font-size: 13px; }
+.picker .panel .item .l .lab { font-weight: 600; color: var(--navy); }
+.picker .panel .item .l .cat { font-size: 10.5px; color: var(--muted); letter-spacing:.14em; text-transform: uppercase; }
+.picker .panel .item .r { font-size: 12px; color: var(--muted); }
+.picker .panel footer { padding: 10px 20px; border-top: 1px solid var(--rule); text-align: right; }
+.picker .panel footer button { font: inherit; padding: 8px 14px; border: 1px solid var(--rule); border-radius: 6px; background: white; cursor: pointer; }
+
+/* --- Right preview pane --- */
+.preview-frame {
+  width: 794px;   /* A4 @ 96dpi */
+  margin: 24px auto;
+  background: white;
+  box-shadow: 0 6px 28px rgba(0,0,0,.10);
+}
+.right .toolbar {
+  position: sticky; top: 0; background: rgba(240,242,245,0.95); backdrop-filter: blur(6px);
+  padding: 12px 24px; border-bottom: 1px solid var(--rule); z-index: 10;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.right .toolbar .title { font-size: 12px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+.right .toolbar .download {
+  background: var(--navy); color: white; border: none; padding: 9px 18px; border-radius: 6px;
+  font: inherit; font-weight: 500; font-size: 13px; cursor: pointer; letter-spacing: .02em;
+}
+.right .toolbar .download:disabled { opacity: 0.5; cursor: not-allowed; }
+.right .toolbar .download:hover:not(:disabled) { background:#13315A; }
+iframe.preview {
+  width: 794px; border: none; display: block;
+  height: 1123px; /* matches A4 page height @ 96 dpi for one page */
+}
+.preview-stack { padding-bottom: 60px; }
+
+/* --- Scope/package toggle pills --- */
+.toggle { display: inline-flex; background: white; border:1px solid var(--rule); border-radius: 8px; padding: 3px; gap: 0; }
+.toggle button { font: inherit; font-size: 12px; padding: 6px 14px; border: 0; background: transparent; cursor: pointer; border-radius: 6px; color: var(--muted); }
+.toggle button.active { background: var(--navy); color: white; }
+</style>
+</head>
+<body>
+<aside class="left">
+
+  <div class="brand">
+    <svg viewBox="0 0 114 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 21V13C15 12.7348 14.8946 12.4804 14.7071 12.2929C14.5196 12.1054 14.2652 12 14 12H10C9.73478 12 9.48043 12.1054 9.29289 12.2929C9.10536 12.4804 9 12.7348 9 13V21" stroke="#C9A24D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 10C2.99993 9.71 3.063 9.422 3.186 9.158C3.308 8.894 3.487 8.66 3.709 8.472L10.709 2.472C11.07 2.167 11.527 2 12 2C12.473 2 12.93 2.167 13.291 2.472L20.291 8.472C20.513 8.66 20.692 8.894 20.814 9.158C20.937 9.422 21 9.71 21 10V19C21 19.531 20.789 20.04 20.414 20.415C20.039 20.79 19.53 21 19 21H5C4.47 21 3.961 20.79 3.586 20.415C3.211 20.04 3 19.531 3 19V10Z" stroke="#C9A24D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="28" y="17" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#0A1F44" letter-spacing="0.5">ZuildUp</text>
+    </svg>
+    <span class="name">Quotation Builder</span>
+    <span class="tag">Internal</span>
+  </div>
+
+  <fieldset>
+    <legend>Customer</legend>
+    <div class="row">
+      <div><label>Salutation</label>
+        <select id="f-salutation">
+          <option>Mr.</option><option selected>Mr. & Mrs.</option><option>Ms.</option><option>Dr.</option>
+        </select>
+      </div>
+      <div><label>Full name</label><input id="f-name" type="text" placeholder="Aanya Kapoor" value="Aanya Kapoor"></div>
+    </div>
+    <div class="full"><label>Plot address</label><textarea id="f-address" rows="2" placeholder="Plot 14, Sector 47, Gurugram, Haryana 122001">Plot 14, Sector 47, Gurugram, Haryana 122001</textarea></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Plot &amp; Build</legend>
+    <div class="row cols-3">
+      <div><label>Plot (sq yd)</label><input id="f-plot" type="number" min="50" step="10" value="300"></div>
+      <div><label>Floors</label><input id="f-floors" type="number" min="1" max="6" value="4"></div>
+      <div><label>Per-floor (sq ft)</label><input id="f-floor-sqft" type="number" min="500" step="50" value="1573"></div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Scope</label>
+        <div class="toggle" id="f-scope">
+          <button data-v="full" class="active">Full Build</button>
+          <button data-v="structure_only">Structure Only</button>
+        </div>
+      </div>
+      <div>
+        <label>Package</label>
+        <select id="f-package">
+          <option value="premium">Premium</option>
+          <option value="platinum" selected>Platinum</option>
+          <option value="royale">Royale</option>
+          <option value="custom">Custom (build row-by-row)</option>
+        </select>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Specifications</legend>
+    <div class="specs-head">
+      <span class="count" id="spec-count">— items</span>
+      <span class="actions">
+        <button id="reset-default" title="Reset to package default">Reset to Package</button>
+        <button id="add-row" class="primary">+ Add Row</button>
+      </span>
+    </div>
+    <div class="spec-list" id="spec-list"></div>
+  </fieldset>
+
+</aside>
+
+<main class="right">
+  <div class="toolbar">
+    <span class="title">Live Preview · A4</span>
+    <button class="download" id="dl">Download PDF</button>
+  </div>
+  <div class="preview-stack">
+    <iframe class="preview" id="preview" src="/preview" title="quote preview"></iframe>
+  </div>
+</main>
+
+<!-- Picker dialog -->
+<div class="picker" id="picker" role="dialog" aria-label="Add row from catalog">
+  <div class="panel">
+    <header>
+      <h3>Add line item from catalog</h3>
+      <input type="text" id="picker-search" placeholder="Search by label or category…" autofocus>
+    </header>
+    <div class="body" id="picker-body"></div>
+    <footer><button id="picker-close">Close</button></footer>
+  </div>
+</div>
+
+<script src="/app/quote.js"></script>
+</body>
+</html>

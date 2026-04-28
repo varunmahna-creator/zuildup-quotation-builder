@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ZuildUp — Quote Cover</title>
+<style>
+  /* === A4 page === */
+  @page { size: A4; margin: 0; }
+  html, body { margin: 0; padding: 0; }
+
+  /* === Fonts === */
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
+  /* === Brand tokens === */
+  :root {
+    --navy:    #0A1F44;
+    --gold:    #C9A24D;
+    --offwhite:#F9FAF7;
+    --ink:     #1B1F2A;
+    --muted:   rgba(255,255,255,0.72);
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--offwhite);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === Cover layout === */
+  .cover {
+    width: 210mm;
+    height: 297mm;
+    position: relative;
+    overflow: hidden;
+    background: var(--navy);
+  }
+  .hero {
+    position: absolute;
+    inset: 0;
+    background-image: url('../assets/lookbook/platinum/slide-01.png');
+    background-size: cover;
+    background-position: center 30%;
+  }
+  .vignette {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(10,31,68,0.42) 0%, rgba(10,31,68,0.10) 35%, rgba(10,31,68,0.78) 100%);
+  }
+  .hero {
+    filter: brightness(0.92) saturate(1.05);
+  }
+
+  /* Top strip with logo */
+  .top {
+    position: absolute;
+    top: 18mm;
+    left: 18mm;
+    right: 18mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo svg {
+    width: 152px;
+    height: auto;
+  }
+  .logo .stroke {
+    /* Force the SVG stroke to gold; the file is already gold but we override for safety */
+    stroke: var(--gold);
+  }
+  .top .meta {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* Centered customer block, sat low */
+  .customer {
+    position: absolute;
+    left: 18mm;
+    right: 18mm;
+    bottom: 64mm;
+    color: white;
+    text-align: center;
+  }
+  .eyebrow {
+    color: var(--gold);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 18px;
+  }
+  .name {
+    font-family: 'Fraunces', 'Playfair Display', serif;
+    font-weight: 500;
+    font-size: 56px;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
+  }
+  .address {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.5;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  /* Quote ID + date bottom right */
+  .footer {
+    position: absolute;
+    bottom: 14mm;
+    left: 18mm;
+    right: 18mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .footer .package-pill {
+    color: var(--navy);
+    background: var(--gold);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    font-weight: 600;
+  }
+  .footer .quote-id {
+    text-align: right;
+    line-height: 1.55;
+  }
+  .footer .quote-id .qid-num {
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    margin-top: 2px;
+    display: block;
+  }
+
+  /* Thin gold rule near the top of the customer block — anchors the composition */
+  .rule {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 132mm;
+    width: 56px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.9;
+  }
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="hero"></div>
+  <div class="vignette"></div>
+
+  <div class="top">
+    <div class="logo">
+      <!-- inlined ZuildUp wordmark — file copy of zuildup_logo_full.svg, recoloured for legibility -->
+      <svg width="152" viewBox="0 0 114 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="ZuildUp">
+        <path d="M15 21V13C15 12.7348 14.8946 12.4804 14.7071 12.2929C14.5196 12.1054 14.2652 12 14 12H10C9.73478 12 9.48043 12.1054 9.29289 12.2929C9.10536 12.4804 9 12.7348 9 13V21" stroke="#F4D58A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 10.0005C2.99993 9.70955 3.06333 9.4221 3.18579 9.1582C3.30824 8.89429 3.4868 8.66028 3.709 8.47248L10.709 2.47248C11.07 2.16739 11.5274 2 12 2C12.4726 2 12.93 2.16739 13.291 2.47248L20.291 8.47248C20.5132 8.66028 20.6918 8.89429 20.8142 9.1582C20.9367 9.4221 21.0001 9.70955 21 10.0005V19.0005C21 19.5309 20.7893 20.0396 20.4142 20.4147C20.0391 20.7898 19.5304 21.0005 19 21.0005H5C4.46957 21.0005 3.96086 20.7898 3.58579 20.4147C3.21071 20.0396 3 19.5309 3 19.0005V10.0005Z" stroke="#F4D58A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="28" y="17" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="white" letter-spacing="0.5">ZuildUp</text>
+      </svg>
+    </div>
+    <div class="meta">DELHI&nbsp;NCR · Estd 2024</div>
+  </div>
+
+  <div class="rule"></div>
+  <div class="customer">
+    <div class="eyebrow">Custom Home Quotation</div>
+    <h1 class="name">Mr. &amp; Mrs. Aanya Kapoor</h1>
+    <div class="address">Plot 14, Sector 47<br>Gurugram, Haryana 122001<br>4-floor independent residence · 1,573&nbsp;sq&nbsp;ft per floor</div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="package-pill">PLATINUM PACKAGE</div>
+    </div>
+    <div class="quote-id">
+      Quote ID
+      <span class="qid-num">ZB-2026-0428-2143</span>
+      28 April 2026
+    </div>
+  </div>
+</div>
+</body>
+</html>

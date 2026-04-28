@@ -1,0 +1,22 @@
+
+ZuildUp Construction Quote Summary
+================================
+
+Quote ID: ZU-300-PLATINUM-20260301072138
+Generated: 2026-03-01T07:21:38.881943
+
+PROJECT DETAILS:
+- Plot Size: 300 sq yards (2,700 sq ft)
+- Package: Platinum
+- Base Rate: ₹2,850/sq ft
+
+COST BREAKDOWN:
+Zone A (100%): 6,706 sq ft × ₹2,850 = ₹19,112,100
+Zone B (50%): 3,353 sq ft × ₹1,425 = ₹4,778,025
+Zone C (30%): 1,676 sq ft × ₹855 = ₹1,432,980
+Zone D (30%): 1,676 sq ft × ₹855 = ₹1,432,980
+
+TOTAL PROJECT COST: ₹26,756,085
+Cost per sq yard: ₹89,186
+Cost breakdown: ₹267.56 Lakhs
+              ₹2.68 Crores

@@ -1,0 +1,1156 @@
+[
+  {
+    "source": "ppt",
+    "source_ref": "slide_11_table_1",
+    "row_index": 1,
+    "row": [
+      "Steel",
+      "Rathi Steel 500FE / @ 5Kg per Sq Ft. Avg; capped at Rs. 55000/MT"
+    ],
+    "label_guess": "Rathi Steel 500FE / @ 5Kg per Sq Ft. Avg; capped at Rs. 55000/MT",
+    "amount_guess": "Rs. 55000",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_11_table_1",
+    "row_index": 2,
+    "row": [
+      "Bricks",
+      "A Class Bricks\nCapped at Rs. 7.50 per brick"
+    ],
+    "label_guess": "A Class Bricks\nCapped at Rs. 7.50 per brick",
+    "amount_guess": "Rs. 7.50",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_12_table_0",
+    "row_index": 2,
+    "row": [
+      "RMC Design Mix",
+      "M25 Ready Mix Concrete in the ratio 1:1:2 (Cement:Sand:Aggregate); capped at Rs. 5000/- per cubic metre"
+    ],
+    "label_guess": "M25 Ready Mix Concrete in the ratio 1:1:2 (Cement:Sand:Aggregate); capped at Rs. 5000/- per cubic metre",
+    "amount_guess": "Rs. 5000",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_12_table_0",
+    "row_index": 3,
+    "row": [
+      "Cement",
+      "Ultratech / ACC; capped at Rs. 380/- per bag"
+    ],
+    "label_guess": "Ultratech / ACC; capped at Rs. 380/- per bag",
+    "amount_guess": "Rs. 380",
+    "brand_guess": "UltraTech"
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_13_table_0",
+    "row_index": 1,
+    "row": [
+      "Underground Water Tank",
+      "RCC Framing with tiles for underground water tank \nSeparate underground water tank for every floor.\nWaterproofing Using Dr.Fixit/Sika.\nUnderground water tank capacity, 3000 Ltr per 1500 sq ft of covered area"
+    ],
+    "label_guess": "RCC Framing with tiles for underground water tank \nSeparate underground water tank for every floor.\nWaterproofing Using Dr.Fixit/Sika.\nUnderground water tank capacity, 3000 Ltr per 1500 sq ft of cover",
+    "amount_guess": "3000",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_13_table_0",
+    "row_index": 2,
+    "row": [
+      "Overhead Water Tank",
+      "1 Overhead Triple LayerWater Tanks per dwelling unit of 1,000 Ltr capacity uptoRs. 8,500/-; Astral brand or equivalent"
+    ],
+    "label_guess": "1 Overhead Triple LayerWater Tanks per dwelling unit of 1,000 Ltr capacity uptoRs. 8,500/-; Astral brand or equivalent",
+    "amount_guess": "Rs. 8,500",
+    "brand_guess": "Astral"
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_13_table_0",
+    "row_index": 3,
+    "row": [
+      "Water Motor",
+      "Crompton Greaves Water Motors Capped at Rs. 8,500/- per floor"
+    ],
+    "label_guess": "Crompton Greaves Water Motors Capped at Rs. 8,500/- per floor",
+    "amount_guess": "Rs. 8,500",
+    "brand_guess": "Crompton"
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_13_table_0",
+    "row_index": 5,
+    "row": [
+      "",
+      "Designer POP Ceiling – Upto Rs. 2,25,000/- per Floor\nPOP ceiling using Sakarni POP or equivalent"
+    ],
+    "label_guess": "Designer POP Ceiling – Upto Rs. 2,25,000/- per Floor\nPOP ceiling using Sakarni POP or equivalent",
+    "amount_guess": "Rs. 2,25,000",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_14_table_0",
+    "row_index": 1,
+    "row": [
+      "",
+      "Exterior Work to be done as per design. \nMix of marble & tiles as per approved design \nBack side of the building - chapai dana with roller.\nModern Elevation Design with cladding/ grooves/ cuts/ projections or any other aesthetic elements upto Rs. 3,50,000/-"
+    ],
+    "label_guess": "Exterior Work to be done as per design. \nMix of marble & tiles as per approved design \nBack side of the building - chapai dana with roller.\nModern Elevation Design with cladding/ grooves/ cuts/ projec",
+    "amount_guess": "Rs. 3,50,000",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_14_table_0",
+    "row_index": 3,
+    "row": [
+      "",
+      "Floor Flooring - Italian Marble - Rs. 250/- sq ft\nBalcony Flooring – Granite Stone – Rs. 100/- sq ft\nStaircase Flooring – Granite Stone – Rs. 100/- sq ft\nTerrace Flooring  – Anti Skid Tile - Rs. 40/- sq ft\nStilt Flooring – Granite Stone  – Rs. 100/- sq ft\nBasement Flooring – Granite Stone – Rs. 100/- sq ft\nLift Façade Tiles/Stone/Wooden Look – Rs. 100/- sq ft"
+    ],
+    "label_guess": "Floor Flooring - Italian Marble - Rs. 250/- sq ft\nBalcony Flooring – Granite Stone – Rs. 100/- sq ft\nStaircase Flooring – Granite Stone – Rs. 100/- sq ft\nTerrace Flooring  – Anti Skid Tile - Rs. 40/- ",
+    "amount_guess": "Rs. 250",
+    "brand_guess": "Italian"
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_14_table_1",
+    "row_index": 1,
+    "row": [
+      "",
+      "CCTV Camera - upto Rs. 50,000/- (CP Plus or equivalent)\nVideo Door Phone – upto Rs. 50,000/- (CP Plus, Alba or equivalent)"
+    ],
+    "label_guess": "CCTV Camera - upto Rs. 50,000/- (CP Plus or equivalent)\nVideo Door Phone – upto Rs. 50,000/- (CP Plus, Alba or equivalent)",
+    "amount_guess": "Rs. 50,000",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_15_table_0",
+    "row_index": 1,
+    "row": [
+      "",
+      "Electrical Conduit Pipes, Boxes –AKG or Equivalent\nElectrical Wiring - KEI Wires\nSwitch & Sockets – Rs. 50,000/- per floor, LeGrand or equivalent brand in white & Dark Grey Color\nCeiling Fans – Rs. 1,800/- per fan, Havells or equivalent brands\nDownlighters  - Philips/Osram or equivalent brands\nCove Strip Lights – Philips/Osram or equivalent brands\nPillar Fancy Light – Rs. 2,500/-  per light"
+    ],
+    "label_guess": "Electrical Conduit Pipes, Boxes –AKG or Equivalent\nElectrical Wiring - KEI Wires\nSwitch & Sockets – Rs. 50,000/- per floor, LeGrand or equivalent brand in white & Dark Grey Color\nCeiling Fans – Rs. 1,",
+    "amount_guess": "Rs. 50,000",
+    "brand_guess": "Havells, Legrand"
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_15_table_2",
+    "row_index": 1,
+    "row": [
+      "",
+      "Kitchen Wall Cladding– Designer vitrified tiles from floor to ceiling, upto Rs. 70/- per sq ft \nFactory finished Modular Kitchen – Upto Rs. 2,50,000/- per kitchen\nFactory-cut HDHMR modular kitchen with premium laminates. Soft-close hardware from Hettich/Hafele. Thoughtful internal design with drawers and smart corner solutions."
+    ],
+    "label_guess": "Kitchen Wall Cladding– Designer vitrified tiles from floor to ceiling, upto Rs. 70/- per sq ft \nFactory finished Modular Kitchen – Upto Rs. 2,50,000/- per kitchen\nFactory-cut HDHMR modular kitchen wit",
+    "amount_guess": "Rs. 70",
+    "brand_guess": "Hettich, Hafele"
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_16_table_0",
+    "row_index": 1,
+    "row": [
+      "",
+      "Bathroom  Fittings (Handshower, Shower, Angle Valve, Drain etc) – Jaguar/Kohler; upto Rs. 20,000/- per Bathroom\nBathroom Fittings Including only WC,  Washbasin (Sanitary Ware) – Jaguar/Kohler; upto Rs. 40,000/- per Bathroom\nBathroom CPVC Fittings – Jaguar|Kohler; upto Rs. 20,000/- per Bathroom\nBathroom Shower Partition/Cubicles – upto Rs. 10,000/- per Bathroom\nBathroom Accessories – Jaguar; upto Rs. 12,000/- per Bathroom\nBathroom Flooring – Anti Skid Tile Cost  upto Rs. 40/- per sq ft\nBathroom Wall Tiles Cladding – Designer ceramic tiles from floor to ceiling, upto Rs. 70/- per sq ft"
+    ],
+    "label_guess": "Bathroom  Fittings (Handshower, Shower, Angle Valve, Drain etc) – Jaguar/Kohler; upto Rs. 20,000/- per Bathroom\nBathroom Fittings Including only WC,  Washbasin (Sanitary Ware) – Jaguar/Kohler; upto Rs",
+    "amount_guess": "Rs. 20,000",
+    "brand_guess": "Kohler"
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_17_table_0",
+    "row_index": 0,
+    "row": [
+      "Doors , Windows & Wardrobe",
+      ""
+    ],
+    "label_guess": "Doors , Windows & Wardrobe",
+    "amount_guess": "rs ,",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_17_table_0",
+    "row_index": 1,
+    "row": [
+      "",
+      "Main Entry Door – Upto Rs. 20,000/- per door (Teak Wood/Mikasa/Sumai or equivalent flush door)\nOther Doors – Upto Rs. 15,000/- per door (Sumai or equivalent flush door)\nTerrace Door(Galvanised Steel) – Rs. 26,000/- (Tata Parvesh)\nAnodized aluminum 3 track sliding windows with mosquito mesh from Tostem – upto Rs. 750/- per sq ft \nWooden Door Frame Hinges (Stainless Steel) & Door Stopper\nDoors Height - 7’.5’’to 8’ as per approved plan\nWooden Door Lock ; Main Door – Upto Rs. 12,000/- (Ozone/Yale or Equivalent)\nWooden Door Lock – Upto Rs. 3000/- (Godrej or equivalent)\nWooden Door Tower Bolt - (18-24 inch, SS/Brass Finish)\nDoor Frames Wood – upto Rs. 2050/- per cubic metre (Teak Wood)\nModular Wardrobe – Rs. 1200/- per sq ft (Laminate Finish)"
+    ],
+    "label_guess": "Main Entry Door – Upto Rs. 20,000/- per door (Teak Wood/Mikasa/Sumai or equivalent flush door)\nOther Doors – Upto Rs. 15,000/- per door (Sumai or equivalent flush door)\nTerrace Door(Galvanised Steel) ",
+    "amount_guess": "Rs. 20,000",
+    "brand_guess": "Tata, Ozone, Yale"
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_18_table_0",
+    "row_index": 1,
+    "row": [
+      "",
+      "Main Gate – upto Rs. 1,00,000/-; Bifold MS Main Gate\nStaircase & Balcony Railing (MS Steel) - Rs. 400/- per sq ft\nProvision for invertor will be done as per the plan.\nStructural Design Shall be Earth Quake Resistant.\nFramed Structures with properly designed Columns and beams as per structural engineer’s/architect’s drawing.\nWater curing will be done 2 times a day.\nAll Sunken Area Water Proofing using Dr.Fixit/Sika\nThe mixing of Cement, aggregate and dust aggregate(rori) shall be done with concrete mixers. On Site mixing shall be used for casting Columns (M-25), i.e., (1:1:2)\nThe use of Vibrators shall be made to consolidate the layers properly in footings, columns, Beams & roof slabs.\nCement Mortar for 9’’ brickwork shall not be leaner (1:6) and for 4½’’ brickwork cement mortar shall not be leaner than 1:4."
+    ],
+    "label_guess": "Main Gate – upto Rs. 1,00,000/-; Bifold MS Main Gate\nStaircase & Balcony Railing (MS Steel) - Rs. 400/- per sq ft\nProvision for invertor will be done as per the plan.\nStructural Design Shall be Earth ",
+    "amount_guess": "Rs. 1,00,000",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 1,
+    "row": [
+      "Ground Floor",
+      "Enclosed Area",
+      "1350"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 2,
+    "row": [
+      "First Floor",
+      "Enclosed Area",
+      "1350"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 3,
+    "row": [
+      "Second Floor",
+      "Enclosed Area",
+      "1350"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 4,
+    "row": [
+      "Third Floor",
+      "Enclosed Area",
+      "1350"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 5,
+    "row": [
+      "Lift",
+      "Area including lift structure, all civil, electrical, paint, exhausting, earthing works for lift",
+      "150"
+    ],
+    "label_guess": "Area including lift structure, all civil, electrical, paint, exhausting, earthing works for lift",
+    "amount_guess": "150",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 6,
+    "row": [
+      "Underground Water Tank",
+      "Underground water tank area including RCC Work",
+      "200"
+    ],
+    "label_guess": "Underground water tank area including RCC Work",
+    "amount_guess": "200",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 7,
+    "row": [
+      "Total Area to be counted at 100% cost (A)",
+      "",
+      "5750"
+    ],
+    "label_guess": "Total Area to be counted at 100% cost (A)",
+    "amount_guess": "5750",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 8,
+    "row": [
+      "Stilt",
+      "Enclosed Area",
+      "1800"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1800",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 9,
+    "row": [
+      "Staircase",
+      "Enclosed Area(100 sq.ft per floor)",
+      "600"
+    ],
+    "label_guess": "Enclosed Area(100 sq.ft per floor)",
+    "amount_guess": "600",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 10,
+    "row": [
+      "Balcony",
+      "About 150 Sq.Ft. of balcony area on every floor",
+      "600"
+    ],
+    "label_guess": "About 150 Sq.Ft. of balcony area on every floor",
+    "amount_guess": "600",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 11,
+    "row": [
+      "Mumty",
+      "Enclosed Area",
+      "200"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "200",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 12,
+    "row": [
+      "Total Area to be counted at 70% cost (B)",
+      "",
+      "3200"
+    ],
+    "label_guess": "Total Area to be counted at 70% cost (B)",
+    "amount_guess": "3200",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 13,
+    "row": [
+      "Terrace",
+      "Area including Bar Counter, Gazebo/peragola  (If Required)",
+      "1350"
+    ],
+    "label_guess": "Area including Bar Counter, Gazebo/peragola  (If Required)",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 14,
+    "row": [
+      "Total Area to be counted at Rs. 1,250/Sq.Ft. (C)",
+      "",
+      "1350"
+    ],
+    "label_guess": "Total Area to be counted at Rs. 1,250/Sq.Ft. (C)",
+    "amount_guess": "Rs. 1,250",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 15,
+    "row": [
+      "Open Area",
+      "Areas like ramp, front offset, back offset, shaft or any other area which is open to sky",
+      "500"
+    ],
+    "label_guess": "Areas like ramp, front offset, back offset, shaft or any other area which is open to sky",
+    "amount_guess": "500",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_19_table_0",
+    "row_index": 16,
+    "row": [
+      "Total Area to be counted at Rs. 1,000/Sq.Ft. (D)",
+      "",
+      "500"
+    ],
+    "label_guess": "Total Area to be counted at Rs. 1,000/Sq.Ft. (D)",
+    "amount_guess": "Rs. 1,000",
+    "brand_guess": null
+  },
+  {
+    "source": "ppt",
+    "source_ref": "slide_20_table_0",
+    "row_index": 5,
+    "row": [
+      "Total",
+      "",
+      "",
+      "Rs. 2,49,59,500/-"
+    ],
+    "label_guess": "Total",
+    "amount_guess": "Rs. 2,49,59,500",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_0",
+    "row_index": 3,
+    "row": [
+      "04",
+      "Construction & Finishing\nMEP, Interiors, Flooring, Painting & Fixtures are completed as per the approved specifications ensuring full transparency and zero deviations."
+    ],
+    "label_guess": "Construction & Finishing\nMEP, Interiors, Flooring, Painting & Fixtures are completed as per the approved specifications ensuring full transparency and zero deviations.",
+    "amount_guess": "rs,",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_3",
+    "row_index": 0,
+    "row": [
+      "Modular Kitchen & Wardrobes",
+      "Modular kitchen worth INR 2,50,000 including chimney, factory-cut HDHMR with premium laminates/fluted glass/acrylic finish. Soft-close channels & hinges from Hettich or equivalent. Thoughtful internal design with drawers and smart corner solutions."
+    ],
+    "label_guess": "Modular kitchen worth INR 2,50,000 including chimney, factory-cut HDHMR with premium laminates/fluted glass/acrylic finish. Soft-close channels & hinges from Hettich or equivalent. Thoughtful internal",
+    "amount_guess": "INR 2,50,000",
+    "brand_guess": "Hettich"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_3",
+    "row_index": 1,
+    "row": [
+      "Luxury Flooring",
+      "Premium Italian Marble with polish and buffing/Premium Wooden Flooring Option available. Polished granite on stairs, granite counter-top in Kitchen."
+    ],
+    "label_guess": "Premium Italian Marble with polish and buffing/Premium Wooden Flooring Option available. Polished granite on stairs, granite counter-top in Kitchen.",
+    "amount_guess": "rs,",
+    "brand_guess": "Italian"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_3",
+    "row_index": 3,
+    "row": [
+      "Premium Fixtures",
+      "Jaquar/Kohler bathroom fittings concealed systems. Wall-hung WCs, rain showers, designer basins. 25L geysers of Racold or equivalent in bathrooms, instant geysers in kitchens and powder rooms."
+    ],
+    "label_guess": "Jaquar/Kohler bathroom fittings concealed systems. Wall-hung WCs, rain showers, designer basins. 25L geysers of Racold or equivalent in bathrooms, instant geysers in kitchens and powder rooms.",
+    "amount_guess": "rs,",
+    "brand_guess": "Jaquar, Kohler"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_6",
+    "row_index": 1,
+    "row": [
+      "Steel",
+      "Rathi Steel 500FE / @ 5Kg per Sq Ft. Avg"
+    ],
+    "label_guess": "Rathi Steel 500FE / @ 5Kg per Sq Ft. Avg",
+    "amount_guess": "500",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_8",
+    "row_index": 1,
+    "row": [
+      "Underground Water Tank",
+      "RCC Framing with tiles for underground water tank Separate underground water tank for every floor Waterproofing Using Dr.Fixit/Sika\nUnderground water tank capacity, 3000 Ltr per dwelling unit"
+    ],
+    "label_guess": "RCC Framing with tiles for underground water tank Separate underground water tank for every floor Waterproofing Using Dr.Fixit/Sika\nUnderground water tank capacity, 3000 Ltr per dwelling unit",
+    "amount_guess": "3000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_8",
+    "row_index": 2,
+    "row": [
+      "Overhead Water Tank",
+      "1 Overhead Triple Layer Water Tanks per dwelling unit of 1,000 Ltr capacity; Astral brand or equivalent"
+    ],
+    "label_guess": "1 Overhead Triple Layer Water Tanks per dwelling unit of 1,000 Ltr capacity; Astral brand or equivalent",
+    "amount_guess": "1000",
+    "brand_guess": "Astral"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_9",
+    "row_index": 1,
+    "row": [
+      "",
+      "Designer POP Ceiling – Upto Rs. 2,25,000/- per Floor POP ceiling using Sakarni POP or equivalent"
+    ],
+    "label_guess": "Designer POP Ceiling – Upto Rs. 2,25,000/- per Floor POP ceiling using Sakarni POP or equivalent",
+    "amount_guess": "Rs. 2,25,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_11",
+    "row_index": 1,
+    "row": [
+      "",
+      "Exterior Work to be done as per design\nMix of marble & tiles as per approved design Back side of the building - chapai dana with roller\nModern Elevation Design with cladding/grooves/cuts/projections or any other aesthetic elements upto Rs. 3,50,000/-"
+    ],
+    "label_guess": "Exterior Work to be done as per design\nMix of marble & tiles as per approved design Back side of the building - chapai dana with roller\nModern Elevation Design with cladding/grooves/cuts/projections o",
+    "amount_guess": "Rs. 3,50,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_12",
+    "row_index": 1,
+    "row": [
+      "Floor Flooring",
+      "Italian Marble - Rs. 250/- sq ft"
+    ],
+    "label_guess": "Italian Marble - Rs. 250/- sq ft",
+    "amount_guess": "Rs. 250",
+    "brand_guess": "Italian"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_12",
+    "row_index": 2,
+    "row": [
+      "Balcony Flooring",
+      "Granite Stone – Rs. 100/- sq ft"
+    ],
+    "label_guess": "Granite Stone – Rs. 100/- sq ft",
+    "amount_guess": "Rs. 100",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_12",
+    "row_index": 3,
+    "row": [
+      "Staircase Flooring",
+      "Granite Stone – Rs. 100/- sq ft"
+    ],
+    "label_guess": "Granite Stone – Rs. 100/- sq ft",
+    "amount_guess": "Rs. 100",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_12",
+    "row_index": 4,
+    "row": [
+      "Terrace Flooring",
+      "Anti Skid Tile - Rs. 40/- sq ft"
+    ],
+    "label_guess": "Anti Skid Tile - Rs. 40/- sq ft",
+    "amount_guess": "Rs. 40",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_12",
+    "row_index": 5,
+    "row": [
+      "Stilt Flooring",
+      "Granite Stone – Rs. 100/- sq ft"
+    ],
+    "label_guess": "Granite Stone – Rs. 100/- sq ft",
+    "amount_guess": "Rs. 100",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_12",
+    "row_index": 6,
+    "row": [
+      "Basement Flooring",
+      "Granite Stone – Rs. 100/- sq ft"
+    ],
+    "label_guess": "Granite Stone – Rs. 100/- sq ft",
+    "amount_guess": "Rs. 100",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_12",
+    "row_index": 7,
+    "row": [
+      "Lift Façade",
+      "Tiles/Stone/Wooden Look – Rs. 100/- sq ft"
+    ],
+    "label_guess": "Tiles/Stone/Wooden Look – Rs. 100/- sq ft",
+    "amount_guess": "Rs. 100",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_13",
+    "row_index": 1,
+    "row": [
+      "CCTV Camera",
+      "upto Rs. 50,000/- (CP Plus or equivalent)"
+    ],
+    "label_guess": "upto Rs. 50,000/- (CP Plus or equivalent)",
+    "amount_guess": "Rs. 50,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_13",
+    "row_index": 2,
+    "row": [
+      "Video Door Phone",
+      "upto Rs. 50,000/- (CP Plus, Alba or equivalent)"
+    ],
+    "label_guess": "upto Rs. 50,000/- (CP Plus, Alba or equivalent)",
+    "amount_guess": "Rs. 50,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_14",
+    "row_index": 3,
+    "row": [
+      "Switch & Sockets",
+      "Rs. 50,000/- per floor, LeGrand or equivalent brand in white & Dark Grey Color"
+    ],
+    "label_guess": "Rs. 50,000/- per floor, LeGrand or equivalent brand in white & Dark Grey Color",
+    "amount_guess": "Rs. 50,000",
+    "brand_guess": "Legrand"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_14",
+    "row_index": 4,
+    "row": [
+      "Ceiling Fans",
+      "Rs. 1,800/- per fan, Havells or equivalent brands"
+    ],
+    "label_guess": "Rs. 1,800/- per fan, Havells or equivalent brands",
+    "amount_guess": "Rs. 1,800",
+    "brand_guess": "Havells"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_14",
+    "row_index": 7,
+    "row": [
+      "Pillar Fancy Light",
+      "Rs. 2,500/- per light"
+    ],
+    "label_guess": "Rs. 2,500/- per light",
+    "amount_guess": "Rs. 2,500",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_16",
+    "row_index": 1,
+    "row": [
+      "Kitchen Wall Cladding",
+      "Designer vitrified tiles from floor to ceiling, upto Rs. 70/- per sq ft"
+    ],
+    "label_guess": "Designer vitrified tiles from floor to ceiling, upto Rs. 70/- per sq ft",
+    "amount_guess": "Rs. 70",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_16",
+    "row_index": 2,
+    "row": [
+      "Modular Kitchen",
+      "Factory finished Modular Kitchen – Upto Rs. 2,50,000/- per kitchen\nFactory-cut HDHMR modular kitchen with premium laminates. Soft-close hardware from Hettich/Hafele. Thoughtful internal design with drawers and smart corner solutions."
+    ],
+    "label_guess": "Factory finished Modular Kitchen – Upto Rs. 2,50,000/- per kitchen\nFactory-cut HDHMR modular kitchen with premium laminates. Soft-close hardware from Hettich/Hafele. Thoughtful internal design with dr",
+    "amount_guess": "Rs. 2,50,000",
+    "brand_guess": "Hettich, Hafele"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_17",
+    "row_index": 1,
+    "row": [
+      "Bathroom Fittings (CP)",
+      "Jaguar/Kohler; upto Rs. 20,000/- per Bathroom"
+    ],
+    "label_guess": "Jaguar/Kohler; upto Rs. 20,000/- per Bathroom",
+    "amount_guess": "Rs. 20,000",
+    "brand_guess": "Kohler"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_17",
+    "row_index": 2,
+    "row": [
+      "Sanitary Ware (WC, Washbasin)",
+      "Jaguar/Kohler; upto Rs. 40,000/- per Bathroom"
+    ],
+    "label_guess": "Jaguar/Kohler; upto Rs. 40,000/- per Bathroom",
+    "amount_guess": "Rs. 40,000",
+    "brand_guess": "Kohler"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_17",
+    "row_index": 3,
+    "row": [
+      "CPVC Fittings",
+      "Jaguar/Kohler; upto Rs. 20,000/- per Bathroom"
+    ],
+    "label_guess": "Jaguar/Kohler; upto Rs. 20,000/- per Bathroom",
+    "amount_guess": "Rs. 20,000",
+    "brand_guess": "Kohler"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_17",
+    "row_index": 4,
+    "row": [
+      "Shower Partition/Cubicles",
+      "upto Rs. 10,000/- per Bathroom"
+    ],
+    "label_guess": "upto Rs. 10,000/- per Bathroom",
+    "amount_guess": "Rs. 10,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_17",
+    "row_index": 5,
+    "row": [
+      "Bathroom Accessories",
+      "Jaguar; upto Rs. 12,000/- per Bathroom"
+    ],
+    "label_guess": "Jaguar; upto Rs. 12,000/- per Bathroom",
+    "amount_guess": "Rs. 12,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_17",
+    "row_index": 6,
+    "row": [
+      "Bathroom Flooring",
+      "Anti Skid Tile Cost upto Rs. 40/- per sq ft"
+    ],
+    "label_guess": "Anti Skid Tile Cost upto Rs. 40/- per sq ft",
+    "amount_guess": "Rs. 40",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_17",
+    "row_index": 7,
+    "row": [
+      "Wall Tiles Cladding",
+      "Designer ceramic tiles from floor to ceiling, upto Rs. 70/- per sq ft"
+    ],
+    "label_guess": "Designer ceramic tiles from floor to ceiling, upto Rs. 70/- per sq ft",
+    "amount_guess": "Rs. 70",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_19",
+    "row_index": 0,
+    "row": [
+      "Doors, Windows & Wardrobe",
+      "Doors, Windows & Wardrobe"
+    ],
+    "label_guess": "Doors, Windows & Wardrobe",
+    "amount_guess": "rs,",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_19",
+    "row_index": 1,
+    "row": [
+      "Main Entry Door",
+      "Upto Rs. 20,000/- per door (Teak Wood/Mikasa/Sumai or equivalent flush door)"
+    ],
+    "label_guess": "Upto Rs. 20,000/- per door (Teak Wood/Mikasa/Sumai or equivalent flush door)",
+    "amount_guess": "Rs. 20,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_19",
+    "row_index": 2,
+    "row": [
+      "Other Doors",
+      "Upto Rs. 15,000/- per door (Sumai or equivalent flush door)"
+    ],
+    "label_guess": "Upto Rs. 15,000/- per door (Sumai or equivalent flush door)",
+    "amount_guess": "Rs. 15,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_19",
+    "row_index": 3,
+    "row": [
+      "Terrace Door",
+      "Galvanised Steel – Rs. 26,000/- (Tata Parvesh)"
+    ],
+    "label_guess": "Galvanised Steel – Rs. 26,000/- (Tata Parvesh)",
+    "amount_guess": "Rs. 26,000",
+    "brand_guess": "Tata"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_19",
+    "row_index": 4,
+    "row": [
+      "Windows",
+      "Anodized aluminum 3 track sliding windows with mosquito mesh from Tostem – upto Rs. 750/- per sq ft"
+    ],
+    "label_guess": "Anodized aluminum 3 track sliding windows with mosquito mesh from Tostem – upto Rs. 750/- per sq ft",
+    "amount_guess": "Rs. 750",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_19",
+    "row_index": 7,
+    "row": [
+      "Main Door Lock",
+      "Upto Rs. 12,000/- (Ozone/Yale or Equivalent)"
+    ],
+    "label_guess": "Upto Rs. 12,000/- (Ozone/Yale or Equivalent)",
+    "amount_guess": "Rs. 12,000",
+    "brand_guess": "Ozone, Yale"
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_19",
+    "row_index": 8,
+    "row": [
+      "Other Door Lock",
+      "Upto Rs. 3,000/- (Godrej or equivalent)"
+    ],
+    "label_guess": "Upto Rs. 3,000/- (Godrej or equivalent)",
+    "amount_guess": "Rs. 3,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_19",
+    "row_index": 10,
+    "row": [
+      "Door Frames Wood",
+      "upto Rs. 2,050/- per cubic metre (Teak Wood)"
+    ],
+    "label_guess": "upto Rs. 2,050/- per cubic metre (Teak Wood)",
+    "amount_guess": "Rs. 2,050",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_19",
+    "row_index": 11,
+    "row": [
+      "Modular Wardrobe",
+      "Rs. 1,200/- per sq ft (Laminate Finish)"
+    ],
+    "label_guess": "Rs. 1,200/- per sq ft (Laminate Finish)",
+    "amount_guess": "Rs. 1,200",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_20",
+    "row_index": 1,
+    "row": [
+      "Main Gate",
+      "upto Rs. 1,00,000/-; Bifold MS Main Gate"
+    ],
+    "label_guess": "upto Rs. 1,00,000/-; Bifold MS Main Gate",
+    "amount_guess": "Rs. 1,00,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_20",
+    "row_index": 2,
+    "row": [
+      "Staircase & Balcony Railing",
+      "MS Steel - Rs. 400/- per sq ft"
+    ],
+    "label_guess": "MS Steel - Rs. 400/- per sq ft",
+    "amount_guess": "Rs. 400",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 1,
+    "row": [
+      "Basement",
+      "Enclosed Area",
+      "1,350"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 2,
+    "row": [
+      "Ground Floor",
+      "Enclosed Area",
+      "1,350"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 3,
+    "row": [
+      "First Floor",
+      "Enclosed Area",
+      "1,350"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 4,
+    "row": [
+      "Second Floor",
+      "Enclosed Area",
+      "1,350"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 5,
+    "row": [
+      "Third Floor",
+      "Enclosed Area",
+      "1,350"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 7,
+    "row": [
+      "UG Water Tank",
+      "RCC Work incl. waterproofing",
+      "160"
+    ],
+    "label_guess": "RCC Work incl. waterproofing",
+    "amount_guess": "160",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 8,
+    "row": [
+      "Total Area at 100% cost (A)",
+      "",
+      "7,010"
+    ],
+    "label_guess": "Total Area at 100% cost (A)",
+    "amount_guess": "7010",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 9,
+    "row": [
+      "Stilt",
+      "Enclosed Area",
+      "1,800"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "1800",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 10,
+    "row": [
+      "Staircase",
+      "100 sq.ft per floor",
+      "400"
+    ],
+    "label_guess": "100 sq.ft per floor",
+    "amount_guess": "400",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 11,
+    "row": [
+      "Balcony",
+      "GF: 150 + Upper: 120/floor",
+      "510"
+    ],
+    "label_guess": "GF: 150 + Upper: 120/floor",
+    "amount_guess": "510",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 12,
+    "row": [
+      "Mumty",
+      "Enclosed Area",
+      "150"
+    ],
+    "label_guess": "Enclosed Area",
+    "amount_guess": "150",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 13,
+    "row": [
+      "Total Area at 70% cost (B)",
+      "",
+      "2,860"
+    ],
+    "label_guess": "Total Area at 70% cost (B)",
+    "amount_guess": "2860",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 14,
+    "row": [
+      "Terrace",
+      "Bar Counter, Gazebo, Pantry (if required)",
+      "1,350"
+    ],
+    "label_guess": "Bar Counter, Gazebo, Pantry (if required)",
+    "amount_guess": "1350",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 15,
+    "row": [
+      "Total Area at Rs. 1,250/Sq.Ft. (C)",
+      "",
+      "1,350"
+    ],
+    "label_guess": "Total Area at Rs. 1,250/Sq.Ft. (C)",
+    "amount_guess": "Rs. 1,250",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 16,
+    "row": [
+      "Open Areas",
+      "Ramp, offsets, shaft, open to sky",
+      "360"
+    ],
+    "label_guess": "Ramp, offsets, shaft, open to sky",
+    "amount_guess": "360",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_22",
+    "row_index": 17,
+    "row": [
+      "Total Area at Rs. 1,000/Sq.Ft. (D)",
+      "",
+      "360"
+    ],
+    "label_guess": "Total Area at Rs. 1,000/Sq.Ft. (D)",
+    "amount_guess": "Rs. 1,000",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_23",
+    "row_index": 0,
+    "row": [
+      "Customer:",
+      "Mr. Rahul Sharma",
+      "Plot:",
+      "200 sq.yd (1800 sq.ft)"
+    ],
+    "label_guess": "200 sq.yd (1800 sq.ft)",
+    "amount_guess": "1800",
+    "brand_guess": null
+  },
+  {
+    "source": "docx",
+    "source_ref": "table_23",
+    "row_index": 1,
+    "row": [
+      "Package:",
+      "Platinum @ ■2,850/sqft",
+      "Floors:",
+      "Stilt + 4"
+    ],
+    "label_guess": "Platinum @ ■2,850/sqft",
+    "amount_guess": "2850",
+    "brand_guess": null
+  }
+]

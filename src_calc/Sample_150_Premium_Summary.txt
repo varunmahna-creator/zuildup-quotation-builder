@@ -1,0 +1,21 @@
+
+ZuildUp Construction Quote Summary
+================================
+
+Quote ID: ZU-150-PREMIUM-20260301072138
+Generated: 2026-03-01T07:21:38.881178
+
+PROJECT DETAILS:
+- Plot Size: 150 sq yards (1,350 sq ft)
+- Package: Premium
+- Base Rate: ₹1,950/sq ft
+
+COST BREAKDOWN:
+Zone A (100%): 3,330 sq ft × ₹1,950 = ₹6,493,500
+Zone B (50%): 1,665 sq ft × ₹975 = ₹1,623,375
+Zone C (30%): 999 sq ft × ₹585 = ₹584,415
+Zone D (30%): 666 sq ft × ₹585 = ₹389,610
+
+TOTAL PROJECT COST: ₹9,090,900
+Cost per sq yard: ₹60,606
+Cost breakdown: ₹90.91 Lakhs

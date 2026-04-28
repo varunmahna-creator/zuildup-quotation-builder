@@ -1,0 +1,72 @@
+{
+  "by_package": {
+    "premium": {
+      "total_slides": 20,
+      "total_ppt_tables": 14,
+      "total_docx_tables": 25,
+      "total_raw_lineitems": 92,
+      "ppt_lineitems": 33,
+      "docx_lineitems": 59,
+      "category_counts": {
+        "steel": 4,
+        "cement": 2,
+        "structure": 5,
+        "flooring": 18,
+        "water": 8,
+        "waterproofing": 3,
+        "ceiling": 5,
+        "electrical": 3,
+        "kitchen": 6,
+        "bathroom": 7,
+        "doors_windows": 6,
+        "paint": 2
+      }
+    },
+    "platinum": {
+      "total_slides": 20,
+      "total_ppt_tables": 15,
+      "total_docx_tables": 25,
+      "total_raw_lineitems": 93,
+      "ppt_lineitems": 34,
+      "docx_lineitems": 59,
+      "category_counts": {
+        "steel": 6,
+        "cement": 1,
+        "structure": 5,
+        "flooring": 18,
+        "water": 8,
+        "waterproofing": 3,
+        "ceiling": 6,
+        "doors_windows": 7,
+        "safety": 1,
+        "electrical": 3,
+        "kitchen": 6,
+        "bathroom": 7,
+        "paint": 2
+      }
+    },
+    "royale": {
+      "total_slides": 20,
+      "total_ppt_tables": 15,
+      "total_docx_tables": 25,
+      "total_raw_lineitems": 93,
+      "ppt_lineitems": 34,
+      "docx_lineitems": 59,
+      "category_counts": {
+        "steel": 6,
+        "cement": 1,
+        "structure": 5,
+        "flooring": 18,
+        "water": 8,
+        "waterproofing": 3,
+        "ceiling": 5,
+        "doors_windows": 7,
+        "safety": 1,
+        "electrical": 3,
+        "kitchen": 6,
+        "bathroom": 7,
+        "paint": 2
+      }
+    }
+  }
+}

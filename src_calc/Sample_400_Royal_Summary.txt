@@ -1,0 +1,22 @@
+
+ZuildUp Construction Quote Summary
+================================
+
+Quote ID: ZU-400-ROYAL-20260301072138
+Generated: 2026-03-01T07:21:38.882630
+
+PROJECT DETAILS:
+- Plot Size: 400 sq yards (3,600 sq ft)
+- Package: Royal
+- Base Rate: ₹4,100/sq ft
+
+COST BREAKDOWN:
+Zone A (100%): 9,522 sq ft × ₹4,100 = ₹39,040,200
+Zone B (50%): 6,348 sq ft × ₹2,050 = ₹13,013,400
+Zone C (30%): 3,174 sq ft × ₹1,230 = ₹3,904,020
+Zone D (30%): 3,174 sq ft × ₹1,230 = ₹3,904,020
+
+TOTAL PROJECT COST: ₹59,861,640
+Cost per sq yard: ₹149,654
+Cost breakdown: ₹598.62 Lakhs
+              ₹5.99 Crores

@@ -1,0 +1,83 @@
+{
+  "success": true,
+  "quote_metadata": {
+    "quote_id": "ZU-400-ROYAL-20260301072138",
+    "generated_on": "2026-03-01T07:21:38.882630",
+    "api_version": "2.0",
+    "methodology": "A/B/C/D Zone Classification"
+  },
+  "client_requirements": {
+    "plot_size_sqyards": 400,
+    "plot_size_sqft": 3600,
+    "package_selected": "Royal",
+    "configuration": {
+      "floors": 3,
+      "basement": true,
+      "lift": true,
+      "architectural_style": "Modern"
+    }
+  },
+  "pricing": {
+    "base_rate_per_sqft": 4100,
+    "zone_breakdown": {
+      "Zone_A": {
+        "description": "Main Construction (Basement, Ground Floor, Upper Floors, Structural)",
+        "area_sqft": 9522,
+        "rate_per_sqft": 4100,
+        "rate_percentage": "100%",
+        "zone_cost": 39040200
+      },
+      "Zone_B": {
+        "description": "Secondary Areas (Stilt, Staircase, Balconies, Utility Spaces)",
+        "area_sqft": 6348,
+        "rate_per_sqft": 2050,
+        "rate_percentage": "50%",
+        "zone_cost": 13013400
+      },
+      "Zone_C": {
+        "description": "Terrace & Open Areas (Terrace, Landscaping Base)",
+        "area_sqft": 3174,
+        "rate_per_sqft": 1230,
+        "rate_percentage": "30%",
+        "zone_cost": 3904020
+      },
+      "Zone_D": {
+        "description": "Service Areas (Ramp, Shaft, External Utilities)",
+        "area_sqft": 3174,
+        "rate_per_sqft": 1230,
+        "rate_percentage": "30%",
+        "zone_cost": 3904020
+      }
+    },
+    "summary": {
+      "total_project_cost": 59861640,
+      "formatted_total": "\u20b959,861,640",
+      "cost_per_sqft_plot": 16628,
+      "cost_per_sqyard_plot": 149654,
+      "cost_in_lakhs": "\u20b9598.62 Lakhs",
+      "cost_in_crores": "\u20b95.99 Crores"
+    }
+  },
+  "package_details": {
+    "name": "Royal",
+    "base_rate": 4100,
+    "key_features": [
+      "Complete civil construction",
+      "Structural design certification",
+      "MEP installation",
+      "Basic interior finishing",
+      "Luxury tiles and fixtures",
+      "Italian modular kitchen",
+      "Premium bathroom fittings",
+      "Complete false ceiling",
+      "Full home automation",
+      "Premium landscaping"
+    ],
+    "timeline_months": "18-24",
+    "warranty": {
+      "structural": "15 years",
+      "windows": "20 years",
+      "general": "1 year"
+    }
+  }
+}

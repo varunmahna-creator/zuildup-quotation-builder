@@ -1,0 +1,80 @@
+{
+  "success": true,
+  "quote_metadata": {
+    "quote_id": "ZU-200-PREMIUM-20260301072138",
+    "generated_on": "2026-03-01T07:21:38.883228",
+    "api_version": "2.0",
+    "methodology": "A/B/C/D Zone Classification"
+  },
+  "client_requirements": {
+    "plot_size_sqyards": 200,
+    "plot_size_sqft": 1800,
+    "package_selected": "Premium",
+    "configuration": {
+      "floors": 3,
+      "basement": true,
+      "lift": true,
+      "architectural_style": "Modern"
+    }
+  },
+  "pricing": {
+    "base_rate_per_sqft": 1950,
+    "zone_breakdown": {
+      "Zone_A": {
+        "description": "Main Construction (Basement, Ground Floor, Upper Floors, Structural)",
+        "area_sqft": 4440,
+        "rate_per_sqft": 1950,
+        "rate_percentage": "100%",
+        "zone_cost": 8658000
+      },
+      "Zone_B": {
+        "description": "Secondary Areas (Stilt, Staircase, Balconies, Utility Spaces)",
+        "area_sqft": 2220,
+        "rate_per_sqft": 975,
+        "rate_percentage": "50%",
+        "zone_cost": 2164500
+      },
+      "Zone_C": {
+        "description": "Terrace & Open Areas (Terrace, Landscaping Base)",
+        "area_sqft": 1332,
+        "rate_per_sqft": 585,
+        "rate_percentage": "30%",
+        "zone_cost": 779220
+      },
+      "Zone_D": {
+        "description": "Service Areas (Ramp, Shaft, External Utilities)",
+        "area_sqft": 888,
+        "rate_per_sqft": 585,
+        "rate_percentage": "30%",
+        "zone_cost": 519480
+      }
+    },
+    "summary": {
+      "total_project_cost": 12121200,
+      "formatted_total": "\u20b912,121,200",
+      "cost_per_sqft_plot": 6734,
+      "cost_per_sqyard_plot": 60606,
+      "cost_in_lakhs": "\u20b9121.21 Lakhs",
+      "cost_in_crores": "\u20b91.21 Crores"
+    }
+  },
+  "package_details": {
+    "name": "Premium",
+    "base_rate": 1950,
+    "key_features": [
+      "Complete civil construction",
+      "Structural design certification",
+      "MEP installation",
+      "Basic interior finishing",
+      "Standard tiles and fixtures",
+      "Basic modular kitchen",
+      "Standard bathroom fittings"
+    ],
+    "timeline_months": "18-24",
+    "warranty": {
+      "structural": "15 years",
+      "windows": "20 years",
+      "general": "1 year"
+    }
+  }
+}

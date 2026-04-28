@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ZuildUp — Spec Card</title>
+<style>
+  @page { size: A4; margin: 0; }
+  html, body { margin: 0; padding: 0; }
+
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --navy:    #0A1F44;
+    --gold:    #C9A24D;
+    --offwhite:#F9FAF7;
+    --ink:     #1B1F2A;
+    --muted:   #5C6373;
+    --rule:    rgba(10,31,68,0.08);
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--offwhite);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    width: 210mm; height: 297mm;
+    box-sizing: border-box;
+    padding: 24mm 22mm 24mm 22mm;
+    background: var(--offwhite);
+    position: relative;
+  }
+
+  /* Header strip */
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 14mm;
+    border-bottom: 1px solid var(--rule);
+  }
+  .head .logo svg { height: 22px; width: auto; }
+  .head .breadcrumb {
+    text-align: right;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .head .breadcrumb .current {
+    color: var(--navy);
+    font-weight: 600;
+  }
+
+  /* Section header */
+  .section-eyebrow {
+    margin-top: 10mm;
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .section-title {
+    font-family: 'Fraunces', 'Playfair Display', serif;
+    font-weight: 500;
+    font-size: 32px;
+    line-height: 1.15;
+    margin: 4px 0 4mm;
+    color: var(--navy);
+    letter-spacing: -0.01em;
+  }
+  .section-lede {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.65;
+    max-width: 420px;
+    margin: 0 0 8mm;
+  }
+
+  /* === The spec card === */
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 1px 0 rgba(10,31,68,0.04), 0 8px 24px rgba(10,31,68,0.06);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 64mm 1fr;
+  }
+
+  .card .image {
+    background:
+      linear-gradient(135deg, #F4EAD0 0%, #EBD9B3 60%, #C9A24D 130%);
+    min-height: 80mm;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .card .image::before {
+    /* faucet icon, scaled large, gold-on-cream */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url('../assets/lookbook/platinum/slide-09-img-06.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 56% auto;
+    filter: invert(20%) sepia(38%) saturate(900%) hue-rotate(8deg) brightness(0.85);
+    opacity: 0.78;
+  }
+  .card .image::after {
+    content: "Lookbook image — final photography to follow";
+    position: absolute;
+    bottom: 6mm;
+    left: 0; right: 0;
+    text-align: center;
+    color: rgba(10,31,68,0.55);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .card .body {
+    padding: 14mm 14mm 14mm 14mm;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .icon-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 4px;
+  }
+  .icon {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    background: rgba(201,162,77,0.12);
+    color: var(--gold);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .icon svg { width: 16px; height: 16px; }
+  .category {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .label {
+    font-family: 'Fraunces', 'Playfair Display', serif;
+    font-size: 22px;
+    line-height: 1.2;
+    font-weight: 500;
+    color: var(--navy);
+    letter-spacing: -0.005em;
+    margin: 0;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 4px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .badge.brand {
+    background: rgba(10,31,68,0.06);
+    color: var(--navy);
+  }
+  .badge.brand .dot {
+    width: 5px; height: 5px; border-radius: 999px;
+    background: var(--gold);
+    margin-right: 7px;
+  }
+
+  .rate-pill {
+    align-self: flex-start;
+    background: var(--navy);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin-top: 2px;
+  }
+  .rate-pill .unit {
+    font-weight: 400;
+    color: rgba(255,255,255,0.74);
+    margin-left: 4px;
+    font-size: 12px;
+  }
+
+  .description {
+    color: var(--ink);
+    font-size: 13.5px;
+    line-height: 1.65;
+    margin: 8px 0 0;
+    max-width: 90mm;
+  }
+
+  /* footer */
+  .foot {
+    position: absolute;
+    bottom: 18mm;
+    left: 22mm;
+    right: 22mm;
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    border-top: 1px solid var(--rule);
+    padding-top: 8mm;
+  }
+  .foot .right { text-align: right; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="head">
+    <div class="logo">
+      <svg viewBox="0 0 114 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="ZuildUp">
+        <path d="M15 21V13C15 12.7348 14.8946 12.4804 14.7071 12.2929C14.5196 12.1054 14.2652 12 14 12H10C9.73478 12 9.48043 12.1054 9.29289 12.2929C9.10536 12.4804 9 12.7348 9 13V21" stroke="#C9A24D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 10.0005C2.99993 9.70955 3.06333 9.4221 3.18579 9.1582C3.30824 8.89429 3.4868 8.66028 3.709 8.47248L10.709 2.47248C11.07 2.16739 11.5274 2 12 2C12.4726 2 12.93 2.16739 13.291 2.47248L20.291 8.47248C20.5132 8.66028 20.6918 8.89429 20.8142 9.1582C20.9367 9.4221 21.0001 9.70955 21 10.0005V19.0005C21 19.5309 20.7893 20.0396 20.4142 20.4147C20.0391 20.7898 19.5304 21.0005 19 21.0005H5C4.46957 21.0005 3.96086 20.7898 3.58579 20.4147C3.21071 20.0396 3 19.5309 3 19.0005V10.0005Z" stroke="#C9A24D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="28" y="17" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#0A1F44" letter-spacing="0.5">ZuildUp</text>
+      </svg>
+    </div>
+    <div class="breadcrumb">
+      Quote · ZB-2026-0428-2143 · <span class="current">Detailed Specifications</span>
+    </div>
+  </div>
+
+  <div class="section-eyebrow">Bathroom &amp; Toilet</div>
+  <h2 class="section-title">Sanitary Ware &amp; CP Fitting</h2>
+  <p class="section-lede">Wall-hung WCs, designer washbasins, concealed CP fittings — selected per tier so the bathroom feels considered, not catalogued.</p>
+
+  <div class="card">
+    <div class="image" role="img" aria-label="Bathroom hero from Platinum lookbook"></div>
+    <div class="body">
+      <div class="icon-row">
+        <span class="icon" aria-hidden="true">
+          <!-- shower icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v4M5 11h14M5 11s.7-5 7-5 7 5 7 5"/>
+            <path d="M9 14v.01M9 17v.01M12 16v.01M12 19v.01M15 14v.01M15 17v.01"/>
+          </svg>
+        </span>
+        <span class="category">Bathroom &amp; Toilet</span>
+      </div>
+
+      <h3 class="label">Bathroom Sanitary Ware — WC + Washbasin</h3>
+
+      <div class="meta-row">
+        <span class="badge brand"><span class="dot"></span>Jaquar</span>
+        <span class="badge brand"><span class="dot"></span>Kohler</span>
+      </div>
+
+      <span class="rate-pill">₹40,000 <span class="unit">per bathroom</span></span>
+
+      <p class="description">WC and washbasin sanitary ware per bathroom — Platinum tier brand set. Brand options shown are indicative; final selection is confirmed with you at the brand-picker stage.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div>Detailed Specifications · Page 4 of 12</div>
+    <div class="right">+91 92172 63051 · info@zuildup.com</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,82 @@
+{
+  "success": true,
+  "quote_metadata": {
+    "quote_id": "ZU-300-PLATINUM-20260301072138",
+    "generated_on": "2026-03-01T07:21:38.881943",
+    "api_version": "2.0",
+    "methodology": "A/B/C/D Zone Classification"
+  },
+  "client_requirements": {
+    "plot_size_sqyards": 300,
+    "plot_size_sqft": 2700,
+    "package_selected": "Platinum",
+    "configuration": {
+      "floors": 3,
+      "basement": true,
+      "lift": true,
+      "architectural_style": "Modern"
+    }
+  },
+  "pricing": {
+    "base_rate_per_sqft": 2850,
+    "zone_breakdown": {
+      "Zone_A": {
+        "description": "Main Construction (Basement, Ground Floor, Upper Floors, Structural)",
+        "area_sqft": 6706,
+        "rate_per_sqft": 2850,
+        "rate_percentage": "100%",
+        "zone_cost": 19112100
+      },
+      "Zone_B": {
+        "description": "Secondary Areas (Stilt, Staircase, Balconies, Utility Spaces)",
+        "area_sqft": 3353,
+        "rate_per_sqft": 1425,
+        "rate_percentage": "50%",
+        "zone_cost": 4778025
+      },
+      "Zone_C": {
+        "description": "Terrace & Open Areas (Terrace, Landscaping Base)",
+        "area_sqft": 1676,
+        "rate_per_sqft": 855,
+        "rate_percentage": "30%",
+        "zone_cost": 1432980
+      },
+      "Zone_D": {
+        "description": "Service Areas (Ramp, Shaft, External Utilities)",
+        "area_sqft": 1676,
+        "rate_per_sqft": 855,
+        "rate_percentage": "30%",
+        "zone_cost": 1432980
+      }
+    },
+    "summary": {
+      "total_project_cost": 26756085,
+      "formatted_total": "\u20b926,756,085",
+      "cost_per_sqft_plot": 9909,
+      "cost_per_sqyard_plot": 89186,
+      "cost_in_lakhs": "\u20b9267.56 Lakhs",
+      "cost_in_crores": "\u20b92.68 Crores"
+    }
+  },
+  "package_details": {
+    "name": "Platinum",
+    "base_rate": 2850,
+    "key_features": [
+      "Complete civil construction",
+      "Structural design certification",
+      "MEP installation",
+      "Basic interior finishing",
+      "Premium tiles and fixtures",
+      "Premium modular kitchen",
+      "Designer bathroom fittings",
+      "False ceiling",
+      "Basic home automation"
+    ],
+    "timeline_months": "18-24",
+    "warranty": {
+      "structural": "15 years",
+      "windows": "20 years",
+      "general": "1 year"
+    }
+  }
+}
