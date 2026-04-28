@@ -501,3 +501,54 @@ These were not in original P1.1 scope. They were caught while inspecting the Abo
 - Sleep + retry clears most wedges (3-15 seconds)
 - `Write` tool succeeds when bash `cp` fails on identical path
 - See `LESSONS_LEARNED.md` lesson #8 expansion for full pattern catalog
+
+
+---
+
+## P1.2 — Catalog Fidelity Pass (2026-04-28 ~17:05 UTC)
+
+### Audit (Dhurandhar, forwarded by Varun)
+- Calculator port verified clean (verbatim constants, math matches live).
+- **Catalog port = silently lossy**: 80 of 87 items lost their price caps during DOCX extraction.
+- Customer-visible impact: Steel rendered "Included" instead of "₹55,000/MT cap"; Modular Kitchen "Included" instead of "₹2,50,000/kitchen"; Floor Flooring missing "₹250/sqft" Italian Marble rate, etc.
+- Root cause: `desc.strip() or first.strip()` silently dropped the cap-bearing source line whenever desc was non-empty AND `parse_rate()` failed (which happened on 73 of 87 items due to missing regex patterns: decimals, no-per forms, compound @kg/MT).
+
+### Three surgical fixes (scripts/build_catalog.py)
+1. **Description preservation**: `((first + ("\n" + desc if desc else "")).strip() if first else desc.strip())` — always prepend `first` line to description.
+2. **parse_rate** tightened with 3 new patterns:
+   - Decimal: `Rs.?\s*(\d+\.\d+)\s*per\s*\w+` ("Rs. 7.50 per brick")
+   - No-per form: `Rs.?\s*(\d+(?:,\d+)*)/-?\s*sq\.?\s*ft` ("Rs. 250/- sq ft")
+   - Compound: `@\s*(\d+)\s*Kg\s*per\s*Sq.?\s*Ft.*?Rs.?\s*(\d+)/MT` (Steel)
+3. **OVERRIDES** extended with explicit `rate_text` for 22 items where regex still couldn't help.
+
+### Verification
+- Catalog: 87 items total, **27 with rate_text** (was 7 before P1.2). Items without rate_text are legitimately description-only (e.g. Architectural Layout, Curing, False Ceiling).
+- **24/24 audit items have correct rate_text** ✅
+- `tests/test_catalog_fidelity.py`: PASS ✅ (regression guard for the 24 items)
+- Filled-fixture PDF rendered (`/tmp/p12_filled.pdf`, 10 pages, 273 KB)
+- Visual QC via image tool (5 spec pages): all caps render correctly
+  - Steel: `@5kg/sqft, ₹55,000/MT cap (Rathi 500FE)` ✅
+  - Cement: `upto ₹380 per bag (Ultratech/ACC)` ✅
+  - Modular Kitchen: `upto ₹2,50,000 per kitchen` ✅
+  - Floor Flooring: `Italian Marble — ₹250 per sq.ft.` ✅
+  - Switch & Sockets: `₹50,000 per floor (LeGrand white & dark grey)` ✅
+  - Staircase Railing: `MS Steel designer railing — ₹400 per sq.ft.` ✅
+  - Main Gate: `₹2,50,000 (cap, includes side gate)` (DEFERRED — see below)
+
+### Deferred
+- `general.main_gate` value contradiction: source DOCX says ₹1,00,000 (Bifold MS); current OVERRIDES says ₹2,50,000 (includes side gate). DM'd Varun for reconciliation. Will follow-up commit once decided.
+
+### Lessons logged (LESSONS_LEARNED.md #9-12)
+- #9: Heuristic extraction is a one-way trapdoor; keep source alongside parse.
+- #10: Silent fallbacks hide data loss; never both-or-neither.
+- #11: Bidirectional negative-test discipline.
+- #12: Verbatim port = both directions (mirror of P0.2 GST add).
+
+### Files changed
+- `scripts/build_catalog.py` (description fix + parse_rate patterns + 22 OVERRIDES additions)
+- `catalog/catalog.json` (regenerated; +20 items now have rate_text)
+- `tests/test_catalog_fidelity.py` (NEW)
+- (parent repo) `LESSONS_LEARNED.md` — 4 new lessons appended
+
+### Tagged
+`phase2-step-7-catalog-fidelity-pass`
