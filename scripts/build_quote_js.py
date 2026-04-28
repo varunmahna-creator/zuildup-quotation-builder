@@ -189,9 +189,9 @@ function calcPackage(state) {
   const costD = totalD * WATER_TANK_RATE;
   const costE = totalE * BASEMENT_RATE;
   const liftCost = b.hasLift ? LIFT_COST : 0;
-  const subtotal = costA + costB + costC + costD + costE + liftCost;
-  // Canonical: subtotal + liftCost (GST/liaison handled outside the calculator).
-  const grand = subtotal;
+  const zoneSubtotal = costA + costB + costC + costD + costE;
+  // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
+  const grand = zoneSubtotal + liftCost;
 
   return {
     mode: hasStilt ? 'stilt' : 'nostilt',
@@ -206,7 +206,7 @@ function calcPackage(state) {
       E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: BASEMENT_RATE, cost: costE, rateLabel: `₹${ni(BASEMENT_RATE)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
-
+    zoneSubtotal,
     grandTotal: grand,
   };
 }
@@ -263,9 +263,9 @@ function calcStructure(state) {
   const costD = totalD * WATER_TANK_RATE;
   const costE = totalE * BASEMENT_RATE;
   const liftCost = b.hasLift ? LIFT_COST : 0;
-  const subtotal = costA + costB + costD + costE + liftCost;
-  // Canonical: subtotal + liftCost (GST/liaison handled outside the calculator).
-  const grand = subtotal;
+  const zoneSubtotal = costA + costB + costD + costE;
+  // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
+  const grand = zoneSubtotal + liftCost;
 
   return {
     mode: 'structure',
@@ -280,7 +280,7 @@ function calcStructure(state) {
       E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: BASEMENT_RATE, cost: costE, rateLabel: `₹${ni(BASEMENT_RATE)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
-
+    zoneSubtotal,
     grandTotal: grand,
   };
 }
@@ -758,21 +758,25 @@ function quoteCss() {
   p.lede { color: var(--muted); font-size: 12.5px; line-height: 1.65; max-width: 440px; margin: 0 0 7mm; }
   .pg-foot { position: absolute; bottom: 12mm; left: 20mm; right: 20mm; display:flex; justify-content: space-between; color: var(--muted); font-size: 8.5px; letter-spacing:.16em; text-transform: uppercase; font-weight: 500; padding-top: 4mm; border-top: 1px solid var(--rule); }
 
-  /* About page */
-  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm 10mm; }
+  /* About page — compact single-page layout */
+  .about-page h1.section { font-size: 22px; margin-bottom: 5mm; max-width: 480px; }
+  .about-page p.lede { display: none; }
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm 8mm; margin-bottom: 5mm; }
   .about-block { break-inside: avoid; }
-  .about-block h3 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 17px; color: var(--navy); margin: 0 0 6px; }
-  .about-block p { font-size: 11.5px; color: var(--ink); line-height: 1.6; margin: 0; }
-  .about-list { list-style: none; padding: 0; margin: 0; }
-  .about-list li { padding: 8px 0; border-bottom: 1px dashed var(--rule); font-size: 12px; }
-  .about-list li:last-child { border: none; }
-  .about-list .num { color: var(--gold); font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; margin-right: 8px; }
-  .about-list .lab { color: var(--navy); font-weight: 600; }
-  .about-list .body { color: var(--muted); font-size: 11px; line-height: 1.5; margin-top: 3px; display: block; }
-  .warranty-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 10px; margin-top: 4mm; }
-  .warranty-grid .w { padding: 8px 10px; background: white; border-radius: 6px; border: 1px solid var(--rule); }
-  .warranty-grid .w .lab { font-size: 11px; font-weight: 600; color: var(--navy); display: block; }
-  .warranty-grid .w .term { font-size: 10px; color: var(--gold); font-weight: 600; letter-spacing: .04em; margin-top: 2px; display: block; }
+  .about-block h3 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 14px; color: var(--navy); margin: 0 0 3px; }
+  .about-block p { font-size: 10.5px; color: var(--ink); line-height: 1.5; margin: 0; }
+  .about-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-bottom: 4mm; }
+  .about-col { break-inside: avoid; }
+  .about-list, .why-list { list-style: none; padding: 0; margin: 4px 0 0; }
+  .about-list li, .why-list li { padding: 5px 0; border-bottom: 1px dashed var(--rule); font-size: 10.5px; }
+  .about-list li:last-child, .why-list li:last-child { border: none; }
+  .about-list .num { color: var(--gold); font-family: 'Fraunces', serif; font-size: 12px; font-weight: 600; margin-right: 6px; }
+  .about-list .lab, .why-list .lab { color: var(--navy); font-weight: 600; font-size: 11px; }
+  .about-list .body, .why-list .body { color: var(--muted); font-size: 10px; line-height: 1.4; margin-top: 2px; display: block; }
+  .warranty-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px 6px; margin-top: 3mm; }
+  .warranty-grid .w { padding: 6px 9px; background: white; border-radius: 5px; border: 1px solid var(--rule); }
+  .warranty-grid .w .lab { font-size: 10.5px; font-weight: 600; color: var(--navy); display: block; line-height: 1.25; }
+  .warranty-grid .w .term { font-size: 9.5px; color: var(--gold); font-weight: 700; letter-spacing: .04em; margin-top: 2px; display: block; }
 
   /* Area / Cost tables */
   .calc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6mm; }
@@ -794,7 +798,6 @@ function quoteCss() {
   .calc-table tfoot td { padding: 10px; }
   .calc-table tfoot .sub { background: rgba(10,31,68,0.04); font-weight: 600; }
   .calc-table tfoot .grand { background: var(--navy); color: white; font-weight: 700; font-size: 13.5px; }
-  .calc-table tfoot .gst { background: rgba(201,162,77,0.10); color: var(--navy); font-weight: 600; }
 
   .params-row { display:flex; flex-wrap:wrap; gap: 4mm 8mm; padding: 6px 0 9mm; border-bottom: 1px solid var(--rule); margin-bottom: 6mm; font-size: 11.5px; color: var(--muted); }
   .params-row b { color: var(--ink); font-weight: 600; margin-right: 4px; }
@@ -879,53 +882,43 @@ function renderAboutPage(state, about) {
   const why  = (about.why_choose || []).slice(0, 6);
   const vm   = about.about?.vision_mission || [];
   return `
-<section class="pg">
+<section class="pg about-page">
   <div class="pg-head">
     ${logoSvg({ size:'large' })}
-    <div class="breadcrumb">Quote · ${escapeHtml(state.quoteId)} · <span class="current">About ZuildUp</span></div>
+    <div class="breadcrumb"><span class="current">About ZuildUp</span></div>
   </div>
   <div class="eyebrow">Why ZuildUp</div>
-  <h1 class="section">Who we are</h1>
-  <p class="lede">At ZuildUp, we transform home construction into an experience of trust, creativity and innovation — your partner in crafting a custom home that reflects your vision.</p>
+  <h1 class="section">Tech-enabled construction, delivered with 24+ years of excellence.</h1>
 
-  <div class="about-grid" style="margin-bottom:10mm;">
+  <div class="about-grid">
     ${vm.map(v => `<div class="about-block"><h3>${escapeHtml(v.title)}</h3><p>${escapeHtml(v.body)}</p></div>`).join('')}
   </div>
 
-  <div class="eyebrow" style="margin-top:6mm;">Our Process</div>
-  <h2 style="font-family:'Fraunces',serif;font-weight:500;font-size:18px;color:var(--navy);margin:0 0 4mm;">Five steps from idea to handover</h2>
-  <ul class="about-list">
-    ${proc.map((p,i) => `<li><span class="num">0${i+1}</span><span class="lab">${escapeHtml(p.title)}</span><span class="body">${escapeHtml((p.body||'').slice(0, 200))}</span></li>`).join('')}
-  </ul>
-
-  <div class="pg-foot"><span>About ZuildUp</span><span>+91 92172 63051 · info@zuildup.com · www.zuildup.com</span></div>
-</section>
-
-<section class="pg">
-  <div class="pg-head">
-    ${logoSvg({ size:'large' })}
-    <div class="breadcrumb">Quote · ${escapeHtml(state.quoteId)} · <span class="current">About ZuildUp (cont.)</span></div>
+  <div class="about-cols">
+    <div class="about-col">
+      <div class="eyebrow">Our Process</div>
+      <ul class="about-list">
+        ${proc.map((p,i) => `<li><span class="num">0${i+1}</span><span class="lab">${escapeHtml(p.title)}</span><span class="body">${escapeHtml((p.body||'').slice(0, 130))}</span></li>`).join('')}
+      </ul>
+    </div>
+    <div class="about-col">
+      <div class="eyebrow">Why families choose us</div>
+      <ul class="why-list">
+        ${why.map(w => `<li><span class="lab">${escapeHtml(w.title)}</span><span class="body">${escapeHtml((w.body||'').slice(0, 90))}</span></li>`).join('')}
+      </ul>
+    </div>
   </div>
 
-  <div class="eyebrow">Trust & Track Record</div>
-  <h1 class="section">Why families choose us</h1>
-  <div class="about-grid">
-    ${why.map(w => `<div class="about-block"><h3>${escapeHtml(w.title)}</h3><p>${escapeHtml((w.body||'').slice(0, 160))}</p></div>`).join('')}
-  </div>
-
-  <div class="eyebrow" style="margin-top:10mm;">Warranty Promise</div>
-  <h2 style="font-family:'Fraunces',serif;font-weight:500;font-size:18px;color:var(--navy);margin:0 0 4mm;">Industry-leading coverage</h2>
+  <div class="eyebrow" style="margin-top:5mm;">Warranty Promise</div>
   <div class="warranty-grid">
-    ${warr.map(w => {
-      const term = (w.body||'').match(/Up to ([^.]+?)(?:\s+Coverage|\s+Warranty|\s|$)/i);
-      const yrs = term ? term[1].trim() : '';
-      return `<div class="w"><span class="lab">${escapeHtml(w.title)}</span><span class="term">${escapeHtml(yrs ? 'Up to '+yrs : '')}</span></div>`;
-    }).join('')}
+    ${warr.map(w => `<div class="w"><span class="lab">${escapeHtml(w.title)}</span><span class="term">${escapeHtml(w.term || '')}</span></div>`).join('')}
   </div>
 
   <div class="pg-foot"><span>About ZuildUp</span><span>+91 92172 63051 · info@zuildup.com · www.zuildup.com</span></div>
 </section>`;
 }
+
+
 
 function renderAreaPage(state, c) {
   const zoneRows = (key, zone) => {
@@ -943,7 +936,7 @@ function renderAreaPage(state, c) {
 <section class="pg">
   <div class="pg-head">
     ${logoSvg({ size:'large' })}
-    <div class="breadcrumb">Quote · ${escapeHtml(state.quoteId)} · <span class="current">Area Calculation</span></div>
+    <div class="breadcrumb"><span class="current">Area Calculation</span></div>
   </div>
   <div class="eyebrow">Step 1</div>
   <h1 class="section">Area Calculation</h1>
@@ -987,7 +980,7 @@ function renderCostPage(state, c) {
 <section class="pg">
   <div class="pg-head">
     ${logoSvg({ size:'large' })}
-    <div class="breadcrumb">Quote · ${escapeHtml(state.quoteId)} · <span class="current">Cost Calculation</span></div>
+    <div class="breadcrumb"><span class="current">Cost Calculation</span></div>
   </div>
   <div class="eyebrow">Step 2</div>
   <h1 class="section">Cost Calculation</h1>
@@ -1003,7 +996,7 @@ function renderCostPage(state, c) {
       ${c.zones.E ? costRow('E', c.zones.E) : ''}
     </tbody>
     <tfoot>
-      <tr class="sub"><td colspan="3">Sub-total (zones)</td><td class="r">${fmtINR(c.subtotal)}</td></tr>
+      <tr class="sub"><td colspan="3">Sub-total (zones)</td><td class="r">${fmtINR(c.zoneSubtotal)}</td></tr>
       ${c.lift ? `<tr class="sub"><td colspan="3">Lift Machine</td><td class="r">${fmtINR(c.lift.cost)}</td></tr>` : ''}
       <tr class="grand"><td colspan="3">Construction Total</td><td class="r">${fmtINR(c.grandTotal)}</td></tr>
     </tfoot>
@@ -1019,7 +1012,7 @@ function renderSpecPages(state, sortedCats, byCat) {
   if (!sortedCats.length) {
     return `
 <section class="pg">
-  <div class="pg-head">${logoSvg({ size:'large' })}<div class="breadcrumb">Quote · ${escapeHtml(state.quoteId)} · <span class="current">Specifications</span></div></div>
+  <div class="pg-head">${logoSvg({ size:'large' })}<div class="breadcrumb"><span class="current">Specifications</span></div></div>
   <p class="lede" style="margin-top:30mm;text-align:center;">No specifications selected. Add rows from the catalog or create custom items.</p>
 </section>`;
   }
@@ -1054,7 +1047,7 @@ function renderSpecPages(state, sortedCats, byCat) {
 <section class="pg">
   <div class="pg-head">
     ${logoSvg({ size:'large' })}
-    <div class="breadcrumb">Quote · ${escapeHtml(state.quoteId)} · <span class="current">Detailed Specifications</span></div>
+    <div class="breadcrumb"><span class="current">Detailed Specifications</span></div>
   </div>
   <div class="eyebrow">Step 3</div>
   <h1 class="section">Detailed Specifications</h1>
@@ -1069,7 +1062,7 @@ function renderNotesPage(state) {
 <section class="pg">
   <div class="pg-head">
     ${logoSvg({ size:'large' })}
-    <div class="breadcrumb">Quote · ${escapeHtml(state.quoteId)} · <span class="current">Notes</span></div>
+    <div class="breadcrumb"><span class="current">Notes</span></div>
   </div>
   <div class="eyebrow">Internal team notes</div>
   <h1 class="section">Notes &amp; Caveats</h1>

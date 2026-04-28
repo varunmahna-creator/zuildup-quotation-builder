@@ -1,7 +1,7 @@
 {
   "hero": {
-    "headline": "Tech Enabled Construction Quality A",
-    "subline": "Tech-enabled construction solutions delivering transparent pricing, assured quality, and on-time homes View our Projects Instant Estimate 124+ Projects 24+ Years 450+ Quality Checks 15+ Yr Warranty"
+    "headline": "Tech-Enabled Construction. Quality Assured.",
+    "subline": "Transparent pricing, assured quality, and on-time homes — delivered with 24+ years of excellence and 450+ quality checks per build."
   },
   "about": {
     "vision_mission": [
@@ -44,19 +44,19 @@
   "process": [
     {
       "title": "Consultation & Planning",
-      "body": "We understand your vision, requirements, and budget. Free site visit and feasibility analysis included. 02 2-3 Week"
+      "body": "We understand your vision, requirements, and budget. Free site visit and feasibility analysis included."
     },
     {
       "title": "Design & Approvals",
-      "body": "Our architects prepare detailed plans and 3D views. Multiple optimized design options provided. 03 16-20 Week"
+      "body": "Our architects prepare detailed plans and 3D views. Multiple optimized design options provided."
     },
     {
       "title": "Foundation & Structure",
-      "body": "Construction begins with strong foundations and structural work using premium-grade materials. 04 24\u201330 Weeks"
+      "body": "Construction begins with strong foundations and structural work using premium-grade materials."
     },
     {
       "title": "Construction & Finishing",
-      "body": "MEP, interiors, flooring, painting, and fixtures completed as per approved specifications. 05 1\u20132 Weeks"
+      "body": "MEP, interiors, flooring, painting, and fixtures completed as per approved specifications."
     },
     {
       "title": "Final Handover",
@@ -82,45 +82,63 @@
     },
     {
       "title": "Digital Handover Care",
-      "body": "Everything safely documented 24\u00d77 project access Digital records Lifetime support"
+      "body": "Everything safely documented 24×7 project access Digital records Lifetime support"
     }
   ],
   "warranty": [
     {
       "title": "Structure Warranty",
-      "body": "Up to 15 Years Coverage on structural integrity"
+      "body": "Up to 15 Years Coverage on structural integrity",
+      "term": "Up to 15 Years",
+      "description": "Coverage on structural integrity"
     },
     {
       "title": "Window Profiles",
-      "body": "Up to 10 Years Warranty on window frames & profiles"
+      "body": "Up to 10 Years Warranty on window frames & profiles",
+      "term": "Up to 10 Years",
+      "description": "Warranty on window frames & profiles"
     },
     {
       "title": "Interiors & Finish",
-      "body": "Up to 5 Years Wardrobe, Modular Kitchen, Vanity & similar items"
+      "body": "Up to 5 Years Wardrobe, Modular Kitchen, Vanity & similar items",
+      "term": "Up to 5 Years",
+      "description": "Wardrobe, Modular Kitchen, Vanity & similar items"
     },
     {
       "title": "Internal Doors",
-      "body": "Up to 5 Years Coverage on all internal door units"
+      "body": "Up to 5 Years Coverage on all internal door units",
+      "term": "Up to 5 Years",
+      "description": "Coverage on all internal door units"
     },
     {
       "title": "Seepage Protection",
-      "body": "Up to 1 Year Extended warranty for seepage, electrical wiring & cracks in paint / plaster can be obtained at an additional cost of Rs 15 / Sq.ft / Annum"
+      "body": "Up to 1 Year Extended warranty for seepage, electrical wiring & cracks in paint / plaster can be obtained at an additional cost of Rs 15 / Sq.ft / Annum",
+      "term": "Up to 1 Year",
+      "description": "Extended warranty for seepage, electrical wiring & cracks in paint / plaster can be obtained at an additional cost of Rs 15 / Sq.ft / Annum"
     },
     {
       "title": "Anti-Termite",
-      "body": "Up to 1 Year Treatment coverage against termites"
+      "body": "Up to 1 Year Treatment coverage against termites",
+      "term": "Up to 1 Year",
+      "description": "Treatment coverage against termites"
     },
     {
       "title": "Electrical Wiring",
-      "body": "Up to 1 Year On all electrical wiring used by ZuildUp"
+      "body": "Up to 1 Year On all electrical wiring used by ZuildUp",
+      "term": "Up to 1 Year",
+      "description": "On all electrical wiring used by ZuildUp"
     },
     {
       "title": "General & AMC",
-      "body": "Up to 1 Year Everything else done by ZuildUp + AMC"
+      "body": "Up to 1 Year Everything else done by ZuildUp + AMC",
+      "term": "Up to 1 Year",
+      "description": "Everything else done by ZuildUp + AMC"
     },
     {
       "title": "3rd Party Products",
-      "body": "Up to Manufacturer As provided by the original manufacturer Warranty Terms & Conditions Warranty covers defects arising due to bad workmanship and/or use of wrong/defective material. If any defect is found, ZuildUp will repair it at its own cost during the warranty period. If repair isn't feasible, we will refund the value of the defected item. Warranties duration may differ based on the package selected. Warranties shall not be honoured if any appliance/item is detected to be faulty due to improper or unprescribed usage."
+      "body": "Up to Manufacturer As provided by the original manufacturer",
+      "term": "Up to Manufacturer",
+      "description": "As provided by the original manufacturer"
     }
   ],
   "faq": [
