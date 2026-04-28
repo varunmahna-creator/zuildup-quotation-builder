@@ -4,115 +4,115 @@
 <meta charset="utf-8">
 <title>ZuildUp Quotation Builder</title>
 <meta name="viewport" content="width=1280">
-<link rel="icon" href="/src_logo/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --navy:#0A1F44; --gold:#C9A24D; --offwhite:#F9FAF7;
   --ink:#1B1F2A; --muted:#5C6373; --rule:rgba(10,31,68,0.10);
-  --bg:#F0F2F5; --card:white;
+  --bg:#F0F2F5;
 }
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
-html,body{margin:0;padding:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--bg);height:100%;}
 * { box-sizing: border-box; }
-body { display: grid; grid-template-columns: 480px 1fr; height: 100vh; }
-.left { background: white; border-right: 1px solid var(--rule); overflow-y: auto; padding: 28px 28px 80px; }
+html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; color: var(--ink); background: var(--bg); height: 100%; }
+body { display: grid; grid-template-columns: 510px 1fr; height: 100vh; }
+.left { background: white; border-right: 1px solid var(--rule); overflow-y: auto; padding: 26px 26px 80px; }
 .right { background: var(--bg); overflow-y: auto; }
 
-/* --- Header --- */
-.brand { display:flex; align-items:center; gap:10px; margin-bottom: 22px; }
+/* Header */
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
 .brand svg { height: 26px; width: auto; }
-.brand .name { font-family:'Fraunces', serif; font-weight:600; font-size: 20px; color: var(--navy); letter-spacing:-.01em; }
-.brand .tag  { color: var(--muted); font-size: 11px; letter-spacing:.18em; text-transform:uppercase; margin-left: auto; }
+.brand .name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; color: var(--navy); letter-spacing: -0.01em; }
+.brand .tag { color: var(--muted); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; margin-left: auto; }
 
-/* --- Form --- */
-fieldset { border: none; margin: 0 0 22px; padding: 0; }
-legend { font-size: 11px; letter-spacing: .22em; text-transform:uppercase; color: var(--gold); font-weight: 600; padding: 0; margin-bottom: 10px; }
-label { display:block; font-size: 12px; color: var(--muted); margin: 0 0 4px; font-weight: 500; }
+/* Form */
+fieldset { border: none; margin: 0 0 20px; padding: 0; }
+legend { font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); font-weight: 600; padding: 0; margin-bottom: 10px; }
+label { display: block; font-size: 11.5px; color: var(--muted); margin: 0 0 4px; font-weight: 500; }
 input[type=text], input[type=number], select, textarea {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px;
-  font: inherit; color: var(--ink); background: white; outline: none;
+  width: 100%; padding: 9px 11px; border: 1px solid var(--rule); border-radius: 7px;
+  font: inherit; font-size: 13px; color: var(--ink); background: white; outline: none;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(10,31,68,.08); }
-.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+input:focus, select:focus, textarea:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(10,31,68,0.08); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
 .row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-.full { margin-bottom: 12px; }
+.full { margin-bottom: 10px; }
+.checkrow { display: flex; gap: 16px; padding: 4px 0 6px; }
+.checkrow label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); cursor: pointer; }
+.checkrow input { width: auto; }
+textarea { resize: vertical; min-height: 60px; }
 
-/* --- Spec table --- */
-.specs-head { display:flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+/* Toggle pills */
+.toggle { display: inline-flex; background: white; border: 1px solid var(--rule); border-radius: 7px; padding: 3px; gap: 0; }
+.toggle button { font: inherit; font-size: 11.5px; padding: 6px 12px; border: 0; background: transparent; cursor: pointer; border-radius: 5px; color: var(--muted); }
+.toggle button.active { background: var(--navy); color: white; }
+
+/* Specs */
+.specs-head { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
 .specs-head .count { font-size: 11px; color: var(--muted); }
-.specs-head .actions button {
-  font: inherit; font-size: 11.5px; padding: 6px 12px; border: 1px solid var(--rule); background: white;
-  border-radius: 6px; cursor: pointer; color: var(--ink); margin-left: 6px;
-}
-.specs-head .actions button.primary { background: var(--navy); color:white; border-color: var(--navy); }
+.specs-head .actions button { font: inherit; font-size: 11px; padding: 6px 11px; border: 1px solid var(--rule); background: white; border-radius: 6px; cursor: pointer; color: var(--ink); margin-left: 6px; }
 .specs-head .actions button:hover { border-color: var(--navy); }
-.spec-list { margin-top: 10px; max-height: 100%; }
-.spec {
-  border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px;
-  margin-bottom: 8px; background: white;
-  display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center;
-}
-.spec .grip { color: var(--muted); cursor: grab; font-size: 12px; user-select: none; }
-.spec .head { display: flex; flex-direction: column; gap: 2px; }
-.spec .label { font-weight: 600; font-size: 13px; color: var(--navy); }
-.spec .meta  { font-size: 11px; color: var(--muted); }
-.spec .rate  { font-size: 12.5px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.spec .x { color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; user-select: none; }
-.spec.editing { padding: 14px; }
-.spec.editing .editor { grid-column: 1/-1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.specs-head .actions button.primary { background: var(--navy); color: white; border-color: var(--navy); }
+.specs-head .actions button.primary:hover { background: #13315A; }
+.spec-list { margin-top: 10px; }
+.spec { border: 1px solid var(--rule); border-radius: 7px; padding: 9px 11px; margin-bottom: 6px; background: white; display: grid; grid-template-columns: 16px 1fr auto auto; gap: 8px; align-items: center; }
+.spec.custom { border-left: 3px solid var(--gold); }
+.spec .grip { color: var(--muted); cursor: grab; font-size: 12px; user-select: none; text-align: center; }
+.spec .head { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.spec .label { font-weight: 600; font-size: 12.5px; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spec .label .loc { color: var(--gold); font-weight: 500; font-size: 11.5px; }
+.spec .meta { font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spec .rate { font-size: 11.5px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.spec .row-actions { display: flex; gap: 6px; }
+.spec .row-actions span { color: var(--muted); cursor: pointer; font-size: 13px; padding: 0 3px; user-select: none; line-height: 1; }
+.spec .row-actions .x:hover { color: #c0392b; }
+.spec .row-actions .dup:hover { color: var(--navy); }
+.spec.editing { padding: 12px; }
+.spec.editing .editor { grid-column: 1/-1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--rule); }
 .spec.editing .editor .full { grid-column: 1/-1; }
-.spec.editing input, .spec.editing textarea { font-size: 12px; padding: 6px 8px; }
+.spec.editing .editor input, .spec.editing .editor textarea, .spec.editing .editor select { font-size: 12px; padding: 6px 8px; }
+.spec.editing .editor label { font-size: 10.5px; }
+.ed-actions { grid-column: 1/-1; display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.ed-actions button { font: inherit; font-size: 11.5px; padding: 6px 14px; border: 1px solid var(--rule); border-radius: 6px; background: white; cursor: pointer; color: var(--ink); }
+.ed-actions .btn-primary { background: var(--navy); color: white; border-color: var(--navy); }
+.ed-actions .btn-danger { color: #c0392b; border-color: #f0d2d0; }
 
-/* --- Picker dialog (for adding rows) --- */
-.picker { display:none; position: fixed; inset: 0; background: rgba(10,31,68,0.35); z-index: 100; align-items: flex-start; justify-content: center; padding-top: 8vh; }
+/* Notes */
+.notes-counter { font-size: 10.5px; color: var(--muted); text-align: right; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+/* Picker dialog */
+.picker { display: none; position: fixed; inset: 0; background: rgba(10,31,68,0.35); z-index: 100; align-items: flex-start; justify-content: center; padding-top: 8vh; }
 .picker.open { display: flex; }
-.picker .panel { background: white; width: 720px; max-height: 80vh; border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,.18); overflow: hidden; display: flex; flex-direction: column; }
-.picker .panel header { padding: 16px 20px; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; }
-.picker .panel header h3 { font-family:'Fraunces',serif; font-size: 18px; font-weight: 500; margin: 0; color: var(--navy); }
-.picker .panel header input { width: 280px; }
+.picker .panel { background: white; width: 720px; max-width: 90vw; max-height: 80vh; border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,0.18); overflow: hidden; display: flex; flex-direction: column; }
+.picker .panel header { padding: 14px 18px; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.picker .panel header h3 { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; margin: 0; color: var(--navy); }
+.picker .panel header input { width: 240px; }
 .picker .panel .body { flex: 1; overflow-y: auto; padding: 8px 12px; }
 .picker .panel .item { padding: 10px 12px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .picker .panel .item:hover { background: rgba(10,31,68,0.04); }
-.picker .panel .item.added { opacity: .4; pointer-events: none; }
-.picker .panel .item .l { font-size: 13px; }
+.picker .panel .item .l { font-size: 12.5px; min-width: 0; }
 .picker .panel .item .l .lab { font-weight: 600; color: var(--navy); }
-.picker .panel .item .l .cat { font-size: 10.5px; color: var(--muted); letter-spacing:.14em; text-transform: uppercase; }
-.picker .panel .item .r { font-size: 12px; color: var(--muted); }
-.picker .panel footer { padding: 10px 20px; border-top: 1px solid var(--rule); text-align: right; }
-.picker .panel footer button { font: inherit; padding: 8px 14px; border: 1px solid var(--rule); border-radius: 6px; background: white; cursor: pointer; }
+.picker .panel .item .l .cat { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+.picker .panel .item .r { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.picker .panel footer { padding: 9px 18px; border-top: 1px solid var(--rule); text-align: right; }
+.picker .panel footer button { font: inherit; padding: 7px 14px; border: 1px solid var(--rule); border-radius: 6px; background: white; cursor: pointer; }
 
-/* --- Right preview pane --- */
-.preview-frame {
-  width: 794px;   /* A4 @ 96dpi */
-  margin: 24px auto;
-  background: white;
-  box-shadow: 0 6px 28px rgba(0,0,0,.10);
-}
+/* Right preview pane */
 .right .toolbar {
   position: sticky; top: 0; background: rgba(240,242,245,0.95); backdrop-filter: blur(6px);
-  padding: 12px 24px; border-bottom: 1px solid var(--rule); z-index: 10;
+  padding: 10px 22px; border-bottom: 1px solid var(--rule); z-index: 10;
   display: flex; justify-content: space-between; align-items: center;
 }
-.right .toolbar .title { font-size: 12px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
-.right .toolbar .download {
-  background: var(--navy); color: white; border: none; padding: 9px 18px; border-radius: 6px;
-  font: inherit; font-weight: 500; font-size: 13px; cursor: pointer; letter-spacing: .02em;
-}
+.right .toolbar .title { font-size: 11.5px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+.right .toolbar .download { background: var(--navy); color: white; border: none; padding: 9px 18px; border-radius: 6px; font: inherit; font-weight: 500; font-size: 13px; cursor: pointer; letter-spacing: 0.02em; }
 .right .toolbar .download:disabled { opacity: 0.5; cursor: not-allowed; }
-.right .toolbar .download:hover:not(:disabled) { background:#13315A; }
-iframe.preview {
-  width: 794px; border: none; display: block;
-  height: 1123px; /* matches A4 page height @ 96 dpi for one page */
-}
-.preview-stack { padding-bottom: 60px; }
-
-/* --- Scope/package toggle pills --- */
-.toggle { display: inline-flex; background: white; border:1px solid var(--rule); border-radius: 8px; padding: 3px; gap: 0; }
-.toggle button { font: inherit; font-size: 12px; padding: 6px 14px; border: 0; background: transparent; cursor: pointer; border-radius: 6px; color: var(--muted); }
-.toggle button.active { background: var(--navy); color: white; }
+.right .toolbar .download:hover:not(:disabled) { background: #13315A; }
+.preview-stack { padding: 16px 0 60px; }
+iframe.preview { width: 794px; border: none; display: block; height: 1123px; margin: 0 auto; background: white; box-shadow: 0 6px 28px rgba(0,0,0,0.10); }
 </style>
 </head>
 <body>
+
 <aside class="left">
 
   <div class="brand">
@@ -122,7 +122,7 @@ iframe.preview {
       <text x="28" y="17" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="#0A1F44" letter-spacing="0.5">ZuildUp</text>
     </svg>
     <span class="name">Quotation Builder</span>
-    <span class="tag">Internal</span>
+    <span class="tag">Internal · v2</span>
   </div>
 
   <fieldset>
@@ -130,39 +130,56 @@ iframe.preview {
     <div class="row">
       <div><label>Salutation</label>
         <select id="f-salutation">
-          <option>Mr.</option><option selected>Mr. & Mrs.</option><option>Ms.</option><option>Dr.</option>
+          <option value=""></option>
+          <option>Mr.</option><option>Ms.</option><option>Mr. & Mrs.</option><option>Dr.</option>
         </select>
       </div>
-      <div><label>Full name</label><input id="f-name" type="text" placeholder="Aanya Kapoor" value="Aanya Kapoor"></div>
+      <div><label>Full name</label><input id="f-name" type="text" placeholder="e.g. Aanya Kapoor"></div>
     </div>
-    <div class="full"><label>Plot address</label><textarea id="f-address" rows="2" placeholder="Plot 14, Sector 47, Gurugram, Haryana 122001">Plot 14, Sector 47, Gurugram, Haryana 122001</textarea></div>
+    <div class="full"><label>Plot address</label><textarea id="f-address" rows="2" placeholder="Plot 14, Sector 47, Gurugram, Haryana 122001"></textarea></div>
   </fieldset>
 
   <fieldset>
-    <legend>Plot &amp; Build</legend>
+    <legend>Build Configuration</legend>
     <div class="row cols-3">
-      <div><label>Plot (sq yd)</label><input id="f-plot" type="number" min="50" step="10" value="300"></div>
-      <div><label>Floors</label><input id="f-floors" type="number" min="1" max="6" value="4"></div>
-      <div><label>Per-floor (sq ft)</label><input id="f-floor-sqft" type="number" min="500" step="50" value="1573"></div>
+      <div><label>Plot (sq.yd)</label><input id="f-plot" type="number" min="50" step="10"></div>
+      <div><label>Breadth (ft)</label><input id="f-breadth" type="number" min="10" step="0.5"></div>
+      <div><label>Coverage (%)</label><input id="f-coverage" type="number" min="0" max="100"></div>
     </div>
     <div class="row">
-      <div>
-        <label>Scope</label>
-        <div class="toggle" id="f-scope">
-          <button data-v="full" class="active">Full Build</button>
-          <button data-v="structure_only">Structure Only</button>
-        </div>
-      </div>
-      <div>
-        <label>Package</label>
-        <select id="f-package">
-          <option value="premium">Premium</option>
-          <option value="platinum" selected>Platinum</option>
-          <option value="royale">Royale</option>
-          <option value="custom">Custom (build row-by-row)</option>
+      <div><label>Build Type</label>
+        <select id="f-build-type">
+          <option value="stilt">Stilt + N Floors (recommended)</option>
+          <option value="nostilt">Ground + N (No Stilt)</option>
+          <option value="structure">Structure Only</option>
         </select>
       </div>
+      <div><label id="floors-label">Floors above stilt</label><input id="f-floors" type="number" min="1" max="6"></div>
     </div>
+    <div class="checkrow">
+      <label><input id="f-basement" type="checkbox"> Basement</label>
+      <label><input id="f-lift" type="checkbox"> Lift</label>
+    </div>
+    <div>
+      <label>Scope</label>
+      <div class="toggle" id="f-scope">
+        <button data-v="full" class="active">Full Build</button>
+        <button data-v="structure_only">Structure Only</button>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Pricing</legend>
+    <div class="row" id="cost-sqft-row">
+      <div><label>Cost per sqft (Zone A) — ₹</label><input id="f-cost-sqft" type="number" min="0" placeholder="e.g. 2,850"></div>
+      <div><label>GST (%)</label><input id="f-gst" type="number" min="0" max="50" step="0.5"></div>
+    </div>
+    <div class="row" id="struct-rate-row" style="display:none;">
+      <div><label>Structure rate per sqft — ₹</label><input id="f-struct-rate" type="number" min="0" placeholder="e.g. 1,250"></div>
+      <div><label>GST (%)</label><input id="f-gst-2" type="number" disabled placeholder="See above"></div>
+    </div>
+    <div class="full"><label>Liaisoning cost (₹) — optional</label><input id="f-liaison" type="number" min="0" step="1000" placeholder="0"></div>
   </fieldset>
 
   <fieldset>
@@ -170,11 +187,18 @@ iframe.preview {
     <div class="specs-head">
       <span class="count" id="spec-count">— items</span>
       <span class="actions">
-        <button id="reset-default" title="Reset to package default">Reset to Package</button>
-        <button id="add-row" class="primary">+ Add Row</button>
+        <button id="reset-default" title="Reset to scope default">Reset</button>
+        <button id="add-custom">+ Custom</button>
+        <button id="add-row" class="primary">+ From Catalog</button>
       </span>
     </div>
     <div class="spec-list" id="spec-list"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Notes (internal)</legend>
+    <textarea id="f-notes" rows="4" maxlength="2000" placeholder="Caveats, observations, special asks from the customer…"></textarea>
+    <div class="notes-counter" id="notes-count">0/2000</div>
   </fieldset>
 
 </aside>
@@ -190,7 +214,7 @@ iframe.preview {
 </main>
 
 <!-- Picker dialog -->
-<div class="picker" id="picker" role="dialog" aria-label="Add row from catalog">
+<div class="picker" id="picker" role="dialog" aria-label="Add row">
   <div class="panel">
     <header>
       <h3>Add line item from catalog</h3>

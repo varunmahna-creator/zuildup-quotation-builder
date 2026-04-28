@@ -1,4 +1,13 @@
-/* ZuildUp Quotation Builder — quote.js (Phase 2 P0.2)
+"""Generator for app/quote.js — Phase 2 P0.2 rebuild.
+
+Single-file emitter so we don't hit the Write-tool ~17 KB ceiling and we can keep
+the file under version control as a real generator (rerun it = same output).
+"""
+import textwrap, sys
+
+OUT_PATH = "/tmp/_quote_v2.js"
+
+QUOTE_JS = r"""/* ZuildUp Quotation Builder — quote.js (Phase 2 P0.2)
  *
  * Loaded by both index.html (form) and preview.html (right-pane / PDF body).
  * State persists in localStorage under key 'zuildup.quote.v2' (v1 keys ignored).
@@ -655,6 +664,10 @@ async function bootForm() {
 
   renderSpecList();
 }
+"""
+
+
+QUOTE_JS_PART3 = r"""
 // ============================================================================
 // PREVIEW PAGE
 // ============================================================================
@@ -825,6 +838,10 @@ function logoSvg({ accent='#C9A24D', text='#0A1F44', size='large' }={}) {
   <text x="28" y="17" font-family="Inter, sans-serif" font-size="12" font-weight="600" fill="${text}" letter-spacing="0.5">ZuildUp</text>
 </svg>`;
 }
+"""
+
+
+QUOTE_JS_PART4 = r"""
 function renderCover(state, customer, showCustomer) {
   const trust = ['24+ Years Excellence', '450+ Quality Checks', 'Transparent Pricing', 'On-Time Delivery'];
   const addr = (customer.address || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -1073,3 +1090,20 @@ function renderNotesPage(state) {
 }
 
 })();
+"""
+
+# ============================================================================
+# Emitter — concatenate the parts and write quote.js
+# ============================================================================
+parts = [QUOTE_JS, QUOTE_JS_PART3, QUOTE_JS_PART4]
+# strip the leading-newline glue between parts so the emitted file has no double-blank lines mid-IIFE
+out = parts[0].rstrip() + "\n"
+for p in parts[1:]:
+    # Each PART variable starts with a literal newline; collapse to one
+    out += p.lstrip("\n").rstrip() + "\n"
+
+with open(OUT_PATH, "w") as f:
+    f.write(out)
+
+print(f"WROTE {OUT_PATH}")
+print(f"  size: {len(out)} bytes  ({sum(1 for _ in out.splitlines())} lines)")
