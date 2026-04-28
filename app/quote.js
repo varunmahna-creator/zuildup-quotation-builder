@@ -55,11 +55,12 @@ const defaultState = () => ({
     hasLift: false,
   },
   // pricing — team enters per quote
+  // GST and liaisoning are intentionally NOT in the quote calculator.
+  // Per ZuildUp practice they're handled outside this document in the
+  // sales/commercial conversation. Canonical total = Σ(zones) + lift cost.
   pricing: {
     costPerSqft: null,           // ₹/sqft for Zone A (full-build modes)
     structureRate: null,         // ₹/sqft for structure-only mode
-    gstPercent: 18,
-    liaisonCost: 0,              // ₹ — manually added line, default 0
   },
   scope: 'full',                 // 'full' | 'structure_only'
   rows: [],                      // [{id, override:{label?, rate?, rate_text?, brands?, description?, location?}, _custom?:bool}]
@@ -180,10 +181,8 @@ function calcPackage(state) {
   const costE = totalE * BASEMENT_RATE;
   const liftCost = b.hasLift ? LIFT_COST : 0;
   const subtotal = costA + costB + costC + costD + costE + liftCost;
-  const liaison  = parseInt(p.liaisonCost) || 0;
-  const beforeGst = subtotal + liaison;
-  const gstAmt  = Math.round(beforeGst * (parseFloat(p.gstPercent)||0) / 100);
-  const grand   = beforeGst + gstAmt;
+  // Canonical: subtotal + liftCost (GST/liaison handled outside the calculator).
+  const grand = subtotal;
 
   return {
     mode: hasStilt ? 'stilt' : 'nostilt',
@@ -198,8 +197,6 @@ function calcPackage(state) {
       E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: BASEMENT_RATE, cost: costE, rateLabel: `₹${ni(BASEMENT_RATE)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
-    subtotal, liaison, beforeGst,
-    gstPercent: parseFloat(p.gstPercent)||0, gstAmount: gstAmt,
     grandTotal: grand,
   };
 }
@@ -257,10 +254,8 @@ function calcStructure(state) {
   const costE = totalE * BASEMENT_RATE;
   const liftCost = b.hasLift ? LIFT_COST : 0;
   const subtotal = costA + costB + costD + costE + liftCost;
-  const liaison = parseInt(p.liaisonCost) || 0;
-  const beforeGst = subtotal + liaison;
-  const gstAmt = Math.round(beforeGst * (parseFloat(p.gstPercent)||0) / 100);
-  const grand = beforeGst + gstAmt;
+  // Canonical: subtotal + liftCost (GST/liaison handled outside the calculator).
+  const grand = subtotal;
 
   return {
     mode: 'structure',
@@ -275,8 +270,6 @@ function calcStructure(state) {
       E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: BASEMENT_RATE, cost: costE, rateLabel: `₹${ni(BASEMENT_RATE)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
-    subtotal, liaison, beforeGst,
-    gstPercent: parseFloat(p.gstPercent)||0, gstAmount: gstAmt,
     grandTotal: grand,
   };
 }
@@ -343,8 +336,6 @@ async function bootForm() {
   $('f-lift').checked     = !!state.build.hasLift;
   $('f-cost-sqft').value  = state.pricing.costPerSqft ?? '';
   $('f-struct-rate').value= state.pricing.structureRate ?? '';
-  $('f-gst').value        = state.pricing.gstPercent ?? 18;
-  $('f-liaison').value    = state.pricing.liaisonCost ?? 0;
   $('f-notes').value      = state.notes ?? '';
   for (const btn of $('f-scope').querySelectorAll('button')) {
     btn.classList.toggle('active', btn.dataset.v === state.scope);
@@ -382,8 +373,6 @@ async function bootForm() {
   // ---- Pricing ----
   $('f-cost-sqft').oninput  = e => { state.pricing.costPerSqft = e.target.value === '' ? null : (+e.target.value || 0); flush(); };
   $('f-struct-rate').oninput= e => { state.pricing.structureRate = e.target.value === '' ? null : (+e.target.value || 0); flush(); };
-  $('f-gst').oninput        = e => { state.pricing.gstPercent = +e.target.value || 0; flush(); };
-  $('f-liaison').oninput    = e => { state.pricing.liaisonCost = +e.target.value || 0; flush(); };
   $('f-notes').oninput      = e => {
     let v = e.target.value;
     if (v.length > 2000) { v = v.slice(0, 2000); e.target.value = v; }
@@ -983,7 +972,7 @@ function renderCostPage(state, c) {
   </div>
   <div class="eyebrow">Step 2</div>
   <h1 class="section">Cost Calculation</h1>
-  <p class="lede">Each zone's area multiplied by its rate. Subtotal, optional liaison and GST applied last.</p>
+  <p class="lede">Each zone's area multiplied by its applicable rate. Lift cost added separately if enabled. Taxes and any liaisoning are quoted separately, outside this document.</p>
 
   <table class="calc-table">
     <thead><tr><th>Zone</th><th>Area</th><th class="r">Rate</th><th class="r">Total</th></tr></thead>
@@ -993,17 +982,15 @@ function renderCostPage(state, c) {
       ${c.zones.C ? costRow('C', c.zones.C) : ''}
       ${costRow('D', c.zones.D)}
       ${c.zones.E ? costRow('E', c.zones.E) : ''}
-      ${c.lift ? `<tr><td>Lift Machine</td><td>—</td><td class="r">fixed</td><td class="r">${fmtINR(c.lift.cost)}</td></tr>` : ''}
     </tbody>
     <tfoot>
-      <tr class="sub"><td colspan="3">Sub-total</td><td class="r">${fmtINR(c.subtotal)}</td></tr>
-      ${c.liaison ? `<tr class="sub"><td colspan="3">Liaisoning Cost</td><td class="r">${fmtINR(c.liaison)}</td></tr>` : ''}
-      ${c.gstPercent ? `<tr class="gst"><td colspan="3">GST @ ${c.gstPercent}%</td><td class="r">${fmtINR(c.gstAmount)}</td></tr>` : ''}
-      <tr class="grand"><td colspan="3">Grand Total</td><td class="r">${fmtINR(c.grandTotal)}</td></tr>
+      <tr class="sub"><td colspan="3">Sub-total (zones)</td><td class="r">${fmtINR(c.subtotal)}</td></tr>
+      ${c.lift ? `<tr class="sub"><td colspan="3">Lift Machine</td><td class="r">${fmtINR(c.lift.cost)}</td></tr>` : ''}
+      <tr class="grand"><td colspan="3">Construction Total</td><td class="r">${fmtINR(c.grandTotal)}</td></tr>
     </tfoot>
   </table>
 
-  <p class="lede" style="margin-top:8mm; color: var(--muted); font-size: 11px;">Final billed at actual brand and finish selection. All taxes as per applicable government regulations.</p>
+  <p class="lede" style="margin-top:8mm; color: var(--muted); font-size: 11px;">Final billed at actual brand and finish selection. GST and any liaisoning fees are quoted separately outside this document.</p>
 
   <div class="pg-foot"><span>Cost Calculation</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>`;
