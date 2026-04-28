@@ -68,25 +68,39 @@ BRAND_FIXES = {
     "Wilroy & Bosch": "Villeroy & Boch",
 }
 
-# ---- Manual override map: id -> {brands, rate, unit, rate_text} ----
-# Curated by reading the customer-facing DOCX directly. This is the source of truth
-# for cases where the heuristic extractor mis-parses brands or rates.
+# ---- Manual override map: id -> {brands} ----
+# P1.3 (subtractive pivot): catalog is a TEMPLATE/DICTIONARY, not a pricing source-of-truth.
+# This map now ONLY corrects brand-extraction noise from the regex (cases where brands=[]
+# is more honest than the heuristic's mis-parse). All `rate`, `rate_text`, `unit` keys
+# were removed in P1.3 — pricing lives at quote-time, in `state.rows[].override`.
+#
+# `brands` here are SUGGESTIONS surfaced in the edit panel for sales, not authoritative
+# defaults. The renderer does NOT auto-render them as committed badges (see build_quote_js.py).
+#
+# P1.2 added 22 entries with hardcoded rates/caps; P1.3 deletes those values.
+# What remains: brand suggestions where the regex extracted reasonable hints, and
+# `brands: []` corrections where the regex extracted noise.
 OVERRIDES = {
     # bathroom — sanitary ware mentions Jaquar / Hindware Italian
     "bathroom.sanitary_ware_and_cp_fitting": {
         "brands": ["Jaquar", "Hindware (Italian Collection)"],
     },
-    "bathroom.bathroom_geyser": { "brands": ["Crompton", "Bajaj"] },
-    "bathroom.exhaust_fan":     { "brands": ["Havells"] },
-    "kitchen.kitchen_wall_cladding_non_visible_areas": { "brands": [] },  # no brand, just "Commercial / Waste tiles"
-    "kitchen.sink_and_faucet":  { "brands": [] },  # description-only
-    "kitchen.kitchen_geyser":   { "brands": ["Crompton", "Bajaj"] },
-    "kitchen.exhaust_fan":      { "brands": ["Havells"] },
-    "kitchen.hob_and_chimney":  { "brands": ["Faber", "KAFF"] },
+    "bathroom.bathroom_geyser":                  { "brands": ["Crompton", "Bajaj"] },
+    "bathroom.exhaust_fan":                      { "brands": ["Havells"] },
+    "bathroom.bathroom_accessories":             { "brands": ["Jaquar"] },
+    "bathroom.cpvc_fittings":                    { "brands": ["Jaquar", "Kohler"] },
+    "kitchen.kitchen_wall_cladding_non_visible_areas": { "brands": [] },  # noise: just "Commercial / Waste tiles"
+    "kitchen.sink_and_faucet":                   { "brands": [] },          # noise: description-only
+    "kitchen.kitchen_geyser":                    { "brands": ["Crompton", "Bajaj"] },
+    "kitchen.exhaust_fan":                       { "brands": ["Havells"] },
+    "kitchen.hob_and_chimney":                   { "brands": ["Faber", "KAFF"] },
+    "kitchen.cpvc_fittings":                     { "brands": ["Jaquar", "Kohler"] },
+    "kitchen.modular_kitchen":                   { "brands": ["Ozone"] },
     "doors_windows.internal_and_bathroom_doors": { "brands": ["Sumai"] },
     "doors_windows.internal_and_bathroom_door_lock": { "brands": ["Godrej", "Ozone", "Yale"] },
     "doors_windows.sliding_door_windows":        { "brands": ["Prominence", "EITI"] },
     "doors_windows.modular_walkin_wardrobe":     { "brands": ["Godrej", "Ozone"] },
+    "doors_windows.main_door_lock":              { "brands": ["Godrej", "Ozone", "Yale"] },
     "flooring.lift_fa_ade":                      { "brands": [] },
     "electrical.electrical_wire":                { "brands": ["Finolex", "Polycab"] },
     "electrical.electrical_wire_specification":  { "brands": [] },
@@ -94,43 +108,26 @@ OVERRIDES = {
     "electrical.downlighters":                   { "brands": ["Philips", "Osram"] },
     "electrical.cove_strip_lights":              { "brands": ["Philips", "Osram"] },
     "electrical.mcb_elcb":                       { "brands": [] },
+    "electrical.switch_sockets":                 { "brands": ["Havells", "Anchor", "LeGrand"] },
+    "electrical.ceiling_fans":                   { "brands": ["Havells"] },
     "structure.curing":                          { "brands": ["Sika Antisol"] },
     "structure.waterproofing":                   { "brands": ["Sika", "Dr. Fixit LW+"] },
     "structure.anti_termite_treatment":          { "brands": ["Bayer", "Terminator (Pidilite)"] },
+    "structure.steel":                           { "brands": ["Rathi Steel 500FE"] },
+    "structure.cement":                          { "brands": ["Ultratech", "ACC"] },
     "water.underground_water_tank":              { "brands": ["Dr. Fixit", "Sika"] },
+    "water.overhead_water_tank":                 { "brands": ["Astral"] },
+    "water.water_motor":                         { "brands": ["Crompton Greaves"] },
     "ceiling.false_ceiling":                     { "brands": ["Sakarni POP"] },
-    "safety.cctv_camera":                        { "brands": ["CP Plus"], "rate": 50000, "unit": "cap", "rate_text": "₹50,000 (cap)" },
-    "safety.video_door_phone":                   { "brands": ["CP Plus", "Alba"], "rate": 50000, "unit": "cap", "rate_text": "₹50,000 (cap)" },
+    "safety.cctv_camera":                        { "brands": ["CP Plus"] },
+    "safety.video_door_phone":                   { "brands": ["CP Plus", "Alba"] },
     "paint.internal_wall_paint":                 { "brands": ["Asian Paints (Apcolite Premium Emulsion)"] },
     "paint.exterior_wall_paint":                 { "brands": ["Berger (Weathercoat Glow)"] },
     "paint.ceiling_paint":                       { "brands": ["Asian Paints (Apcolite Premium Emulsion)"] },
     "paint.putty":                               { "brands": ["JK Birla"] },
     "paint.polish":                              { "brands": [] },
-    "general.main_gate":                         { "brands": [], "rate": 250000, "unit": "cap", "rate_text": "₹2,50,000 (cap, includes side gate)" },
-    "general.lift_machine":                      { "brands": ["Schindler", "Kone"], "rate": 1000000, "unit": "cap", "rate_text": "₹10,00,000 (cap)" },
-    # ---- P1.2: explicit rate_text for items the parse_rate regex can't catch ----
-    "bathroom.shower_partition_cubicles":         { "rate": 10000, "unit": "per_bathroom", "rate_text": "upto ₹10,000 per bathroom" },
-    "bathroom.bathroom_accessories":              { "brands": ["Jaquar"], "rate": 12000, "unit": "per_bathroom", "rate_text": "upto ₹12,000 per bathroom" },
-    "bathroom.bathroom_flooring":                 { "rate": 40, "unit": "per_sqft", "rate_text": "Anti-skid tile cap ₹40 per sq.ft." },
-    "bathroom.cpvc_fittings":                     { "brands": ["Jaquar", "Kohler"], "rate": 20000, "unit": "per_bathroom", "rate_text": "upto ₹20,000 per bathroom" },
-    "kitchen.cpvc_fittings":                      { "brands": ["Jaquar", "Kohler"], "rate": 20000, "unit": "per_bathroom", "rate_text": "upto ₹20,000 per bathroom" },
-    "kitchen.modular_kitchen":                    { "brands": ["Ozone"], "rate": 250000, "unit": "cap", "rate_text": "upto ₹2,50,000 per kitchen" },
-    "doors_windows.main_entry_door":              { "rate": 20000, "unit": "per_door", "rate_text": "upto ₹20,000 per door (Teak/Mikasa/Sumai)" },
-    "doors_windows.main_door_lock":               { "brands": ["Godrej", "Ozone", "Yale"], "rate": 12000, "unit": "cap", "rate_text": "upto ₹12,000 (Godrej/Ozone/Yale)" },
-    "doors_windows.terrace_door":                 { "rate": 26000, "unit": "fixed", "rate_text": "₹26,000 (Tata Parvesh GS)" },
-    "flooring.floor_flooring":                    { "rate": 250, "unit": "per_sqft", "rate_text": "Italian Marble — ₹250 per sq.ft." },
-    "flooring.balcony_flooring":                  { "rate": 100, "unit": "per_sqft", "rate_text": "Granite Stone — ₹100 per sq.ft." },
-    "flooring.terrace_flooring":                  { "rate": 40, "unit": "per_sqft", "rate_text": "Anti-skid tile — ₹40 per sq.ft." },
-    "flooring.lift_fa_ade":                       { "rate": 100, "unit": "per_sqft", "rate_text": "Tiles/Stone/Wooden Look — ₹100 per sq.ft." },
-    "electrical.switch_sockets":                  { "brands": ["Havells", "Anchor", "LeGrand"], "rate": 50000, "unit": "per_floor", "rate_text": "₹50,000 per floor (LeGrand white & dark grey)" },
-    "electrical.ceiling_fans":                    { "brands": ["Havells"], "rate": 1800, "unit": "per_fan", "rate_text": "₹1,800 per fan (Havells)" },
-    "electrical.pillar_fancy_light":              { "rate": 2500, "unit": "per_piece", "rate_text": "₹2,500 per light" },
-    "water.overhead_water_tank":                  { "brands": ["Astral"], "rate": 8500, "unit": "cap", "rate_text": "1×1000 L Triple-Layer per dwelling, upto ₹8,500" },
-    "water.water_motor":                          { "brands": ["Crompton Greaves"], "rate": 8500, "unit": "per_floor", "rate_text": "₹8,500 per floor (Crompton Greaves)" },
-    "general.staircase_balcony_railing":          { "rate": 400, "unit": "per_sqft", "rate_text": "MS Steel designer railing — ₹400 per sq.ft." },
-    "structure.steel":                            { "brands": ["Rathi Steel 500FE"], "rate": 55000, "unit": "per_sqft", "rate_text": "@5kg/sqft, ₹55,000/MT cap (Rathi 500FE)" },
-    "structure.cement":                           { "brands": ["Ultratech", "ACC"], "rate": 380, "unit": "per_piece", "rate_text": "upto ₹380 per bag (Ultratech/ACC)" },
-    "structure.bricks":                           { "rate": 7, "unit": "per_piece", "rate_text": "upto ₹7.50 per brick (A Class)" },
+    "general.main_gate":                         { "brands": [] },
+    "general.lift_machine":                      { "brands": ["Schindler", "Kone"] },
 }
 
 # ---- Helpers ----
@@ -379,7 +376,12 @@ def main():
                 first = ""
 
             label = fix_label(re.sub(r'\s+', ' ', label_cell))
-            rate, rate_text, unit = parse_rate(first + " " + desc, label)
+            # P1.3: Catalog is TEMPLATE only — pricing is per-quote, not per-catalog.
+            # parse_rate() retained for descriptive analysis but its output is intentionally discarded.
+            # rate, rate_text, unit are forced to empty/zero defaults here. Pricing values flow
+            # from `state.rows[].override.{rate, rate_text, unit}` at quote-time.
+            _ = parse_rate(first + " " + desc, label)  # discarded; kept call for parity
+            rate, rate_text, unit = 0, "", "descriptive"
             brands = extract_brands(first if first else spec_cell)
 
             item_id = f"{cat_key}.{slugify(label)}"
@@ -408,7 +410,7 @@ def main():
             "version": "2.0.0",
             "built": "2026-04-28",
             "source": "src_docx/Customer_Facing_Quote_Sheet.docx (Customer: Ms. Rajkumari Kamboj reference quote)",
-            "schema": "no-tier; single rate + single brands per item; team enters cost-per-sqft per quote",
+            "schema": "no-tier; catalog as template/dictionary; rate, description, brands all set per quote via row overrides",
             "tier_system": "removed in Phase 2 P0.1",
             "items_total": len(items),
         },

@@ -3,7 +3,7 @@
     "version": "2.0.0",
     "built": "2026-04-28",
     "source": "src_docx/Customer_Facing_Quote_Sheet.docx (Customer: Ms. Rajkumari Kamboj reference quote)",
-    "schema": "no-tier; single rate + single brands per item; team enters cost-per-sqft per quote",
+    "schema": "no-tier; catalog as template/dictionary; rate, description, brands all set per quote via row overrides",
     "tier_system": "removed in Phase 2 P0.1",
     "items_total": 87
   },
@@ -42,9 +42,9 @@
       "category": "structure",
       "category_label": "Structure",
       "label": "Steel",
-      "rate": 55000,
-      "rate_text": "@5kg/sqft, ₹55,000/MT cap (Rathi 500FE)",
-      "unit": "per_sqft",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Rathi Steel 500FE"
       ],
@@ -59,9 +59,9 @@
       "category": "structure",
       "category_label": "Structure",
       "label": "Cement",
-      "rate": 380,
-      "rate_text": "upto ₹380 per bag (Ultratech/ACC)",
-      "unit": "per_piece",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Ultratech",
         "ACC"
@@ -77,9 +77,9 @@
       "category": "structure",
       "category_label": "Structure",
       "label": "Bricks",
-      "rate": 7,
-      "rate_text": "upto ₹7.50 per brick (A Class)",
-      "unit": "per_piece",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full",
@@ -265,9 +265,9 @@
       "category": "bathroom",
       "category_label": "Bathroom & Toilet",
       "label": "Sanitary Ware and CP Fitting",
-      "rate": 35000,
-      "rate_text": "₹35,000 per bathroom",
-      "unit": "per_bathroom",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Jaquar",
         "Hindware (Italian Collection)"
@@ -282,9 +282,9 @@
       "category": "bathroom",
       "category_label": "Bathroom & Toilet",
       "label": "Shower Partition/Cubicles",
-      "rate": 10000,
-      "rate_text": "upto ₹10,000 per bathroom",
-      "unit": "per_bathroom",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
@@ -296,9 +296,9 @@
       "category": "bathroom",
       "category_label": "Bathroom & Toilet",
       "label": "Bathroom Accessories",
-      "rate": 12000,
-      "rate_text": "upto ₹12,000 per bathroom",
-      "unit": "per_bathroom",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Jaquar"
       ],
@@ -314,7 +314,7 @@
       "label": "Bathroom Geyser",
       "rate": 0,
       "rate_text": "",
-      "unit": "per_bathroom",
+      "unit": "descriptive",
       "brands": [
         "Crompton",
         "Bajaj"
@@ -345,9 +345,9 @@
       "category": "bathroom",
       "category_label": "Bathroom & Toilet",
       "label": "Bathroom Flooring",
-      "rate": 40,
-      "rate_text": "Anti-skid tile cap ₹40 per sq.ft.",
-      "unit": "per_sqft",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
@@ -373,9 +373,9 @@
       "category": "bathroom",
       "category_label": "Bathroom & Toilet",
       "label": "CPVC Fittings",
-      "rate": 20000,
-      "rate_text": "upto ₹20,000 per bathroom",
-      "unit": "per_bathroom",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Jaquar",
         "Kohler"
@@ -462,7 +462,7 @@
       "label": "Kitchen Geyser",
       "rate": 0,
       "rate_text": "",
-      "unit": "per_bathroom",
+      "unit": "descriptive",
       "brands": [
         "Crompton",
         "Bajaj"
@@ -493,9 +493,9 @@
       "category": "kitchen",
       "category_label": "Kitchen",
       "label": "CPVC Fittings",
-      "rate": 20000,
-      "rate_text": "upto ₹20,000 per bathroom",
-      "unit": "per_bathroom",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Jaquar",
         "Kohler"
@@ -510,9 +510,9 @@
       "category": "kitchen",
       "category_label": "Kitchen",
       "label": "Modular Kitchen",
-      "rate": 250000,
-      "rate_text": "upto ₹2,50,000 per kitchen",
-      "unit": "cap",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Ozone"
       ],
@@ -557,9 +557,9 @@
       "category": "doors_windows",
       "category_label": "Doors, Windows & Wardrobe",
       "label": "Main Entry Door",
-      "rate": 20000,
-      "rate_text": "upto ₹20,000 per door (Teak/Mikasa/Sumai)",
-      "unit": "per_door",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
@@ -571,9 +571,9 @@
       "category": "doors_windows",
       "category_label": "Doors, Windows & Wardrobe",
       "label": "Main Door Lock",
-      "rate": 12000,
-      "rate_text": "upto ₹12,000 (Godrej/Ozone/Yale)",
-      "unit": "cap",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Godrej",
         "Ozone",
@@ -623,9 +623,9 @@
       "category": "doors_windows",
       "category_label": "Doors, Windows & Wardrobe",
       "label": "Terrace Door",
-      "rate": 26000,
-      "rate_text": "₹26,000 (Tata Parvesh GS)",
-      "unit": "fixed",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
@@ -715,9 +715,9 @@
       "category": "flooring",
       "category_label": "Flooring",
       "label": "Floor Flooring",
-      "rate": 250,
-      "rate_text": "Italian Marble — ₹250 per sq.ft.",
-      "unit": "per_sqft",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
@@ -729,9 +729,9 @@
       "category": "flooring",
       "category_label": "Flooring",
       "label": "Balcony Flooring",
-      "rate": 100,
-      "rate_text": "Granite Stone — ₹100 per sq.ft.",
-      "unit": "per_sqft",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
@@ -757,9 +757,9 @@
       "category": "flooring",
       "category_label": "Flooring",
       "label": "Terrace Flooring",
-      "rate": 40,
-      "rate_text": "Anti-skid tile — ₹40 per sq.ft.",
-      "unit": "per_sqft",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
@@ -785,13 +785,10 @@
       "category": "flooring",
       "category_label": "Flooring",
       "label": "Lift Façade",
-      "rate": 100,
-      "rate_text": "Tiles/Stone/Wooden Look — ₹100 per sq.ft.",
-      "unit": "per_sqft",
-      "brands": [
-        "Tiles",
-        "Granite"
-      ],
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
       "scope": [
         "full"
       ],
@@ -864,9 +861,9 @@
       "category": "electrical",
       "category_label": "Electrical Work",
       "label": "Switch & Sockets",
-      "rate": 50000,
-      "rate_text": "₹50,000 per floor (LeGrand white & dark grey)",
-      "unit": "per_floor",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Havells",
         "Anchor",
@@ -882,9 +879,9 @@
       "category": "electrical",
       "category_label": "Electrical Work",
       "label": "Ceiling Fans",
-      "rate": 1800,
-      "rate_text": "₹1,800 per fan (Havells)",
-      "unit": "per_fan",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Havells"
       ],
@@ -946,9 +943,9 @@
       "category": "electrical",
       "category_label": "Electrical Work",
       "label": "Pillar Fancy Light",
-      "rate": 2500,
-      "rate_text": "₹2,500 per light",
-      "unit": "per_piece",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
@@ -976,7 +973,7 @@
       "label": "EV Charging Point",
       "rate": 0,
       "rate_text": "",
-      "unit": "per_floor",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
@@ -1032,7 +1029,7 @@
       "label": "Underground Water Tank",
       "rate": 0,
       "rate_text": "",
-      "unit": "per_floor",
+      "unit": "descriptive",
       "brands": [
         "Dr. Fixit",
         "Sika"
@@ -1048,9 +1045,9 @@
       "category": "water",
       "category_label": "Water Management",
       "label": "Overhead Water Tank",
-      "rate": 8500,
-      "rate_text": "1×1000 L Triple-Layer per dwelling, upto ₹8,500",
-      "unit": "cap",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Astral"
       ],
@@ -1065,9 +1062,9 @@
       "category": "water",
       "category_label": "Water Management",
       "label": "Water Motor",
-      "rate": 8500,
-      "rate_text": "₹8,500 per floor (Crompton Greaves)",
-      "unit": "per_floor",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Crompton Greaves"
       ],
@@ -1142,9 +1139,9 @@
       "category": "safety",
       "category_label": "Safety & Security",
       "label": "CCTV Camera",
-      "rate": 50000,
-      "rate_text": "₹50,000 (cap)",
-      "unit": "cap",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "CP Plus"
       ],
@@ -1158,9 +1155,9 @@
       "category": "safety",
       "category_label": "Safety & Security",
       "label": "Video Door Phone",
-      "rate": 50000,
-      "rate_text": "₹50,000 (cap)",
-      "unit": "cap",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "CP Plus",
         "Alba"
@@ -1253,9 +1250,9 @@
       "category": "general",
       "category_label": "General Aspects",
       "label": "Main Gate",
-      "rate": 250000,
-      "rate_text": "₹2,50,000 (cap, includes side gate)",
-      "unit": "cap",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full",
@@ -1268,9 +1265,9 @@
       "category": "general",
       "category_label": "General Aspects",
       "label": "Staircase & Balcony Railing",
-      "rate": 400,
-      "rate_text": "MS Steel designer railing — ₹400 per sq.ft.",
-      "unit": "per_sqft",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [],
       "scope": [
         "full",
@@ -1343,9 +1340,9 @@
       "category": "general",
       "category_label": "General Aspects",
       "label": "Lift Machine",
-      "rate": 1000000,
-      "rate_text": "₹10,00,000 (cap)",
-      "unit": "cap",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
       "brands": [
         "Schindler",
         "Kone"

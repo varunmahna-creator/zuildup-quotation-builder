@@ -552,3 +552,57 @@ These were not in original P1.1 scope. They were caught while inspecting the Abo
 
 ### Tagged
 `phase2-step-7-catalog-fidelity-pass`
+
+---
+
+## P1.3 — Catalog Modularization (Subtractive Pivot) — 2026-04-28
+
+**Tag:** `phase2-step-8-catalog-modularization`
+**Pivot rationale (Varun):** *"No spec cost or description should be hardcoded."* The catalog is a **template/dictionary**, not a pricing source-of-truth. Sales drives every value per customer via the row-override mechanism that P1.2 hardened.
+
+### What P1.2 did vs. what P1.3 does
+- **P1.2** added 22 OVERRIDES with hardcoded `rate` / `rate_text` / `unit`. Tests passed, caps rendered, but the architecture baked pricing into the catalog.
+- **P1.3** deletes those values. Same OVERRIDES dict, but only `brands` keys remain — and those are now **suggestions** surfaced in the edit panel, not authoritative defaults.
+- Infrastructure stays (parse_rate, override mechanism, build_quote_js renderer); the **direction of authority moves** from catalog → quote.
+
+### The 7 changes
+1. **OVERRIDES stripped** (`scripts/build_catalog.py`) — all `rate`/`rate_text`/`unit` keys deleted; only `brands` (suggestions) and `brands: []` (regex-noise corrections) remain. ~75 entries → ~42 entries.
+2. **parse_rate output discarded** in `main()` — every catalog item is now built with `rate=0, rate_text="", unit="descriptive"`. The function is retained for parity / future debugging but has no effect on catalog values.
+3. **Renderer (PDF — `renderSpecPages`)** — when `o.rate` and `o.rate_text` are unset on a row, the spec card now shows a muted dashed-border `"Set rate"` pill (CSS class `.rate-pill.set`), and the whole card is styled `.spec-card.unedited` (faint background, dashed border, italic muted description). Replaces the old `"Included"` default which read as a closed commitment.
+4. **Renderer (HTML editor — `renderSpecList`)** — meta line shows `<em class="suggest">suggested: ...</em>` when only catalog (template) brands are present, and `<em class="set-rate">Set rate</em>` for the rate column when nothing is set. Same dashed visual language.
+5. **Brand authority changed** — both renderers (PDF and editor) now check `o.brands` (override) explicitly. Catalog `item.brands` are NEVER auto-promoted to committed badges on the rendered PDF. They appear only as suggestions in the edit panel.
+6. **Inverted fidelity test** (`tests/test_catalog_fidelity.py`) — replaces P1.2's "24 audit items must have caps" assertion with the negative: every item must have `rate == 0` and `rate_text == ""`. Schema declaration must contain "template" or "dictionary". Becomes the regression guard against future re-introduction of hardcoded pricing.
+7. **`_meta.schema`** — updated to `"no-tier; catalog as template/dictionary; rate, description, brands all set per quote via row overrides"`.
+
+### Verification
+- **Inverted fidelity test:** `python3 tests/test_catalog_fidelity.py` → **PASS** ✅
+  - 87 items total, **0 with hardcoded rate**, **0 with hardcoded rate_text**, 38 with brand suggestions (informational).
+- **Filled-fixture PDF render** (15 rows, NO overrides, seeded via `app/_p13_preview.html`):
+  - 8 pages, 314 KB
+  - Vision QC pages 6 + 7: every spec card pill reads exactly `"Set rate"` (not "Included", not a hardcoded ₹ amount, not blank)
+  - Zero brand badges rendered on PDF (suggestions stay in edit panel only) ✅
+- **Renderer JS:** `node -c app/quote.js` → SYNTAX_OK ✅
+- **DOM grep confirmation:** 15 "Set rate" matches, 0 ">Included<" matches.
+
+### Audit-vs-source-of-truth (P1.2 methodology footnote)
+P1.2's audit (referenced in `CATALOG_AUDIT_2026-04-28.md`) was anchored to `extracted/platinum/raw_lineitems.json` — a Phase 1 Platinum PPT extract. The catalog actually builds from `src_docx/Customer_Facing_Quote_Sheet.docx` — the Phase 2 canonical. The two disagree on values (e.g. Steel cap ₹55,000/MT vs PPT noise; Main Gate ₹2,50,000 vs DOCX ₹1,00,000). **P1.3 makes the disagreement moot** — neither source's prices live in the catalog any more. The methodology lesson (Lesson #14) stands: future audits must confirm reference == build pipeline input.
+
+### `general.main_gate` deferred contradiction — RESOLVED
+P1.2 had this on the deferred list (₹1,00,000 source vs ₹2,50,000 override). In P1.3 the contradiction evaporates: both values are deleted from the catalog. Sales sets the gate price per customer like every other line item.
+
+### Files changed in P1.3
+- `scripts/build_catalog.py` — OVERRIDES stripped; parse_rate output discarded; schema string updated
+- `scripts/build_quote_js.py` — `renderSpecList` and `renderSpecPages` updated; CSS for `.rate-pill.set`, `.spec-card.unedited`, `.suggest`, `.set-rate`
+- `app/index.html` — added `.spec .meta .suggest, .spec .rate .set-rate` styles
+- `app/quote.js` — regenerated from `build_quote_js.py`
+- `catalog/catalog.json` — regenerated; **0 items with hardcoded prices** (was 27 in P1.2)
+- `tests/test_catalog_fidelity.py` — fully rewritten as inverted negative test
+- `app/_p13_preview.html` — verification seed (committed for future P1.x reuse)
+
+### Lessons (queued for `/opt/openclaw/workspace/zuildup/LESSONS_LEARNED.md`, after rebuild)
+- **#13 — Catalog as Template, Not Truth:** spec catalogs are dictionaries, not authoritative pricing. Pricing is per-customer business logic, not data.
+- **#14 — Audit Reference Must Match Build Pipeline Input:** a fidelity audit anchored to the wrong file produces real-feeling but invalid findings.
+- **#15 — Subtractive Engineering > Additive:** when the right architecture is "less, not more", delete confidently. P1.2 wasn't waste — it proved the override mechanism end-to-end. P1.3 just shifted where the values live.
+- **#16 — Distinguish namespace RO from filesystem RO:** `mount | grep ' / '` shows BOTH the namespace flag AND the underlying device flag. Sandbox bind-mounts of `/` as ro are NOT a wedged FS — writes inside `/opt/openclaw/...` work fine.
+- **#17 — Verify the actual blocker before halting:** discipline says stop on suspected FS issues, but a 30-second `touch /opt/openclaw/workspace/...test_write && rm` would have shown writes work. **Stop → verify → escalate-or-proceed.** Stop-without-verify burns a coordination cycle.
+

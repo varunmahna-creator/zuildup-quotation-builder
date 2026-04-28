@@ -422,12 +422,22 @@ async function bootForm() {
       if (!row._custom && !item) return;
       const o = row.override || {};
       const label = o.label ?? (item ? item.label : (row.id || 'Untitled'));
-      const rate  = (o.rate !== undefined) ? o.rate : (item ? item.rate : 0);
-      const rateText = o.rate_text ?? (item ? item.rate_text : '') ?? '';
-      const brands = o.brands ?? (item ? item.brands : []) ?? [];
+      // P1.3: rate / brands are AUTHORITATIVE only when set in override. Catalog values
+      // are templates/suggestions and must not surface as committed values in the spec list.
+      const rate  = (o.rate !== undefined) ? o.rate : 0;
+      const rateText = (o.rate_text !== undefined) ? o.rate_text : '';
+      const overrideBrands = (o.brands !== undefined) ? o.brands : null;
+      const brands = overrideBrands ?? [];
+      const suggestedBrands = (item && Array.isArray(item.brands)) ? item.brands : [];
       const desc  = o.description ?? (item ? item.description : '');
       const cat   = item ? item.category_label : (o.category_label || 'Custom');
       const loc   = o.location || '';
+      const brandMeta = brands.length
+        ? escapeHtml(brands.join(' · '))
+        : (suggestedBrands.length ? `<em class="suggest">suggested: ${escapeHtml(suggestedBrands.join(' · '))}</em>` : '<em class="suggest">brands — set in edit</em>');
+      const rateMeta = (rateText && rateText.trim())
+        ? escapeHtml(rateText)
+        : (rate > 0 ? fmtINR(rate) : '<em class="set-rate">Set rate</em>');
 
       const el = document.createElement('div');
       el.className = 'spec' + (row._custom ? ' custom' : '');
@@ -437,9 +447,9 @@ async function bootForm() {
         <span class="grip" title="drag to reorder">≡</span>
         <span class="head">
           <span class="label">${escapeHtml(label)}${loc ? ' <span class="loc">— '+escapeHtml(loc)+'</span>' : ''}</span>
-          <span class="meta">${escapeHtml(cat)} · ${brands.length ? escapeHtml(brands.join(' · ')) : '—'}</span>
+          <span class="meta">${escapeHtml(cat)} · ${brandMeta}</span>
         </span>
-        <span class="rate">${rateText || (rate>0 ? fmtINR(rate) : '—')}</span>
+        <span class="rate">${rateMeta}</span>
         <span class="row-actions">
           <span class="dup" title="duplicate row" data-act="dup">⎘</span>
           <span class="x" title="remove row" data-act="remove">×</span>
@@ -809,6 +819,10 @@ function quoteCss() {
   .spec-card .badge { background: rgba(10,31,68,0.05); color: var(--navy); padding: 2px 8px; border-radius: 999px; font-size: 9.5px; font-weight: 500; }
   .spec-card .rate-pill { align-self: flex-start; background: var(--navy); color: white; padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 600; }
   .spec-card .rate-pill.descr { background: rgba(10,31,68,0.06); color: var(--navy); }
+  /* P1.3: open-field placeholder for rows where sales has not entered a rate yet. */
+  .spec-card .rate-pill.set { background: rgba(10,31,68,0.04); color: rgba(10,31,68,0.55); font-style: italic; font-weight: 500; border: 1px dashed rgba(10,31,68,0.20); }
+  .spec-card.unedited { background: rgba(10,31,68,0.015); border-style: dashed; }
+  .spec-card.unedited .desc { color: rgba(10,31,68,0.55); font-style: italic; }
   .spec-card .desc { color: var(--ink); font-size: 10.5px; line-height: 1.5; margin: 2px 0 0; white-space: pre-line; }
 
   /* Notes page */
@@ -1013,16 +1027,18 @@ function renderSpecPages(state, sortedCats, byCat) {
     const cardArr = byCat[cat].map(({row, item: it}) => {
       const o = row.override || {};
       const lab = o.label ?? (it ? it.label : '');
-      const rate = (o.rate !== undefined) ? o.rate : (it ? it.rate : 0);
-      const rateText = o.rate_text ?? (it ? it.rate_text : '');
-      const brands = o.brands ?? (it ? it.brands : []) ?? [];
+      // P1.3: pricing/brand authoritative ONLY when set in per-row override.
+      // Catalog values are template hints — they do not surface on the rendered PDF unless sales has accepted them.
+      const rate = (o.rate !== undefined) ? o.rate : 0;
+      const rateText = (o.rate_text !== undefined) ? o.rate_text : '';
+      const brands = (o.brands !== undefined) ? (o.brands || []) : [];
       const desc = o.description ?? (it ? it.description : '');
       const loc = o.location || '';
       const ratePill = (rateText && rateText.trim())
         ? `<span class="rate-pill">${escapeHtml(rateText)}</span>`
-        : (rate > 0 ? `<span class="rate-pill">${fmtINR(rate)}</span>` : `<span class="rate-pill descr">Included</span>`);
+        : (rate > 0 ? `<span class="rate-pill">${fmtINR(rate)}</span>` : `<span class="rate-pill set">Set rate</span>`);
       return `
-        <div class="spec-card">
+        <div class="spec-card${(rateText || rate > 0) ? '' : ' unedited'}">
           <h3 class="lab">${escapeHtml(lab)}${loc ? ' <span class="loc">— '+escapeHtml(loc)+'</span>' : ''}</h3>
           ${brands.length ? `<div class="badges">${brands.map(b => `<span class="badge">${escapeHtml(b)}</span>`).join('')}</div>` : ''}
           ${ratePill}

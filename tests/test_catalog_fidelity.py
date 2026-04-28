@@ -1,86 +1,83 @@
-"""P1.2 — Catalog Fidelity Regression Guard.
+"""P1.3 — Inverted Catalog Fidelity Guard (subtractive pivot).
 
-For every catalog item that the audit (CATALOG_AUDIT_2026-04-28.md) flagged as
-missing a price cap, assert the catalog now exposes the cap via rate_text.
+The architectural rule (Varun, 2026-04-28): "No spec cost or description should be
+hardcoded." The catalog is a TEMPLATE/DICTIONARY (item set, categories, canonical
+labels, suggested brands as hints) — pricing is per-quote, set by sales via
+`state.rows[].override`.
 
-This is the "negative-test bidirectionally" pattern that should have been in place
-from day one — same pattern as the data-URL inlining negative test in P1.1.
+This test enforces that rule as a regression guard: every catalog item must have
+`rate == 0` and `rate_text == ""`. If a future change accidentally re-introduces
+hardcoded pricing in the catalog (via OVERRIDES, parse_rate output, etc.), this
+test fails loudly.
+
+History:
+  - P1.2 introduced an *additive* fidelity test that asserted 24 audit items had
+    cap-bearing text in `rate_text + description`. That test was correct under
+    the catalog-as-truth model.
+  - P1.3 deleted that model. Catalog = structure, quote = values. So this test
+    is the *negative* of P1.2's: zero items may have hardcoded prices.
+
+Run: `python3 tests/test_catalog_fidelity.py` from repo root.
 """
-import json, re, sys
+import json
+import sys
 from pathlib import Path
 
 QB = Path(__file__).parent.parent
 CAT = json.load(open(QB / "catalog/catalog.json"))
-items_by_id = {i["id"]: i for i in CAT["items"]}
-
-# Audit's 24 cap-stripped items — must each now have rate_text and a sane rate.
-AUDIT_REQUIRED = {
-    "structure.steel":                      ("55000", "Rathi"),
-    "structure.cement":                     ("380",   "Ultratech"),
-    "structure.bricks":                     ("7",     "brick"),
-    "bathroom.shower_partition_cubicles":   ("10,000", "bathroom"),
-    "bathroom.bathroom_accessories":        ("12,000", "bathroom"),
-    "bathroom.bathroom_flooring":           ("40",    "sq.ft."),
-    "bathroom.cpvc_fittings":               ("20,000", "bathroom"),
-    "kitchen.cpvc_fittings":                ("20,000", "bathroom"),
-    "kitchen.modular_kitchen":              ("2,50,000", "kitchen"),
-    "doors_windows.main_entry_door":        ("20,000", "door"),
-    "doors_windows.main_door_lock":         ("12,000", "Godrej"),
-    "doors_windows.terrace_door":           ("26,000", "Tata"),
-    "flooring.floor_flooring":              ("250",   "sq.ft."),
-    "flooring.balcony_flooring":            ("100",   "sq.ft."),
-    "flooring.terrace_flooring":            ("40",    "sq.ft."),
-    "flooring.lift_fa_ade":                 ("100",   "sq.ft."),
-    "electrical.switch_sockets":            ("50,000", "floor"),
-    "electrical.ceiling_fans":              ("1,800", "fan"),
-    "electrical.pillar_fancy_light":        ("2,500", "light"),
-    "water.overhead_water_tank":            ("8,500", "1000"),
-    "water.water_motor":                    ("8,500", "Crompton"),
-    "safety.cctv_camera":                   ("50,000", "cap"),
-    "safety.video_door_phone":              ("50,000", "cap"),
-    "general.staircase_balcony_railing":    ("400",   "sq.ft."),
-}
+items = CAT["items"]
 
 failures = []
-for item_id, (price_substring, marker_substring) in AUDIT_REQUIRED.items():
-    item = items_by_id.get(item_id)
-    if not item:
-        failures.append(f"MISSING: {item_id}")
-        continue
-    rate_text = item.get("rate_text", "") or ""
-    rate = item.get("rate", 0)
-    desc = item.get("description", "") or ""
-    blob = (rate_text + " " + desc).lower()
-    if not rate_text:
-        failures.append(f"NO rate_text: {item_id}")
-        continue
-    if rate == 0:
-        failures.append(f"NO rate: {item_id}")
-        continue
-    # Check the price substring is in rate_text or description (digits-only compare too)
-    digits_blob = re.sub(r"[^\d]", "", rate_text + " " + desc)
-    digits_expected = re.sub(r"[^\d]", "", price_substring)
-    if digits_expected not in digits_blob:
-        failures.append(
-            f"PRICE_MISSING: {item_id} expected '{price_substring}' not in rate_text='{rate_text}' / desc='{desc[:80]}'"
-        )
-        continue
-    # Check the marker word is somewhere in rate_text or description
-    if marker_substring.lower() not in blob:
-        failures.append(
-            f"MARKER_MISSING: {item_id} expected '{marker_substring}' not in rate_text+desc"
-        )
 
-# Item count check
-total = len(CAT["items"])
-with_rate_text = sum(1 for i in CAT["items"] if i.get("rate_text"))
-print(f"Catalog: {total} items, {with_rate_text} with rate_text.")
-print(f"Audit required: {len(AUDIT_REQUIRED)} items checked.")
+# 1. Zero items should have a non-zero rate.
+items_with_rate = [i for i in items if i.get("rate", 0) not in (0, None)]
+if items_with_rate:
+    failures.append(
+        f"HARDCODED_PRICE: {len(items_with_rate)} item(s) have non-zero `rate`. "
+        f"Catalog must be template-only; pricing belongs in per-row overrides. "
+        f"Offenders (first 5): " + ", ".join(i["id"] for i in items_with_rate[:5])
+    )
+
+# 2. Zero items should have a non-empty rate_text.
+items_with_rate_text = [i for i in items if (i.get("rate_text") or "").strip()]
+if items_with_rate_text:
+    failures.append(
+        f"HARDCODED_PRICE_TEXT: {len(items_with_rate_text)} item(s) have non-empty `rate_text`. "
+        f"Catalog must be template-only; rate_text belongs in per-row overrides. "
+        f"Offenders (first 5): " + ", ".join(
+            f"{i['id']}='{(i.get('rate_text') or '')[:40]}'" for i in items_with_rate_text[:5]
+        )
+    )
+
+# 3. Every item must have stable structural fields (id, category, label, scope, description).
+for it in items:
+    for fld in ("id", "category", "category_label", "label", "scope"):
+        if not it.get(fld):
+            failures.append(f"MISSING_STRUCTURE: {it.get('id', '???')} missing required field '{fld}'")
+
+# 4. Schema must declare the template/dictionary intent.
+schema_decl = (CAT.get("_meta", {}).get("schema") or "").lower()
+if "template" not in schema_decl and "dictionary" not in schema_decl:
+    failures.append(
+        f"SCHEMA_DRIFT: catalog._meta.schema does not declare template/dictionary intent. "
+        f"Got: '{CAT['_meta'].get('schema')}'"
+    )
+
+# Summary
+total = len(items)
+items_with_brand_suggestions = sum(1 for i in items if i.get("brands"))
+print(f"Catalog: {total} items.")
+print(f"  items with hardcoded rate>0 : {len(items_with_rate)}  (target: 0)")
+print(f"  items with hardcoded rate_text: {len(items_with_rate_text)}  (target: 0)")
+print(f"  items with brand suggestions : {items_with_brand_suggestions}  (informational; surfaced as hints in edit panel)")
+print(f"  schema declared              : {CAT['_meta'].get('schema')!r}")
+print(f"")
 print(f"Failures: {len(failures)}")
 for f in failures:
     print(f"  - {f}")
 
 if failures:
     sys.exit(1)
-print("PASS ✅")
+
+print("PASS \u2705 — catalog is template-only; all pricing flows from per-row overrides.")
 sys.exit(0)

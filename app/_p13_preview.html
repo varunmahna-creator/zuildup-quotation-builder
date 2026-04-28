@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>P1.3 Preview</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #F9FAF7; }
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+  body { font-family: 'Inter', system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<script>
+// Seed BEFORE quote.js runs.
+const SEED = {
+  customer: { name: "Ms. Rajkumari Kamboj (P1.3 Test)", address: "Sector 56, Gurgaon", phone: "+91 99999 99999" },
+  build: { mode: "stilt", plotL: 30, plotB: 50, cov: 0.6, floors: 3, liftEnabled: false },
+  pricing: { A: 3250, B: 1625, C: 1250, D: 1000, structRate: 1500 },
+  scope: "full",
+  quoteId: "p13-test",
+  createdAt: new Date().toISOString(),
+  rows: [
+    { id: "structure.steel" },
+    { id: "structure.cement" },
+    { id: "structure.bricks" },
+    { id: "bathroom.sanitary_ware_and_cp_fitting" },
+    { id: "bathroom.shower_partition_cubicles" },
+    { id: "bathroom.bathroom_accessories" },
+    { id: "kitchen.modular_kitchen" },
+    { id: "kitchen.cpvc_fittings" },
+    { id: "doors_windows.main_entry_door" },
+    { id: "flooring.floor_flooring" },
+    { id: "electrical.switch_sockets" },
+    { id: "electrical.ceiling_fans" },
+    { id: "safety.cctv_camera" },
+    { id: "general.main_gate" },
+    { id: "general.lift_machine" }
+  ]
+};
+localStorage.setItem('zuildup.quote.v2', JSON.stringify(SEED));
+</script>
+<div id="preview-root"></div>
+<script src="/app/quote.js"></script>
+</body>
+</html>
