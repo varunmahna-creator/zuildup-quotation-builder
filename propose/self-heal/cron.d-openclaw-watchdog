@@ -1,0 +1,5 @@
+# /etc/cron.d/openclaw-watchdog
+# Mode: 0644, owned by root:root.
+# Runs every 5 minutes. Logs to /var/log/openclaw-watchdog.log.
+
+*/5 * * * * root /usr/local/bin/openclaw-watchdog.sh

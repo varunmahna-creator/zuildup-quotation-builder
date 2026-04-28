@@ -408,3 +408,96 @@ All in `.preview-checks/` (gitignored):
 ---
 
 **End of handoff doc.** Update this file at every meaningful state change so future sessions can resume cleanly.
+
+---
+
+## Definitive 10-point list — Varun's Phase 1 live test feedback (audit-confirmed by Dhurandhar, 2026-04-28)
+
+| # | Original feedback | Audit Status | Notes |
+|---|---|---|---|
+| 1 | Drop the package selector entirely; rate/sqft is manually entered per quote | ✅ Shipped | P0.1 / `9bf68ce` |
+| 2 | Cover: bigger logo, remove per-sqft, date below address, fix footer alignment, correct contact info from zuildup.com | ✅ All sub-items verified in P1.1 | 2a bigger logo ✅ verified · 2b About H1 JSON-wired ✅ FIXED in P1.1 (was hardcoded — pre-existing P0.3 regression caught during P1.1) · 2c per-sqft removed ✅ · 2d date below address ✅ + footer alignment ✅ verified · 2e Warranty descriptions ✅ FIXED in P1.1 (was term-only — pre-existing P0.3 regression caught during P1.1) · 2f contact info ✅ |
+| 3 | Add an "About ZuildUp" page (the marketing/brand page) — second page of the quote | ✅ Shipped | P0.2 / `4655f69` + P0.3 consolidated to 1 page / `5d5043e` |
+| 4 | Port the canonical cost calculator from git; show area + cost as separate blocks; add notes section (hide if empty) | ✅ Shipped | P0.2 + P0.2-fix `87dd329` (GST/liaison removed) |
+| 5 | Keep card-style for specs (NOT table); copy descriptions from the customer-facing quote sheet; eliminate blank-space pagination | ✅ All sub-items verified in P1.1 | Card-style ✅ + descriptions ✅ + pagination orphan-free verified on 65-row stress fixture using `<table><thead>` (display:table-header-group) so heading repeats on every continuation page per Chrome --print-to-pdf spec |
+| 6 | Spec edit box collapses too quickly — UX fix | ✅ Shipped + code-level verified in P1.1 | `toggleEdit` opens only if not already editing; closes only on Done click or Escape key; no `document.click` blur listener exists. Click-outside leaves editor open. (Headed-browser test deferred — not feasible in current environment.) |
+| 7 | Add custom-row functionality (bathtub, walk-in wardrobe, lawn etc.) | ✅ Shipped + verified | Tested in fixture: Free-standing Bathtub, Walk-in Wardrobe |
+| 8 | Same spec row multiple times with different specs (Flooring × 3 rooms with different materials) — add Location/Room field | ✅ Shipped + verified | Tested in fixture: 3× Flooring rows with locations |
+| 9 | Use quote-sheet rates as base spec sheet (no tiers) | ✅ Shipped | P0.1 catalog v2 (87 items, single rate field) |
+| 10 | Cover image not embedding in downloaded PDF — bug fix | 🟢 Architecturally moot per Varun (2026-04-28); the broader PDF asset-inlining fix landed in tag `phase2-step-6-cover-and-ux` | The lookbook bg-image was Phase 1 mock only; Phase 2 cover is SVG-on-gradient (no raster). However the architectural cause (relative URLs broken when HTML rendered from `/tmp/`) is fixed defensively in P1.1 via server-side data-URL inlining. |
+| Bonus | Push the code to varunmahna-creator GitHub | ✅ Shipped | Step 0 — repo `zuildup-quotation-builder`, all tags pushed |
+
+### P1.1 / phase2-step-6 scope (in progress)
+- Cover image PDF embed bug — architectural fix via data-URL inlining helper in `app/server.js` (defense for any future asset addition)
+- Verify cover logo size (point 2a)
+- Verify cover footer alignment (point 2d)
+- Stress test pagination (point 5c) — 50+ spec rows, long descriptions, custom rows
+- Manual UI test for spec edit box stickiness (point 6)
+
+---
+
+## P1.1 / phase2-step-6-pdf-inlining-pagination — outcomes (2026-04-28)
+
+**Tag:** `phase2-step-6-pdf-inlining-pagination`
+**Status:** ✅ All 5 sub-items addressed; bonus 2× P0.3 regressions also fixed.
+
+### Architectural fix — PDF asset inlining (`app/server.js`)
+- `inlineLocalAssets(html, baseDir)` walks the rendered HTML and replaces every relative `src=`, `poster=`, `data-src=`, `<link rel=stylesheet href=>`, and CSS `url(...)` token with a `data:` URL by reading from disk under `ROOT`.
+- External `https://` references (e.g. Google Fonts) are left alone.
+- `<script>` tags are stripped (the iframe DOM already reflects post-script state; re-execution would mutate it again).
+- `injectImageLoadWait()` waits for all `<img>` to load + `document.fonts.ready` before signaling print-ready (defensive — Chrome still respects `--virtual-time-budget=15000`).
+- `--virtual-time-budget` bumped 8s → 15s.
+- **Defense-in-depth:** any future asset addition (cover hero, badges, brand logos) automatically inlines.
+
+### Generator changes (`scripts/build_quote_js.py`) — P1.1 scope
+- **Spec pagination orphan fix (point 5c):** `.cat-section` is now rendered as `<table>` with `<thead>` containing the H2 heading and `<tbody>` containing the cards grid. `display: table-header-group` causes Chrome to repeat the heading on every continuation page when a category overflows. Verified on 65-row stress fixture: every continuation page carries its category heading.
+- This is the documented Chrome `--print-to-pdf` pattern for repeating headers across page breaks. Cleaner than per-category page-break (which wastes paper) and cleaner than `keep-together` (which only hides orphans for small categories).
+
+### Bonus fixes (P0.3 regressions discovered during P1.1)
+These were not in original P1.1 scope. They were caught while inspecting the About page in QC.
+
+1. **About hero H1** now reads from `about.hero.headline` (was hardcoded as "Tech-enabled construction, delivered with 24+ years of excellence."). Now renders **"Tech-Enabled Construction. Quality Assured."** per spec.
+2. **Hero subline** added below H1 (from `about.hero.subline`). Was completely missing.
+3. **Warranty cards** now show `term` AND `description` (was term-only). Each card: title / term / description.
+
+### QC artifacts (in `.preview-checks/`)
+- `p11_empty.pdf` (442 KB, 13 pages) — empty-state with default 87 catalog rows
+- `p11_filled_v2.pdf` / `p11_filled_v3.pdf` (267 KB, 9 pages) — 26-row realistic fixture
+- `p11_stress_v3.pdf` (396 KB, 13 pages) — 65-row stress fixture, headings repeat correctly
+- `p11_negtest.pdf` (75 KB, 1 page) — verifies the data-URL inliner against `<img src>`, CSS `url()`, and `<link href>`
+
+### Page count summary
+
+| Fixture | Pre-P1.1 | Post-P1.1 | Target | Status |
+|---|---|---|---|---|
+| Empty (87 default rows) | 13 | 13 | ≤14 | ✅ |
+| Filled (26 curated rows) | 9 | 9 | =9 | ✅ |
+| Stress (65 rows) | 12 (with orphans) | 13 (no orphans) | ≤13 | ✅ |
+
+### Sub-item verification
+
+| # | Item | Status | Evidence |
+|---|---|---|---|
+| 10 | Cover image PDF embed bug | ✅ Architecturally fixed | `p11_negtest.pdf`: 5 inlined assets (SVG + PNG + CSS bg), all rendering. Vision QC confirmed visible on rendered page. |
+| 2a | Cover logo size | ✅ Verified | Vision QC: "professional and balanced, not cramped" |
+| 2d | Cover footer alignment | ✅ Verified | Vision QC: bottom-left badge + bottom-right Quote ID "vertically aligned at approximately the same baseline" |
+| 5c | Spec pagination | ✅ Fixed (heading repeats) | Vision QC on 65-row stress fixture: pages 2/3/4 each carry the continuing category heading at top |
+| 6 | Spec edit-box stickiness | ✅ Code-level verified | `toggleEdit` opens only if not already editing; closes only on Done click or Escape key; no click-outside listener exists. UI matches spec. |
+
+### Bonus item verification (P0.3 regressions)
+
+| # | Item | Status | Evidence |
+|---|---|---|---|
+| 2b | About H1 JSON-wired | ✅ FIXED | Vision QC on filled-fixture About page: H1 reads "Tech-Enabled Construction. Quality Assured." |
+| 2e | Warranty descriptions | ✅ FIXED | Vision QC: "Structure Warranty / Up to 15 Years / Coverage on structural integrity" — all 9 cards show title+term+description |
+
+### Self-heal toolkit
+**Status:** Staged in `propose/self-heal/` (not deployed). See that directory's README for sudoers ask + cron entry text.
+
+### Phantom-FS workarounds (operational hazard, kept stale dentry caches even post-disk-resize)
+- Always use git as ground truth before destructive `cat | mv` patterns
+- `find -path` works when `ls` doesn't
+- `cat | python3 -c '...'` works when `python3 open()` directly fails
+- Sleep + retry clears most wedges (3-15 seconds)
+- `Write` tool succeeds when bash `cp` fails on identical path
+- See `LESSONS_LEARNED.md` lesson #8 expansion for full pattern catalog

@@ -777,6 +777,10 @@ function quoteCss() {
   .warranty-grid .w { padding: 6px 9px; background: white; border-radius: 5px; border: 1px solid var(--rule); }
   .warranty-grid .w .lab { font-size: 10.5px; font-weight: 600; color: var(--navy); display: block; line-height: 1.25; }
   .warranty-grid .w .term { font-size: 9.5px; color: var(--gold); font-weight: 700; letter-spacing: .04em; margin-top: 2px; display: block; }
+  .warranty-grid .w .desc { font-size: 9.5px; color: var(--muted); margin-top: 2px; display: block; line-height: 1.35; }
+  .hero-subline { color: var(--muted); font-size: 12px; line-height: 1.55; margin: 4px 0 8mm; max-width: 165mm; }
+  /* P1.1: heading repeat across page breaks now handled by <thead>; keep-together remains as legacy guard */
+  .cat-section .keep-together { break-inside: avoid; page-break-inside: avoid; }
 
   /* Area / Cost tables */
   .calc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6mm; }
@@ -803,7 +807,11 @@ function quoteCss() {
   .params-row b { color: var(--ink); font-weight: 600; margin-right: 4px; }
 
   /* Spec cards */
-  .cat-section { margin-bottom: 7mm; break-inside: auto; }
+  /* Spec category — uses <table><thead> so the heading repeats on every page Chrome paginates onto. */
+  table.cat-section { width: 100%; margin-bottom: 7mm; border-collapse: collapse; }
+  table.cat-section thead { display: table-header-group; }
+  table.cat-section thead th { padding: 0 0 4mm; text-align: left; font-weight: normal; }
+  table.cat-section tbody td { padding: 0; }
   .cat-section h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 18px; color: var(--navy); margin: 0 0 4mm; padding-bottom: 6px; border-bottom: 1px solid var(--rule); break-after: avoid; }
   .cat-section h2 .count { font-size: 11px; color: var(--muted); font-weight: 400; font-family: 'Inter', sans-serif; margin-left: 8px; }
   .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -888,7 +896,8 @@ function renderAboutPage(state, about) {
     <div class="breadcrumb"><span class="current">About ZuildUp</span></div>
   </div>
   <div class="eyebrow">Why ZuildUp</div>
-  <h1 class="section">Tech-enabled construction, delivered with 24+ years of excellence.</h1>
+  <h1 class="section">${escapeHtml(about.hero?.headline || 'Tech-Enabled Construction. Quality Assured.')}</h1>
+  ${about.hero?.subline ? `<p class="hero-subline">${escapeHtml(about.hero.subline)}</p>` : ''}
 
   <div class="about-grid">
     ${vm.map(v => `<div class="about-block"><h3>${escapeHtml(v.title)}</h3><p>${escapeHtml(v.body)}</p></div>`).join('')}
@@ -911,7 +920,7 @@ function renderAboutPage(state, about) {
 
   <div class="eyebrow" style="margin-top:5mm;">Warranty Promise</div>
   <div class="warranty-grid">
-    ${warr.map(w => `<div class="w"><span class="lab">${escapeHtml(w.title)}</span><span class="term">${escapeHtml(w.term || '')}</span></div>`).join('')}
+    ${warr.map(w => `<div class="w"><span class="lab">${escapeHtml(w.title)}</span><span class="term">${escapeHtml(w.term || '')}</span>${w.description ? `<span class="desc">${escapeHtml(w.description)}</span>` : ''}</div>`).join('')}
   </div>
 
   <div class="pg-foot"><span>About ZuildUp</span><span>+91 92172 63051 · info@zuildup.com · www.zuildup.com</span></div>
@@ -1018,7 +1027,7 @@ function renderSpecPages(state, sortedCats, byCat) {
   }
   // Group all categories into a single continuous flow page (cards flow naturally with break-inside:avoid)
   const sectionsHtml = sortedCats.map(cat => {
-    const cards = byCat[cat].map(({row, item: it}) => {
+    const cardArr = byCat[cat].map(({row, item: it}) => {
       const o = row.override || {};
       const lab = o.label ?? (it ? it.label : '');
       const rate = (o.rate !== undefined) ? o.rate : (it ? it.rate : 0);
@@ -1036,12 +1045,20 @@ function renderSpecPages(state, sortedCats, byCat) {
           ${ratePill}
           <p class="desc">${escapeHtml(desc)}</p>
         </div>`;
-    }).join('');
+    });
     return `
-      <div class="cat-section">
-        <h2>${escapeHtml(cat)}<span class="count">${byCat[cat].length} items</span></h2>
-        <div class="spec-grid">${cards}</div>
-      </div>`;
+      <table class="cat-section">
+        <thead>
+          <tr><th>
+            <h2>${escapeHtml(cat)}<span class="count">${byCat[cat].length} items</span></h2>
+          </th></tr>
+        </thead>
+        <tbody>
+          <tr><td>
+            <div class="spec-grid">${cardArr.join('')}</div>
+          </td></tr>
+        </tbody>
+      </table>`;
   }).join('');
   return `
 <section class="pg">

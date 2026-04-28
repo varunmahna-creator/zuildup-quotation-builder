@@ -1,0 +1,10 @@
+# /etc/sudoers.d/openclaw-selfheal
+# Mode: 0440 (chmod 440), owned by root:root.
+# Validate before installing:
+#   sudo visudo -c -f /etc/sudoers.d/openclaw-selfheal
+#
+# Narrow privilege whitelist — script paths only, NOT raw mount/find/journalctl.
+# This keeps the privilege surface tiny.
+
+varunmahna ALL=(root) NOPASSWD: /usr/local/bin/openclaw-disk-heal.sh
+varunmahna ALL=(root) NOPASSWD: /usr/local/bin/openclaw-watchdog.sh
