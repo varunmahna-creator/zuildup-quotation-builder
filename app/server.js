@@ -329,13 +329,14 @@ async function renderPdf(html, cb) {
 
   fs.writeFileSync(tmpHtml, final);
   const args = [
-    '--headless','--no-sandbox','--disable-gpu','--hide-scrollbars',
+    '--headless=new','--no-sandbox','--disable-dev-shm-usage','--disable-gpu','--hide-scrollbars',
     '--print-to-pdf-no-header',
     `--print-to-pdf=${tmpPdf}`,
     '--virtual-time-budget=15000',
     `file://${tmpHtml}`,
   ];
-  const p = spawn('google-chrome', args, { stdio: ['ignore','ignore','pipe'] });
+  const CHROME = process.env.CHROME_BIN || 'google-chrome';
+  const p = spawn(CHROME, args, { stdio: ['ignore','ignore','pipe'] });
   let stderr = '';
   p.stderr.on('data', d => stderr += d.toString());
   p.on('close', code => {
@@ -351,9 +352,101 @@ async function renderPdf(html, cb) {
   });
 }
 
+// --- Production basic auth gate ---------------------------------------------
+// Activated only when AUTH_USER / AUTH_PASS env vars are both set.
+// Single shared credential — sales team uses one login. /feedback is also gated.
+function requireAuth(req, res) {
+  const user = process.env.AUTH_USER;
+  const pass = process.env.AUTH_PASS;
+  if (!user || !pass) return true; // dev mode
+  const header = req.headers['authorization'] || '';
+  if (!header.startsWith('Basic ')) {
+    res.writeHead(401, {
+      'WWW-Authenticate': 'Basic realm="ZuildUp"',
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
+    res.end('Authentication required');
+    return false;
+  }
+  let decoded;
+  try { decoded = Buffer.from(header.slice(6), 'base64').toString('utf8'); }
+  catch (_) { decoded = ''; }
+  const idx = decoded.indexOf(':');
+  const u = idx >= 0 ? decoded.slice(0, idx) : '';
+  const p = idx >= 0 ? decoded.slice(idx + 1) : '';
+  if (u !== user || p !== pass) {
+    res.writeHead(401, {
+      'WWW-Authenticate': 'Basic realm="ZuildUp"',
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
+    res.end('Invalid credentials');
+    return false;
+  }
+  return true;
+}
+
+// --- /feedback route -------------------------------------------------------
+// Forwards a sales-side comment + redacted state summary to a Discord webhook
+// configured via env var FEEDBACK_WEBHOOK. Returns 503 if not configured.
+async function handleFeedback(req, res) {
+  let chunks = [];
+  for await (const c of req) chunks.push(c);
+  let body;
+  try { body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'); }
+  catch (_) { body = {}; }
+  const webhook = process.env.FEEDBACK_WEBHOOK;
+  if (!webhook) {
+    res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ ok: false, error: 'feedback_disabled' }));
+    return;
+  }
+  const comment = (body.comment || '').toString().slice(0, 1500);
+  const stateSummary = body.state_summary || {};
+  const pageUrl = (body.url || '').toString().slice(0, 200);
+  const summaryStr = JSON.stringify(stateSummary, null, 2).slice(0, 1400);
+  const payload = {
+    content: [
+      '**ZuildUp Quote Builder Feedback**',
+      `Time: \`${new Date().toISOString()}\``,
+      pageUrl ? `URL: ${pageUrl}` : null,
+      '',
+      '**Comment:**',
+      comment || '_(empty)_',
+      '',
+      '**State summary:**',
+      '```json',
+      summaryStr,
+      '```',
+    ].filter(Boolean).join('\n').slice(0, 1900),
+  };
+  try {
+    const resp = await fetch(webhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) throw new Error(`webhook ${resp.status}`);
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ ok: true }));
+  } catch (err) {
+    console.error('FEEDBACK FAIL:', err.message);
+    res.writeHead(502, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ ok: false, error: err.message }));
+  }
+}
+
 const server = http.createServer((req, res) => {
   const u = url.parse(req.url, true);
-  const pathname = decodeURIComponent(u.pathname);
+  const earlyPath = decodeURIComponent(u.pathname);
+  // Public health endpoint — no auth, used by Cloud Run startup probe
+  if (req.method === 'GET' && earlyPath === '/healthz') {
+    return send(res, 200, 'ok', { 'Content-Type': 'text/plain; charset=utf-8' });
+  }
+  // Production auth gate (no-op in dev when AUTH_USER/AUTH_PASS unset).
+  if (!requireAuth(req, res)) return;
+  const pathname = earlyPath;
 
   // POST /pdf  ->  body is HTML, return PDF
   // P1.6: filename via Content-Disposition.
@@ -395,6 +488,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // POST /feedback  ->  forward to Discord webhook (P-deploy)
+  if (req.method === 'POST' && pathname === '/feedback') {
+    return handleFeedback(req, res);
+  }
+
   // GET /  ->  index.html
   if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
     return serveStatic(req, res, '/app/index.html');
@@ -410,8 +508,8 @@ const server = http.createServer((req, res) => {
   send(res, 405, 'Method not allowed');
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`ZuildUp Quotation Builder listening on http://127.0.0.1:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`ZuildUp Quotation Builder listening on http://0.0.0.0:${PORT}`);
   console.log(`  ROOT = ${ROOT}`);
   console.log(`  open  http://127.0.0.1:${PORT}/`);
 });

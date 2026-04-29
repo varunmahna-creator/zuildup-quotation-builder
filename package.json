@@ -1,0 +1,16 @@
+{
+  "name": "zuildup-quotation-builder",
+  "version": "1.0.0",
+  "description": "ZuildUp internal quotation builder — single-page web app + Node PDF server.",
+  "private": true,
+  "main": "app/server.js",
+  "scripts": {
+    "start": "node app/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "sharp": "^0.33.0"
+  }
+}
