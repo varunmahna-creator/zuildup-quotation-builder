@@ -563,8 +563,68 @@ async function bootForm() {
     btn.classList.toggle('active', btn.dataset.v === state.scope);
   }
   reflectModeUi(state.build.buildType);
+  // P1.7: applyValidation defined just below — call after first paint so initial state is reflected.
+  setTimeout(() => { try { applyValidation(); } catch(_) {} }, 0);
 
-  function flush() { saveState(state); renderSpecList(); }
+  // ---- P1.7: field validation + business rules ----
+  function applyValidation() {
+    const rules = [];
+    // Coverage: 0 < x ≤ 100
+    const cov = state.build.coverage;
+    rules.push({ id: 'f-coverage', valid: cov > 0 && cov <= 100,
+      hint: cov <= 0 ? 'must be > 0%' : (cov > 100 ? 'max 100%' : '') });
+    // costPerSqft (full-build modes only)
+    const isStruct = state.build.buildType === 'structure' || state.scope === 'structure_only';
+    if (!isStruct) {
+      const v = state.pricing.costPerSqft;
+      rules.push({ id: 'f-cost-sqft', valid: typeof v === 'number' && v > 0,
+        hint: 'Required (₹ per sq ft)' });
+    } else {
+      rules.push({ id: 'f-cost-sqft', valid: true, hint: '' });
+    }
+    // structureRate (structure-only mode)
+    if (isStruct) {
+      const v = state.pricing.structureRate;
+      rules.push({ id: 'f-struct-rate', valid: typeof v === 'number' && v > 0,
+        hint: 'Required (₹ per sq ft)' });
+    } else {
+      rules.push({ id: 'f-struct-rate', valid: true, hint: '' });
+    }
+    for (const r of rules) {
+      const el = document.getElementById(r.id);
+      if (!el) continue;
+      el.classList.toggle('invalid', !r.valid);
+      // Manage hint span (insert/remove a sibling .qb-hint).
+      let hint = el.parentElement.querySelector('.qb-hint');
+      if (!r.valid && r.hint) {
+        if (!hint) {
+          hint = document.createElement('span');
+          hint.className = 'qb-hint';
+          el.parentElement.appendChild(hint);
+        }
+        hint.textContent = r.hint;
+        hint.style.display = '';
+      } else if (hint) {
+        hint.style.display = 'none';
+        hint.textContent = '';
+      }
+    }
+    // Empty rows → disable Download PDF.
+    const dlBtn = document.getElementById('dl');
+    if (dlBtn) {
+      dlBtn.disabled = state.rows.length === 0;
+      dlBtn.title = state.rows.length === 0
+        ? 'Add at least one spec line item to download'
+        : 'Download PDF';
+    }
+    // Inline empty-state hint in spec-count area.
+    const specCount = document.getElementById('spec-count');
+    if (specCount && state.rows.length === 0) {
+      specCount.innerHTML = '0 items <span class="empty-hint">· add at least one line item to download</span>';
+    }
+  }
+
+  function flush() { saveState(state); renderSpecList(); applyValidation(); }
 
   // ---- Customer field listeners ----
   $('f-salutation').oninput = e => { state.customer.salutation = e.target.value; flush(); };
@@ -1247,7 +1307,23 @@ async function bootForm() {
 
   // ---- Download PDF ----
   // P1.6: filename via Content-Disposition (server computes from customer_last + date).
+  // P1.7: empty-row guard + no-rate confirmation modal.
   async function downloadPdf() {
+    // P1.7: refuse if zero rows (button should already be disabled, but defense in depth).
+    if (!state.rows.length) {
+      toast('Add at least one spec line item to download.', 'warn');
+      return;
+    }
+    // P1.7: warn if any row has no rate set.
+    const noRate = state.rows.filter(r => {
+      const o = r.override || {};
+      const has = (o.rate_text && o.rate_text.trim()) || (typeof o.rate === 'number' && o.rate > 0);
+      return !has;
+    }).length;
+    if (noRate > 0) {
+      const proceed = await qbConfirmNoRate(noRate);
+      if (!proceed) return;
+    }
     const btn = document.getElementById('dl');
     btn.disabled = true; btn.textContent = 'Building PDF…';
     try {
@@ -1284,7 +1360,45 @@ async function bootForm() {
       alert('PDF render error: ' + e.message);
     } finally {
       btn.disabled = false; btn.textContent = 'Download PDF';
+      // P1.7: re-evaluate disabled state (rows may have changed mid-render).
+      try { applyValidation(); } catch(_) {}
     }
+  }
+
+  // P1.7: confirmation modal — resolves true if user clicks Continue.
+  function qbConfirmNoRate(n) {
+    return new Promise(resolve => {
+      let modal = document.getElementById('qb-norate-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'qb-norate-modal';
+        modal.className = 'qb-modal';
+        modal.innerHTML = `
+          <div class="panel">
+            <header><h3>Some rows have no rate set</h3></header>
+            <div class="body">
+              <p style="margin:0 0 6px;font-size:13px;"><span id="qb-norate-n"></span> have no rate set.</p>
+              <p style="margin:0;font-size:12px;color:var(--muted);">The PDF will show "Set rate" placeholders for those rows. Continue anyway?</p>
+            </div>
+            <footer>
+              <button id="qb-norate-cancel">Cancel</button>
+              <button id="qb-norate-continue" class="btn-primary">Continue</button>
+            </footer>
+          </div>`;
+        document.body.appendChild(modal);
+      }
+      modal.querySelector('#qb-norate-n').textContent =
+        n === 1 ? '1 row has no rate set' : (n + ' rows have no rate set');
+      const cleanup = (val) => {
+        modal.classList.remove('open');
+        modal.querySelector('#qb-norate-cancel').onclick = null;
+        modal.querySelector('#qb-norate-continue').onclick = null;
+        resolve(val);
+      };
+      modal.querySelector('#qb-norate-cancel').onclick   = () => cleanup(false);
+      modal.querySelector('#qb-norate-continue').onclick = () => cleanup(true);
+      modal.classList.add('open');
+    });
   }
 
   renderSpecList();
