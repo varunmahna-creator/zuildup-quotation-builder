@@ -79,6 +79,27 @@ const defaultState = () => ({
 });
 
 function loadState() {
+  // P1.5: prefer the active named slot. Falls back to scratch state (zuildup.quote.v2)
+  // when no active id is set, or the active id points to a missing slot.
+  try {
+    const aid = localStorage.getItem('zuildup.active_quote_id');
+    if (aid) {
+      const slotRaw = localStorage.getItem('zuildup.quotes.' + aid);
+      if (slotRaw) {
+        const s = JSON.parse(slotRaw);
+        const d = defaultState();
+        return {
+          ...d, ...s,
+          customer: { ...d.customer, ...(s.customer||{}) },
+          build:    { ...d.build,    ...(s.build||{})    },
+          pricing:  { ...d.pricing,  ...(s.pricing||{})  },
+        };
+      }
+      // Stale active id — clear it.
+      localStorage.removeItem('zuildup.active_quote_id');
+    }
+  } catch (_) {}
+
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return defaultState();
@@ -95,8 +116,205 @@ function loadState() {
 }
 function saveState(s) {
   localStorage.setItem(STORE_KEY, JSON.stringify(s));
+  // P1.5: if there's an active named quote, also persist into the named slot
+  // and keep the index entry's modified_at fresh. This is what makes the
+  // toolbar "Saved at HH:MM" indicator update on every keystroke once the
+  // user has explicitly Saved (or Loaded) into a named slot. If they're in
+  // scratch mode (no active id), we keep zuildup.quote.v2 as the only copy.
+  try {
+    const aid = QuoteStorage.activeId();
+    if (aid) QuoteStorage._touch(aid, s);
+  } catch(_){}
   window.dispatchEvent(new Event('quote-state-changed'));
 }
+
+// ============================================================================
+// QuoteStorage — P1.5 named-slot persistence (multi-customer)
+// ============================================================================
+// localStorage layout:
+//   zuildup.quotes.<id>     — full state object (id is q_<ts>_<6-rand>)
+//   zuildup.quotes.index    — array [{id, name, customer_name, created_at, modified_at, row_count}]
+//   zuildup.active_quote_id — string, currently-open quote (or empty for scratch)
+//   zuildup.quote.v2        — kept for scratch state / backward-compat
+//
+// The storage layer is intentionally side-effect-free w.r.t. the global state:
+// callers pass a full state object in, get it back out. The bootForm code is
+// the only place that reconciles QuoteStorage with the in-memory `state` var.
+const QuoteStorage = {
+  IDX_KEY:    'zuildup.quotes.index',
+  ACTIVE_KEY: 'zuildup.active_quote_id',
+  PFX:        'zuildup.quotes.',
+
+  _genId() {
+    const t = Date.now().toString(36);
+    const r = Math.random().toString(36).slice(2, 8);
+    return 'q_' + t + '_' + r;
+  },
+  _readIndex() {
+    try {
+      const raw = localStorage.getItem(this.IDX_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
+  },
+  _writeIndex(arr) {
+    localStorage.setItem(this.IDX_KEY, JSON.stringify(arr));
+  },
+  _slotKey(id) { return this.PFX + id; },
+
+  /** Save state into a named slot.
+   *  - If state.quoteId already maps to an existing slot AND `name` is undefined,
+   *    overwrites in place (same id, refresh modified_at).
+   *  - Otherwise creates a new slot and returns its id.
+   *  - `name` is the human-friendly label (e.g. "Aanya — Gurgaon"). If omitted on
+   *    a brand-new save, we synthesize from customer_name + date.
+   */
+  save(state, name) {
+    const idx = this._readIndex();
+    const now = new Date().toISOString();
+    let id = (state && state.quoteId && state.quoteId.startsWith('q_')) ? state.quoteId : null;
+    let entry = id ? idx.find(e => e.id === id) : null;
+
+    // Overwrite path
+    if (entry && name === undefined) {
+      const cloned = JSON.parse(JSON.stringify(state));
+      cloned.quoteId = id;
+      cloned.modifiedAt = now;
+      localStorage.setItem(this._slotKey(id), JSON.stringify(cloned));
+      entry.modified_at  = now;
+      entry.customer_name = (cloned.customer && cloned.customer.name) || entry.customer_name || '';
+      entry.row_count    = (cloned.rows || []).length;
+      // bubble up to front
+      const others = idx.filter(e => e.id !== id);
+      this._writeIndex([entry, ...others]);
+      return id;
+    }
+
+    // Create new slot
+    id = this._genId();
+    const cloned = JSON.parse(JSON.stringify(state));
+    cloned.quoteId   = id;
+    cloned.createdAt = cloned.createdAt || now;
+    cloned.modifiedAt = now;
+    const customer_name = (cloned.customer && cloned.customer.name) || '';
+    const date_str = now.slice(0, 10);
+    const finalName = (name && name.trim())
+      ? name.trim()
+      : ((customer_name || 'Untitled') + ' — ' + date_str);
+    localStorage.setItem(this._slotKey(id), JSON.stringify(cloned));
+    const newEntry = {
+      id, name: finalName,
+      customer_name,
+      created_at: cloned.createdAt,
+      modified_at: now,
+      row_count: (cloned.rows || []).length,
+    };
+    this._writeIndex([newEntry, ...idx.filter(e => e.id !== id)]);
+    return id;
+  },
+
+  /** Internal — silent overwrite-only used by saveState() auto-persist. */
+  _touch(id, state) {
+    const idx = this._readIndex();
+    const entry = idx.find(e => e.id === id);
+    if (!entry) return; // active id stale; ignore
+    const now = new Date().toISOString();
+    const cloned = JSON.parse(JSON.stringify(state));
+    cloned.quoteId    = id;
+    cloned.modifiedAt = now;
+    localStorage.setItem(this._slotKey(id), JSON.stringify(cloned));
+    entry.modified_at  = now;
+    entry.customer_name = (cloned.customer && cloned.customer.name) || entry.customer_name || '';
+    entry.row_count    = (cloned.rows || []).length;
+    this._writeIndex(idx);
+  },
+
+  load(id) {
+    try {
+      const raw = localStorage.getItem(this._slotKey(id));
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (_) { return null; }
+  },
+
+  /** List all saved quotes, newest-modified first. */
+  list() {
+    const idx = this._readIndex();
+    return idx.slice().sort((a, b) => (b.modified_at || '').localeCompare(a.modified_at || ''));
+  },
+
+  delete(id) {
+    localStorage.removeItem(this._slotKey(id));
+    const idx = this._readIndex().filter(e => e.id !== id);
+    this._writeIndex(idx);
+    if (this.activeId() === id) this.setActiveId('');
+  },
+
+  /** Clone an existing slot's state into a brand-new slot. Returns the new id. */
+  duplicate(id) {
+    const src = this.load(id);
+    if (!src) throw new Error('quote not found: ' + id);
+    const idx = this._readIndex();
+    const srcEntry = idx.find(e => e.id === id);
+    const newName = (srcEntry ? srcEntry.name : 'Quote') + ' (copy)';
+    // Reset id so save() takes the create-new path
+    const cloned = JSON.parse(JSON.stringify(src));
+    cloned.quoteId = null;
+    return this.save(cloned, newName);
+  },
+
+  exportJSON(id) {
+    const s = this.load(id);
+    if (!s) throw new Error('quote not found: ' + id);
+    return JSON.stringify(s, null, 2);
+  },
+
+  /** Validate + import. Returns the new id; throws on invalid shape. */
+  importJSON(jsonStr) {
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (_) {
+      throw new Error('Invalid JSON');
+    }
+    if (!parsed || typeof parsed !== 'object') throw new Error('Invalid quote: not an object');
+    const required = ['customer', 'build', 'pricing', 'rows'];
+    for (const k of required) {
+      if (!(k in parsed)) throw new Error('Invalid quote: missing field "' + k + '"');
+    }
+    if (!Array.isArray(parsed.rows)) throw new Error('Invalid quote: "rows" must be an array');
+    // Force a new slot id even if the JSON carries one
+    parsed.quoteId = null;
+    return this.save(parsed);
+  },
+
+  activeId() {
+    return localStorage.getItem(this.ACTIVE_KEY) || '';
+  },
+  setActiveId(id) {
+    if (id) localStorage.setItem(this.ACTIVE_KEY, id);
+    else    localStorage.removeItem(this.ACTIVE_KEY);
+  },
+
+  /** Total bytes used by zuildup.* keys (rough — counts UTF-16 code units × 2). */
+  size() {
+    let total = 0;
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || !k.startsWith('zuildup.')) continue;
+        const v = localStorage.getItem(k) || '';
+        // 2 bytes per JS string code unit is the typical browser storage accounting.
+        total += (k.length + v.length) * 2;
+      }
+    } catch (_) {}
+    return total;
+  },
+};
+
+// Test hook: expose to window so unit tests + CDP tests can poke at storage.
+try { if (typeof window !== 'undefined') window.QuoteStorage = QuoteStorage; } catch (_) {}
 
 // ============================================================================
 // Catalog
@@ -428,10 +646,299 @@ async function bootForm() {
           (customerName ? `Customer: ${customerName}\n` : '') +
           `Rows: ${total}\n\nThis cannot be undone. (P1.5 will add Save/Load.)`;
       if (!confirm(msg)) return;
-      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+      try {
+        localStorage.removeItem(STORE_KEY);
+        // P1.5: also drop the active named-slot pointer so we go to scratch mode.
+        QuoteStorage.setActiveId('');
+      } catch (e) {}
       location.reload();
     };
   }
+
+  // ============================================================================
+  // P1.5 — Save / Load / Export / Import + auto-save + storage warning
+  // ============================================================================
+  // Toast helper. Disappears after 2.4s (3.6s for warn/err).
+  let _toastTimer = null;
+  function toast(msg, kind) {
+    const el = document.getElementById('qb-toast');
+    if (!el) return;
+    el.className = 'qb-toast' + (kind ? ' ' + kind : '');
+    el.textContent = msg;
+    // Force reflow then add .show
+    void el.offsetWidth;
+    el.classList.add('show');
+    if (_toastTimer) clearTimeout(_toastTimer);
+    const dwell = (kind === 'warn' || kind === 'err') ? 3600 : 2400;
+    _toastTimer = setTimeout(() => el.classList.remove('show'), dwell);
+  }
+
+  // Indicator helper: "Saving…" → "Saved at HH:MM" → muted.
+  const savedIndicator = document.getElementById('saved-indicator');
+  function setIndicator(state, text) {
+    if (!savedIndicator) return;
+    savedIndicator.className = 'saved-indicator' + (state ? ' ' + state : '');
+    savedIndicator.textContent = text || '';
+  }
+  function refreshIndicatorIdle() {
+    const aid = QuoteStorage.activeId();
+    if (!aid) { setIndicator('', ''); return; }
+    const entry = QuoteStorage.list().find(e => e.id === aid);
+    if (!entry) { setIndicator('', ''); return; }
+    const t = new Date(entry.modified_at);
+    const hh = String(t.getHours()).padStart(2,'0');
+    const mm = String(t.getMinutes()).padStart(2,'0');
+    setIndicator('saved', 'Saved ' + hh + ':' + mm);
+  }
+
+  // Storage pressure check — call after any explicit save.
+  // Browsers cap localStorage at ~5-10 MB. Warn at 4 MB.
+  function checkStoragePressure() {
+    try {
+      const used = QuoteStorage.size();
+      if (used > 4 * 1024 * 1024) {
+        toast('Storage 80% full. Export old quotes and delete to free space.', 'warn');
+      }
+    } catch (_) {}
+  }
+
+  // Modal helpers
+  const saveModal = document.getElementById('save-modal');
+  const loadModal = document.getElementById('load-modal');
+  function openModal(m) { if (m) m.classList.add('open'); }
+  function closeModal(m) { if (m) m.classList.remove('open'); }
+  // Click-outside-to-close
+  if (saveModal) saveModal.addEventListener('click', e => { if (e.target === saveModal) closeModal(saveModal); });
+  if (loadModal) loadModal.addEventListener('click', e => { if (e.target === loadModal) closeModal(loadModal); });
+
+  // ---- Save Quote button + modal ----
+  const saveBtn = document.getElementById('save-quote');
+  if (saveBtn) saveBtn.onclick = () => {
+    const aid = QuoteStorage.activeId();
+    const promptDiv  = document.getElementById('save-modal-prompt');
+    const existDiv   = document.getElementById('save-modal-existing');
+    const saveAsNew  = document.getElementById('save-as-new');
+    const nameInput  = document.getElementById('save-name-input');
+    const titleEl    = document.getElementById('save-modal-title');
+    const existName  = document.getElementById('save-existing-name');
+
+    if (aid) {
+      // Existing slot: 3-button mode (Save / Save As New / Cancel)
+      const entry = QuoteStorage.list().find(e => e.id === aid);
+      promptDiv.style.display  = 'none';
+      existDiv.style.display   = '';
+      saveAsNew.style.display  = '';
+      titleEl.textContent      = 'Save quote';
+      existName.textContent    = entry ? entry.name : '(unknown)';
+    } else {
+      // No slot: prompt for name with sensible default.
+      const cn = (state.customer.name || '').trim() || 'Untitled';
+      const today = new Date().toISOString().slice(0,10);
+      promptDiv.style.display = '';
+      existDiv.style.display  = 'none';
+      saveAsNew.style.display = 'none';
+      titleEl.textContent     = 'Save quote';
+      nameInput.value         = cn + ' — ' + today;
+    }
+    openModal(saveModal);
+    if (!aid) setTimeout(() => { nameInput.focus(); nameInput.select(); }, 30);
+  };
+
+  document.getElementById('save-cancel').onclick = () => closeModal(saveModal);
+
+  document.getElementById('save-confirm').onclick = () => {
+    setIndicator('saving', 'Saving…');
+    let id;
+    try {
+      const aid = QuoteStorage.activeId();
+      if (aid) {
+        // Overwrite path
+        id = QuoteStorage.save(state); // no name → overwrite
+      } else {
+        const name = (document.getElementById('save-name-input').value || '').trim();
+        id = QuoteStorage.save(state, name);
+      }
+      QuoteStorage.setActiveId(id);
+      state.quoteId = id; // mirror into in-memory state
+      saveState(state);   // re-persist to scratch + named slot via _touch
+      closeModal(saveModal);
+      toast('Saved');
+      refreshIndicatorIdle();
+      checkStoragePressure();
+    } catch (e) {
+      toast('Save failed: ' + e.message, 'err');
+      setIndicator('', '');
+    }
+  };
+
+  document.getElementById('save-as-new').onclick = () => {
+    setIndicator('saving', 'Saving…');
+    try {
+      // Force create-new path by clearing in-state quoteId
+      const orig = state.quoteId;
+      state.quoteId = null;
+      const cn = (state.customer.name || '').trim() || 'Untitled';
+      const today = new Date().toISOString().slice(0,10);
+      const id = QuoteStorage.save(state, cn + ' — ' + today + ' (copy)');
+      QuoteStorage.setActiveId(id);
+      state.quoteId = id;
+      saveState(state);
+      closeModal(saveModal);
+      toast('Saved as new copy');
+      refreshIndicatorIdle();
+      checkStoragePressure();
+    } catch (e) {
+      toast('Save failed: ' + e.message, 'err');
+      setIndicator('', '');
+    }
+  };
+
+  // Enter inside name input = save
+  document.getElementById('save-name-input').addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); document.getElementById('save-confirm').click(); }
+  });
+
+  // ---- Load Quote button + modal ----
+  function renderLoadList() {
+    const body = document.getElementById('load-modal-body');
+    const list = QuoteStorage.list();
+    if (!list.length) {
+      body.innerHTML = '<div class="qm-empty">No saved quotes yet. Click <b>Save</b> to create one.</div>';
+      return;
+    }
+    const ul = document.createElement('ul');
+    ul.className = 'qm-list';
+    for (const e of list) {
+      const li = document.createElement('li');
+      const cn = e.customer_name || '(no customer name)';
+      const date = (e.modified_at || '').slice(0, 10);
+      li.innerHTML = `
+        <span class="meta">
+          <span class="name">${escapeHtml(e.name || cn)}</span>
+          <span class="sub">${escapeHtml(cn)} · saved ${escapeHtml(date)} · ${e.row_count || 0} rows</span>
+        </span>
+        <span class="row-acts">
+          <button data-act="open" class="btn-primary">Open</button>
+          <button data-act="dup" title="Duplicate">⎘</button>
+          <button data-act="del" class="btn-danger" title="Delete">×</button>
+        </span>
+      `;
+      li.querySelector('[data-act="open"]').onclick = () => openSavedQuote(e.id);
+      li.querySelector('[data-act="dup"]').onclick  = () => {
+        try { const newId = QuoteStorage.duplicate(e.id); toast('Duplicated'); renderLoadList(); }
+        catch (err) { toast('Duplicate failed: ' + err.message, 'err'); }
+      };
+      li.querySelector('[data-act="del"]').onclick  = () => {
+        if (!confirm('Delete "' + (e.name || cn) + '"? This cannot be undone.')) return;
+        try { QuoteStorage.delete(e.id); toast('Deleted'); renderLoadList(); refreshIndicatorIdle(); }
+        catch (err) { toast('Delete failed: ' + err.message, 'err'); }
+      };
+      ul.appendChild(li);
+    }
+    body.innerHTML = '';
+    body.appendChild(ul);
+  }
+
+  function openSavedQuote(id) {
+    // If current state has unsaved changes (no active id but state has any data), confirm first.
+    const hasContent = (state.customer.name || (state.rows && state.rows.length));
+    const aid = QuoteStorage.activeId();
+    if (!aid && hasContent) {
+      if (!confirm('Open saved quote? Your current scratch quote will be discarded.\n\nClick Cancel and use Save first if you want to keep it.')) return;
+    }
+    QuoteStorage.setActiveId(id);
+    closeModal(loadModal);
+    location.reload();
+  }
+
+  const loadBtn = document.getElementById('load-quote');
+  if (loadBtn) loadBtn.onclick = () => { renderLoadList(); openModal(loadModal); };
+  document.getElementById('load-close').onclick = () => closeModal(loadModal);
+
+  // ---- Export JSON ----
+  function sanitizeFilename(s) {
+    return (s || 'quote').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'quote';
+  }
+  const exportBtn = document.getElementById('export-quote');
+  if (exportBtn) exportBtn.onclick = () => {
+    try {
+      // Export current in-memory state (works whether or not it's saved).
+      const json = JSON.stringify(state, null, 2);
+      const cn = sanitizeFilename(state.customer.name || 'unnamed');
+      const date = new Date().toISOString().slice(0, 10);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = cn + '_' + date + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast('Exported');
+    } catch (e) {
+      toast('Export failed: ' + e.message, 'err');
+    }
+  };
+
+  // ---- Import JSON ----
+  const importBtn  = document.getElementById('import-quote');
+  const importFile = document.getElementById('import-file');
+  if (importBtn && importFile) {
+    importBtn.onclick = () => {
+      const hasContent = (state.customer.name || (state.rows && state.rows.length));
+      const aid = QuoteStorage.activeId();
+      if (!aid && hasContent) {
+        if (!confirm('Import will replace the current scratch quote. Continue?\n\nClick Cancel and Save first to keep it.')) return;
+      }
+      importFile.value = '';
+      importFile.click();
+    };
+    importFile.onchange = (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const id = QuoteStorage.importJSON(String(reader.result));
+          QuoteStorage.setActiveId(id);
+          const loaded = QuoteStorage.load(id);
+          const cn = (loaded && loaded.customer && loaded.customer.name) || 'unknown';
+          toast('Imported quote for ' + cn);
+          location.reload();
+        } catch (e) {
+          toast('Import failed: ' + e.message, 'err');
+        }
+      };
+      reader.onerror = () => toast('Could not read file', 'err');
+      reader.readAsText(f);
+    };
+  }
+
+  // ---- Auto-save (3-second debounce) ----
+  // Only fires when there's an active named slot. In scratch mode user must explicitly Save.
+  let _autoSaveTimer = null;
+  function scheduleAutoSave() {
+    const aid = QuoteStorage.activeId();
+    if (!aid) return;
+    if (_autoSaveTimer) clearTimeout(_autoSaveTimer);
+    setIndicator('saving', 'Saving…');
+    _autoSaveTimer = setTimeout(() => {
+      try {
+        // saveState already calls _touch under the hood; we just need to refresh
+        // the indicator AFTER the timestamp has been written.
+        saveState(state);
+        refreshIndicatorIdle();
+        checkStoragePressure();
+      } catch (e) {
+        setIndicator('', '');
+        toast('Auto-save failed: ' + e.message, 'err');
+      }
+    }, 3000);
+  }
+  window.addEventListener('quote-state-changed', scheduleAutoSave);
+  // Initial indicator paint
+  refreshIndicatorIdle();
 
   function reflectModeUi(mode) {
     const isStruct = mode === 'structure';

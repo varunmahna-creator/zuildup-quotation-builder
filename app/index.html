@@ -109,7 +109,40 @@ textarea { resize: vertical; min-height: 60px; }
 .right .toolbar .download:disabled { opacity: 0.5; cursor: not-allowed; }
 .right .toolbar .download:hover:not(:disabled) { background: #13315A; }
 /* P1.4: secondary toolbar button + unedited rows + counter */
-.right .toolbar .secondary { background: white; color: var(--navy); border: 1px solid var(--rule); padding: 8px 14px; border-radius: 6px; font: inherit; font-weight: 500; font-size: 12.5px; cursor: pointer; margin-right: 8px; }
+.right .toolbar .secondary { background: white; color: var(--navy); border: 1px solid var(--rule); padding: 8px 14px; border-radius: 6px; font: inherit; font-weight: 500; font-size: 12.5px; cursor: pointer; margin-right: 6px; }
+/* P1.5: save-state indicator + modals + toast */
+.right .toolbar .saved-indicator { font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em; margin: 0 10px 0 4px; min-width: 100px; text-align: right; font-variant-numeric: tabular-nums; }
+.right .toolbar .saved-indicator.saving { color: var(--gold); }
+.right .toolbar .saved-indicator.saved  { color: #2E7D32; }
+.qb-modal { display: none; position: fixed; inset: 0; background: rgba(10,31,68,0.35); z-index: 200; align-items: flex-start; justify-content: center; padding-top: 8vh; }
+.qb-modal.open { display: flex; }
+.qb-modal .panel { background: white; width: 560px; max-width: 92vw; max-height: 80vh; border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,0.18); overflow: hidden; display: flex; flex-direction: column; }
+.qb-modal .panel header { padding: 14px 18px; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.qb-modal .panel header h3 { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; margin: 0; color: var(--navy); }
+.qb-modal .panel .body { flex: 1; overflow-y: auto; padding: 14px 18px; font-size: 13px; }
+.qb-modal .panel .body label { font-size: 11px; color: var(--muted); margin: 0 0 4px; display: block; }
+.qb-modal .panel .body input[type=text] { width: 100%; padding: 9px 11px; border: 1px solid var(--rule); border-radius: 7px; font: inherit; font-size: 13px; }
+.qb-modal .panel footer { padding: 10px 18px; border-top: 1px solid var(--rule); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.qb-modal .panel footer button { font: inherit; font-size: 12px; padding: 7px 14px; border: 1px solid var(--rule); border-radius: 6px; background: white; cursor: pointer; color: var(--ink); }
+.qb-modal .panel footer button.btn-primary { background: var(--navy); color: white; border-color: var(--navy); }
+.qb-modal .panel footer button.btn-primary:hover { background: #13315A; }
+.qb-modal .panel footer button.btn-danger { color: #c0392b; border-color: #f0d2d0; }
+.qb-modal .panel footer button:hover:not(.btn-primary) { border-color: rgba(10,31,68,0.30); }
+.qm-list { list-style: none; padding: 0; margin: 0; }
+.qm-list li { padding: 10px 12px; border-radius: 7px; border: 1px solid var(--rule); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: white; }
+.qm-list li:hover { border-color: rgba(10,31,68,0.30); }
+.qm-list .meta { min-width: 0; flex: 1; }
+.qm-list .meta .name { font-weight: 600; color: var(--navy); font-size: 13px; }
+.qm-list .meta .sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+.qm-list .row-acts { display: flex; gap: 4px; }
+.qm-list .row-acts button { font: inherit; font-size: 11px; padding: 5px 9px; border: 1px solid var(--rule); border-radius: 5px; background: white; cursor: pointer; color: var(--ink); }
+.qm-list .row-acts button.btn-primary { background: var(--navy); color: white; border-color: var(--navy); }
+.qm-list .row-acts button.btn-danger { color: #c0392b; border-color: #f0d2d0; }
+.qm-empty { text-align: center; padding: 22px 10px; color: var(--muted); font-size: 12.5px; }
+.qb-toast { position: fixed; top: 16px; right: 18px; background: var(--navy); color: white; padding: 10px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 500; box-shadow: 0 6px 20px rgba(0,0,0,0.18); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease; transform: translateY(-6px); }
+.qb-toast.show { opacity: 1; transform: translateY(0); }
+.qb-toast.warn { background: #B8860B; }
+.qb-toast.err  { background: #c0392b; }
 .right .toolbar .secondary:hover { background: rgba(10,31,68,0.04); border-color: rgba(10,31,68,0.30); }
 .right .toolbar > span.title { margin-right: auto; }
 .spec.unedited { background: rgba(10,31,68,0.025); border-style: dashed; }
@@ -218,6 +251,12 @@ iframe.preview { width: 794px; border: none; display: block; height: 1123px; mar
   <div class="toolbar">
     <span class="title">Live Preview · A4</span>
     <button class="secondary" id="new-quote" title="Clear current quote and start fresh">New Quote</button>
+    <button class="secondary" id="save-quote" title="Save quote (Ctrl/Cmd+S)">Save</button>
+    <button class="secondary" id="load-quote" title="Open a saved quote">Load</button>
+    <button class="secondary" id="export-quote" title="Download quote as JSON">Export</button>
+    <button class="secondary" id="import-quote" title="Import quote from JSON">Import</button>
+    <span class="saved-indicator" id="saved-indicator" aria-live="polite"></span>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
     <button class="download" id="dl">Download PDF</button>
   </div>
   <div class="preview-stack">
@@ -236,6 +275,39 @@ iframe.preview { width: 794px; border: none; display: block; height: 1123px; mar
     <footer><button id="picker-close">Close</button></footer>
   </div>
 </div>
+
+<!-- P1.5: Save / Load / Import modals + toast -->
+<div class="qb-modal" id="save-modal" role="dialog" aria-label="Save quote">
+  <div class="panel">
+    <header><h3 id="save-modal-title">Save quote</h3></header>
+    <div class="body">
+      <div id="save-modal-prompt">
+        <label for="save-name-input">Save quote as</label>
+        <input type="text" id="save-name-input" placeholder="e.g. Aanya Kapoor — Sector 47">
+        <p style="font-size:11px;color:var(--muted);margin:8px 0 0;">A short label so you can find this quote later. Customer name + locality usually works.</p>
+      </div>
+      <div id="save-modal-existing" style="display:none;">
+        <p style="margin:0 0 6px;font-size:13px;">This quote is already saved as <b id="save-existing-name"></b>.</p>
+        <p style="margin:0;font-size:12px;color:var(--muted);">Save updates the existing entry. Save As New creates a separate copy.</p>
+      </div>
+    </div>
+    <footer>
+      <button id="save-cancel">Cancel</button>
+      <button id="save-as-new" style="display:none;">Save As New</button>
+      <button id="save-confirm" class="btn-primary">Save</button>
+    </footer>
+  </div>
+</div>
+
+<div class="qb-modal" id="load-modal" role="dialog" aria-label="Load quote">
+  <div class="panel">
+    <header><h3>Load quote</h3></header>
+    <div class="body" id="load-modal-body"></div>
+    <footer><button id="load-close">Close</button></footer>
+  </div>
+</div>
+
+<div class="qb-toast" id="qb-toast"></div>
 
 <script src="/app/quote.js"></script>
 </body>
