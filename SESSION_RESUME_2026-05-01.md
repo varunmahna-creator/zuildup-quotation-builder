@@ -179,7 +179,7 @@ sleep 4
 curl -s http://127.0.0.1:8124/ -o /dev/null -w "server=%{http_code}\n"
 ```
 
-Run all tests:
+Run all tests (sequentially — they share Chrome's localStorage):
 
 ```bash
 .venv/bin/python3 tests/test_catalog_fidelity.py
@@ -188,6 +188,10 @@ node tests/test_quote_storage.js
 .venv/bin/python3 tests/test_p17_cdp.py
 .venv/bin/python3 /tmp/_pdf_baseline.py   # confirms text_md5
 ```
+
+⚠ **Don't run P1.6 and P1.7 CDP suites in parallel** — they share the
+Chrome user-data-dir (`/tmp/qb_chrome_p1567`) and clobber each other's
+localStorage state. Run them one after the other.
 
 Catalog rebuild (rarely needed):
 
