@@ -1,9 +1,9 @@
 {
   "_meta": {
     "version": "2.0.0",
-    "built": "2026-04-28",
+    "built": "2026-04-29",
     "source": "src_docx/Customer_Facing_Quote_Sheet.docx (Customer: Ms. Rajkumari Kamboj reference quote)",
-    "schema": "no-tier; catalog as template/dictionary; rate, description, brands all set per quote via row overrides",
+    "schema": "no-tier; catalog as template/dictionary; rate, description (P1.5.1 prose-scrubbed), brands all set per quote via row overrides",
     "tier_system": "removed in Phase 2 P0.1",
     "items_total": 87
   },
@@ -52,7 +52,7 @@
         "full",
         "structure_only"
       ],
-      "description": "Rathi Steel 500FE  @4.5Kg per sqft\nAny variation above and below 4.5kg is charged and refunded on pro rata basis."
+      "description": "Rathi Steel 500FE @4.5Kg per sqft\nAny variation above and below 4.5kg is charged and refunded on pro rata basis."
     },
     {
       "id": "structure.cement",
@@ -100,7 +100,7 @@
         "full",
         "structure_only"
       ],
-      "description": "Plinth is considered at  1ft 6 inches to 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft\nStilt height as per the government norms"
+      "description": "Plinth is considered at 1ft 6 inches to 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft\nStilt height as per the government norms"
     },
     {
       "id": "structure.aggregates_rodi",
@@ -130,7 +130,7 @@
         "full",
         "structure_only"
       ],
-      "description": "100mm (4 inch)  thick PCC in ratio of 1:3:6 (Cement:Sand:Aggregate)\nPCC to be done below the foundation jal, in stilt area below the granite work and also in terrace below the terrace tile flooring"
+      "description": "100mm (4 inch) thick PCC in ratio of 1:3:6 (Cement:Sand:Aggregate)\nPCC to be done below the foundation jal, in stilt area below the granite work and also in terrace below the terrace tile flooring"
     },
     {
       "id": "structure.plaster_work",
@@ -192,7 +192,7 @@
         "full",
         "structure_only"
       ],
-      "description": "Sika Antisol\nAll RCC and masonry works shall be properly cured using continuous water curing methods to maintain adequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14  days for brickwork and plaster twice a day\nColumns will be covered with jute bag during curing to retain water"
+      "description": "Sika Antisol\nAll RCC and masonry works shall be properly cured using continuous water curing methods to maintain adequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14 days for brickwork and plaster twice a day\nColumns will be covered with jute bag during curing to retain water"
     },
     {
       "id": "structure.waterproofing",
@@ -338,7 +338,7 @@
       "scope": [
         "full"
       ],
-      "description": "Provision and installation of a wall-mounted exhaust fan (Havells make) for proper ventilation."
+      "description": "Provision and installation of a wall-mounted exhaust fan for proper ventilation."
     },
     {
       "id": "bathroom.bathroom_flooring",
@@ -486,7 +486,7 @@
       "scope": [
         "full"
       ],
-      "description": "Provision and installation of a wall-mounted exhaust fan (Havells make) for proper ventilation."
+      "description": "Provision and installation of a wall-mounted exhaust fan for proper ventilation."
     },
     {
       "id": "kitchen.cpvc_fittings",
@@ -564,7 +564,7 @@
       "scope": [
         "full"
       ],
-      "description": "44 mm thick premium teak wood / flush door shutter with polished/laminated finish, fixed on a seasoned hardwood frame (teak/sal wood), complete with SS 304 hinges, SS tower bolts , door stopper, handle, and all necessary fittings and hardware.."
+      "description": "44 mm thick premium teak wood / flush door shutter with polished/laminated finish, fixed on a seasoned hardwood frame (teak/sal wood), complete with SS 304 hinges, SS tower bolts, door stopper, handle, and all necessary fittings and hardware."
     },
     {
       "id": "doors_windows.main_door_lock",
@@ -582,7 +582,7 @@
       "scope": [
         "full"
       ],
-      "description": "Premium quality door locks from Godrej / Ozone / Yale  make shall be provided, suitable for the main door ensuring durability, safety, and smooth operation."
+      "description": "Premium quality door locks from Godrej / Ozone / Yale make shall be provided, suitable for the main door ensuring durability, safety, and smooth operation."
     },
     {
       "id": "doors_windows.internal_and_bathroom_doors",
@@ -598,7 +598,7 @@
       "scope": [
         "full"
       ],
-      "description": "Flush door shutters (Sumai or equivalent) with laminate/paint finish, installed on hardwood frames, complete with SS 304 hinges, SS tower bolts (where applicable), door stopper, handle, and all required fittings and hardware."
+      "description": "Flush door shutters with laminate/paint finish, installed on hardwood frames, complete with SS 304 hinges, SS tower bolts (where applicable), door stopper, handle, and all required fittings and hardware."
     },
     {
       "id": "doors_windows.internal_and_bathroom_door_lock",
@@ -950,7 +950,7 @@
       "scope": [
         "full"
       ],
-      "description": "Rs. 2,000/- per piller\nDecorative pillar lights shall be provided for external areas. Maximum upto 4 pillers"
+      "description": "Decorative pillar lights for third-party areas. Maximum 4 pillars."
     },
     {
       "id": "electrical.ups_wiring",
@@ -1148,7 +1148,7 @@
       "scope": [
         "full"
       ],
-      "description": "Rs. 50,000/- (CP Plus or equivalent)\nCCTV camera system from CP Plus or equivalent make shall be provided, including necessary cameras, and basic wiring upto specified budget."
+      "description": "CCTV camera system with cameras and basic wiring as per layout."
     },
     {
       "id": "safety.video_door_phone",
@@ -1165,7 +1165,7 @@
       "scope": [
         "full"
       ],
-      "description": "Rs. 50,000/- (CP Plus, Alba or equivalent)\nVideo door phone system from CP Plus / Alba or equivalent make shall be provided with indoor monitor for each floor and entrance panel control."
+      "description": "Video door phone system with indoor monitor for each floor and main outdoor unit at gate."
     },
     {
       "id": "paint.internal_wall_paint",
@@ -1258,7 +1258,7 @@
         "full",
         "structure_only"
       ],
-      "description": "Bifold MS Main Gate upto INR 2,50,000/- (Includes Main Gate and Side Gate)"
+      "description": "Bifold MS Main Gate."
     },
     {
       "id": "general.staircase_balcony_railing",
@@ -1351,7 +1351,7 @@
         "full",
         "structure_only"
       ],
-      "description": "All Civil, Electrical, Paint, Polish, Exhausting, Earthing Work for lift will be done\nEntry for all floors will be well designed with stone panelling\nLift Machine – Schindler/Kone equivalent\nThe cost of lift machine is capped at INR 10 Lacs"
+      "description": "Includes all civil, electrical, paint, polish, exhaust, and earthing work. Entry on all floors."
     }
   ]
 }

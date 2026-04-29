@@ -62,6 +62,31 @@ if "template" not in schema_decl and "dictionary" not in schema_decl:
         f"SCHEMA_DRIFT: catalog._meta.schema does not declare template/dictionary intent. "
         f"Got: '{CAT['_meta'].get('schema')}'"
     )
+# 5. P1.5.1 — descriptions must NOT contain rate/price prose.
+#    Catalog describes WHAT items are. HOW MUCH lives in per-quote overrides.
+#
+# Regex note: the original brief specified `[\d,]+` for the digit class.
+# That is a defect — `,` alone matches, so prose like "doors, ensuring"
+# falsely matches "rs,". We tighten to require at least one actual digit.
+import re as _re
+_PROSE_RATE_RE = _re.compile(
+    r'(Rs\.?\s*\d[\d,]*|₹\s*\d[\d,]*|INR\s+\d[\d,]*|upto\s+INR)',
+    _re.IGNORECASE,
+)
+prose_violations = []
+for it in items:
+    desc = it.get("description") or ""
+    m = _PROSE_RATE_RE.search(desc)
+    if m:
+        prose_violations.append((it["id"], m.group(0), desc[:80]))
+if prose_violations:
+    failures.append(
+        f"PROSE_RATE: {len(prose_violations)} item(s) have rate/price prose in description. "
+        f"Catalog must describe WHAT, not HOW MUCH. "
+        f"Offenders (first 5): " + ", ".join(
+            f"{i}='{m}'" for i, m, _ in prose_violations[:5]
+        )
+    )
 
 # Summary
 total = len(items)
@@ -71,6 +96,7 @@ print(f"  items with hardcoded rate>0 : {len(items_with_rate)}  (target: 0)")
 print(f"  items with hardcoded rate_text: {len(items_with_rate_text)}  (target: 0)")
 print(f"  items with brand suggestions : {items_with_brand_suggestions}  (informational; surfaced as hints in edit panel)")
 print(f"  schema declared              : {CAT['_meta'].get('schema')!r}")
+print(f"  items with prose rates       : {len(prose_violations)}  (target: 0)")
 print(f"")
 print(f"Failures: {len(failures)}")
 for f in failures:

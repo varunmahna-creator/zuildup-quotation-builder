@@ -345,6 +345,71 @@ def fix_label(label):
     return fixes.get(label, label)
 
 
+# ---- P1.5.1: prose-scrub for description fields ------------------------------
+# Catalog describes WHAT items are (template). Per-quote overrides handle HOW MUCH
+# and edge cases. Strip rate/price prose + inline brand-lock fragments from the
+# description field. The fidelity test enforces this.
+
+# Patterns to strip wholesale (replaced with single space; whitespace normalized after).
+_PROSE_RATE_PATTERNS = [
+    # "upto INR 1,00,000/-" / "upto INR 1,00,000 ..." — strip the entire phrase up to next sentence boundary.
+    re.compile(r'\bupto\s+INR\s+[\d,]+(?:/-?)?[^.\n]*(?=[.\n]|$)', re.IGNORECASE),
+    re.compile(r'\bup\s*to\s+INR\s+[\d,]+(?:/-?)?[^.\n]*(?=[.\n]|$)', re.IGNORECASE),
+    # "INR 10 Lacs" / "INR 2,50,000/-" / "INR 50,000"
+    re.compile(r'\bINR\s+[\d,]+(?:\.\d+)?\s*(?:Lacs?|Lakhs?|Cr|Crores?)?(?:/-?)?', re.IGNORECASE),
+    # "Rs. 50,000/-" / "Rs 7.50" / "Rs.2,50,000"
+    re.compile(r'\bRs\.?\s*[\d,]+(?:\.\d+)?(?:/-?)?', re.IGNORECASE),
+    # "₹ 35,000" / "₹35,000/-"
+    re.compile(r'₹\s*[\d,]+(?:\.\d+)?(?:/-?)?'),
+]
+
+# Inline brand-lock parentheticals: "(CP Plus or equivalent)", "(CP Plus, Alba or equivalent)",
+# "(Schindler/Kone equivalent)" — these belong in suggested_brands, not description prose.
+_BRAND_LOCK_PAREN = re.compile(
+    r'\s*\([^)]*\b(?:or\s+equivalent|equivalent|make)\b[^)]*\)',
+    re.IGNORECASE,
+)
+
+
+def scrub_prose_rates(text):
+    """Strip rate/price prose + inline brand-lock parentheticals from a description.
+
+    Returns the cleaned text with whitespace normalized. Idempotent.
+    """
+    if not text:
+        return text
+    s = text
+    for pat in _PROSE_RATE_PATTERNS:
+        s = pat.sub(' ', s)
+    s = _BRAND_LOCK_PAREN.sub('', s)
+    # Cleanup orphan fragments left by removals.
+    s = re.sub(r'\bRs\.?\s*(?=[\s,.;:])', '', s, flags=re.IGNORECASE)
+    s = re.sub(r'(?<!\w)/-(?!\w)', '', s)
+    out_lines = []
+    for line in s.split('\n'):
+        line = re.sub(r'[ \t]+', ' ', line).strip()
+        line = re.sub(r'^[\s,.;:\-]+', '', line)
+        line = re.sub(r'\s+,', ',', line)
+        line = re.sub(r',\s*,+', ',', line)
+        line = re.sub(r'\.\s*\.+', '.', line)
+        line = line.strip(' ,;:').strip()
+        if line:
+            out_lines.append(line)
+    return '\n'.join(out_lines)
+
+
+# ---- P1.5.1: explicit Varun-signed rewrites ----------------------------------
+# After regex scrub, override these specific items with the exact strings below.
+# Side-gate mention dropped from main_gate (corner-plot only, per-quote concern).
+DESCRIPTION_REWRITES = {
+    'general.main_gate':              'Bifold MS Main Gate.',
+    'safety.cctv_camera':             'CCTV camera system with cameras and basic wiring as per layout.',
+    'safety.video_door_phone':        'Video door phone system with indoor monitor for each floor and main outdoor unit at gate.',
+    'electrical.pillar_fancy_light':  'Decorative pillar lights for third-party areas. Maximum 4 pillars.',
+    'general.lift_machine':           'Includes all civil, electrical, paint, polish, exhaust, and earthing work. Entry on all floors.',
+}
+
+
 def main():
     # FS cache wedged on this shell's mount namespace. open() / stat() / md5sum can't see
     # the DOCX, but cat-via-openat() can. Read via stdin (piped-in cat).
@@ -401,6 +466,11 @@ def main():
             ov = OVERRIDES.get(item_id, {})
             for k, v in ov.items():
                 item[k] = v
+            # P1.5.1: scrub rate/price prose + inline brand-lock parentheticals from description.
+            item['description'] = scrub_prose_rates(item.get('description', ''))
+            # P1.5.1: apply explicit Varun-signed description rewrites (5 items).
+            if item_id in DESCRIPTION_REWRITES:
+                item['description'] = DESCRIPTION_REWRITES[item_id]
             # dedupe — same id within table run
             if not any(i['id'] == item['id'] for i in items):
                 items.append(item)
@@ -408,9 +478,9 @@ def main():
     catalog = {
         "_meta": {
             "version": "2.0.0",
-            "built": "2026-04-28",
+            "built": "2026-04-29",  # P1.5.1: prose-scrub + 5 explicit rewrites
             "source": "src_docx/Customer_Facing_Quote_Sheet.docx (Customer: Ms. Rajkumari Kamboj reference quote)",
-            "schema": "no-tier; catalog as template/dictionary; rate, description, brands all set per quote via row overrides",
+            "schema": "no-tier; catalog as template/dictionary; rate, description (P1.5.1 prose-scrubbed), brands all set per quote via row overrides",
             "tier_system": "removed in Phase 2 P0.1",
             "items_total": len(items),
         },
