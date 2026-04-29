@@ -222,3 +222,110 @@ node -c app/quote.js
 ---
 
 — Iraaj, 2026-04-29 (Phase 2 close)
+
+---
+
+## Cloud Run Deployment — phase2-deployed (2026-04-29)
+
+### Live service
+- **URL:** https://zuildup-quotes-586295767597.asia-south1.run.app
+- **Region:** asia-south1
+- **GCP project:** `zuildup-quotes`
+- **Owner account:** varunmahna@gmail.com (one-time `gcloud auth login`)
+- **Billing account:** `01E743-EB4996-3EAD7C` ("My Billing Account")
+- **APIs enabled:** `run.googleapis.com`, `cloudbuild.googleapis.com`, `artifactregistry.googleapis.com`
+
+### Auth (production basic auth — single shared credential)
+- **Username:** `zuildup-sales`
+- **Password:** in `/tmp/zuildup_auth_pass.txt` on the orchestrator VM (DO NOT commit) —   also DM'd to Varun. Rotate via:
+  ```
+  NEW=$(openssl rand -base64 18 | tr -d '/+=' | head -c 20)
+  gcloud run services update zuildup-quotes --region asia-south1 \\
+    --update-env-vars AUTH_PASS=$NEW
+  ```
+
+### Container
+- Built from `Dockerfile` at repo root (node:20-slim + Chrome + fonts)
+- Cloud Build server-side (no local Docker on VM)
+- Source upload after `.dockerignore` excludes: ~668 KB
+- First build took ~2.5 min end-to-end
+
+### Cloud Run config
+- 2 GiB / 1 CPU / 60s timeout / max 10 instances
+- Scales to zero when idle (cost ≈ ₹0/mo at zero traffic)
+- Estimated cost at 5–50 quotes/day: **₹0–200/mo** (mostly PDF render CPU time)
+- `--allow-unauthenticated` (basic auth at app layer, not GCP IAM)
+
+### Server.js patches (committed in `457608e`)
+- Bind `0.0.0.0` (was `127.0.0.1`)
+- `CHROME_BIN` env-driven (`google-chrome-stable` in container)
+- Chrome flags: `--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --hide-scrollbars`
+- Basic auth gate (skipped in dev when env vars unset)
+- `/healthz` public endpoint (note: Google's edge intercepts paths matching their reserved health-check prefix; the app-level handler is unreachable. Cloud Run uses TCP probe by default — works fine.)
+- `/feedback` POST → Discord webhook (env var `FEEDBACK_WEBHOOK`); returns 503 `feedback_disabled` if not set
+
+### Smoke tests passed (live URL)
+- `/` no creds → 401 ✅
+- `/` valid creds → 200 (660 ms warm) ✅
+- `/` wrong creds → 401 ✅
+- `/catalog/catalog.json` → 200, 41,598 bytes (87 items) ✅
+- `/pdf` minimal POST → 200, 25 KB PDF, 7.4s, correct `Content-Disposition` filename ✅
+- `/pdf` static `_p13_preview.html` POST → 200, 11 KB PDF, 2.9s ✅
+- `/feedback` no webhook → 503 `feedback_disabled` ✅
+
+### PDF baseline note (deferred)
+- The `58ef6d4ee186d12c354806b38029ea02` text-md5 baseline from P1.5.1 is from a
+  CLIENT-rendered preview (quote.js executes in browser, then DOM is POSTed).
+- The VM has no local Chrome to reproduce client-rendered output for an
+  end-to-end byte-identical match against the deployed instance.
+- Server-side rendering of the static `_p13_preview.html` (no client JS) produces a
+  smaller PDF since spec cards aren't populated.
+- Baseline parity verification on Cloud Run = a P-deploy-2 follow-up: install
+  headless Chrome on a CDP harness, point at the live URL with auth, run a P1.5
+  fixture, compare md5s.
+
+### Operations runbook
+
+**Redeploy after code changes:**
+```
+cd /opt/ocplatform/workspace/zuildup/quotation-builder
+gcloud run deploy zuildup-quotes --source . --region asia-south1 --quiet
+```
+
+**Update env vars (e.g. wire feedback webhook later):**
+```
+gcloud run services update zuildup-quotes --region asia-south1 \
+  --update-env-vars FEEDBACK_WEBHOOK=https://discord.com/api/webhooks/...
+```
+
+**List revisions:**
+```
+gcloud run revisions list --service zuildup-quotes --region asia-south1
+```
+
+**Roll back to a previous revision:**
+```
+gcloud run services update-traffic zuildup-quotes --region asia-south1 \
+  --to-revisions REV_NAME=100
+```
+
+**Service logs:**
+```
+gcloud run services logs read zuildup-quotes --region asia-south1 --limit 50
+```
+
+### Outstanding items
+- [ ] Discord webhook URL for /feedback — Varun creates a webhook in #dhurandhar-iraaj or similar, then runs the env-var update command above
+- [ ] Cold-start measurement — after 5 min idle, first-request time. Skipped during initial deploy to keep iteration fast; can be measured opportunistically.
+- [ ] Optional: custom domain (e.g. `quotes.zuildup.com`) via Cloud Run domain mapping
+- [ ] Optional: replace basic auth with Identity-Aware Proxy or proper SSO if sales team grows
+
+### Session-resume bootstrap (next person)
+```
+cd /opt/openclaw/workspace/zuildup/quotation-builder
+git log --oneline -5         # verify HEAD includes 'phase2-deployed' tag
+gcloud config get-value project  # should be 'zuildup-quotes'
+URL=$(gcloud run services describe zuildup-quotes --region asia-south1 --format='value(status.url)')
+PASS=$(cat /tmp/zuildup_auth_pass.txt)  # if /tmp got wiped, get from Varun
+curl -s -u zuildup-sales:$PASS -o /dev/null -w 'live=%{http_code}\n' $URL
+```

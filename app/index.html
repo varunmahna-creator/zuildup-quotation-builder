@@ -264,6 +264,7 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
     <button class="secondary" id="load-quote" title="Open a saved quote">Load</button>
     <button class="secondary" id="export-quote" title="Download quote as JSON">Export</button>
     <button class="secondary" id="import-quote" title="Import quote from JSON">Import</button>
+    <button class="secondary" id="feedback-btn" title="Send feedback to the team">💬 Feedback</button>
     <label class="draft-toggle" title="Mark this quote as DRAFT — adds diagonal watermark on every page" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin:0 6px;cursor:pointer;user-select:none;">
       <input type="checkbox" id="f-draft" style="margin:0;width:auto;cursor:pointer;"> DRAFT
     </label>
@@ -316,6 +317,27 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
     <header><h3>Load quote</h3></header>
     <div class="body" id="load-modal-body"></div>
     <footer><button id="load-close">Close</button></footer>
+  </div>
+</div>
+
+<!-- Deploy: Feedback modal -->
+<div class="qb-modal" id="feedback-modal" role="dialog" aria-label="Send feedback">
+  <div class="panel">
+    <header><h3>💬 Send feedback</h3></header>
+    <div class="body">
+      <p style="margin:0 0 10px;color:var(--muted);font-size:12px;">
+        Tell the team what's working or not. We send a redacted state summary
+        (build mode, row count, etc.) — <b>no customer names, phone, or address</b>.
+      </p>
+      <label for="feedback-text">Your comment</label>
+      <textarea id="feedback-text" rows="6"
+        style="width:100%;padding:10px;border:1px solid var(--rule);border-radius:7px;font:inherit;font-size:13px;resize:vertical;"
+        placeholder="What feels off? What would help?" maxlength="1500"></textarea>
+    </div>
+    <footer>
+      <button id="feedback-cancel">Cancel</button>
+      <button id="feedback-submit" class="btn-primary">Send</button>
+    </footer>
   </div>
 </div>
 
