@@ -21,6 +21,9 @@ const path = require('path');
 const url  = require('url');
 const { spawn } = require('child_process');
 const os   = require('os');
+let sharp;
+try { sharp = require('sharp'); }
+catch (_) { sharp = null; console.warn('[server] sharp not available — image compression disabled'); }
 
 const PORT  = process.env.PORT || 8124;
 const ROOT  = path.resolve(__dirname, '..');           // workspace root for assets
@@ -84,6 +87,11 @@ function resolveLocalUrl(rawUrl, baseDir) {
   return abs;
 }
 
+// P1.6: image compression — JPEG re-encode for inlined images > 200KB
+//       (vector SVG kept as-is, already small / lossless).
+const COMPRESS_BYTES_THRESHOLD = 200 * 1024;
+const COMPRESS_JPEG_QUALITY    = 70;
+
 function fileToDataUrl(absPath) {
   try {
     const ext = path.extname(absPath).toLowerCase();
@@ -95,6 +103,37 @@ function fileToDataUrl(absPath) {
       return 'data:image/svg+xml;utf8,' + encodeURIComponent(text);
     }
     return `data:${mime};base64,${buf.toString('base64')}`;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Async variant — used by the /pdf renderer pipeline. Compresses raster images > 200KB
+// to JPEG q70 BEFORE inlining (target: total PDF < 1MB on standard fixture).
+async function fileToDataUrlMaybeCompressed(absPath) {
+  try {
+    const ext = path.extname(absPath).toLowerCase();
+    const mime = MIME[ext] || 'application/octet-stream';
+    const buf = fs.readFileSync(absPath);
+    if (ext === '.svg') {
+      const text = buf.toString('utf8').replace(/\s+/g, ' ').trim();
+      return { dataUrl: 'data:image/svg+xml;utf8,' + encodeURIComponent(text), bytes: buf.length, compressed: false };
+    }
+    // Raster — consider compression
+    if (sharp && buf.length > COMPRESS_BYTES_THRESHOLD && (ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.webp')) {
+      try {
+        const out = await sharp(buf).jpeg({ quality: COMPRESS_JPEG_QUALITY, mozjpeg: true }).toBuffer();
+        return {
+          dataUrl: `data:image/jpeg;base64,${out.toString('base64')}`,
+          bytes: out.length,
+          compressed: true,
+          origBytes: buf.length,
+        };
+      } catch (e) {
+        // Fall through to uncompressed below.
+      }
+    }
+    return { dataUrl: `data:${mime};base64,${buf.toString('base64')}`, bytes: buf.length, compressed: false };
   } catch (e) {
     return null;
   }
@@ -171,6 +210,76 @@ function inlineCssUrls(css, baseDir) {
     return `url("${dataUrl}")`;
   });
 }
+// P1.6: async variant of inlineLocalAssets used by /pdf — compresses raster
+// images > 200KB to JPEG q70 to keep final PDF under 1 MB. Same shape/output as
+// the sync version, just awaits image conversion.
+async function inlineLocalAssetsAsync(html, baseDir) {
+  baseDir = baseDir || ROOT;
+  let out = html;
+  let inlinedCount = 0;
+  let strippedScripts = 0;
+  let inlinedStylesheets = 0;
+  let compressedCount = 0;
+  let bytesSaved = 0;
+  const skipped = [];
+
+  // 1. Strip <script>...</script> blocks (executed scripts).
+  out = out.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, () => { strippedScripts++; return ''; });
+  out = out.replace(/<script\b[^>]*\/?>/gi, () => { strippedScripts++; return ''; });
+
+  // 2. Inline <link rel="stylesheet"> as <style>.
+  out = out.replace(/<link\b([^>]*?)href=(["'])([^"']+)\2([^>]*)>/gi,
+    (m, before, q, href, after) => {
+      if (!/rel\s*=\s*["']?stylesheet/i.test(before + after)) return m;
+      const absPath = resolveLocalUrl(href, baseDir);
+      if (!absPath) return m;
+      try {
+        const css = fs.readFileSync(absPath, 'utf8');
+        const cssDir = path.dirname(absPath);
+        const rewritten = inlineCssUrls(css, cssDir);
+        inlinedStylesheets++;
+        return `<style data-inlined-from="${href}">\n${rewritten}\n</style>`;
+      } catch (e) {
+        skipped.push({ href, reason: e.message });
+        return m;
+      }
+    });
+
+  // 3. Replace src/poster/data-src attributes with promised data-URLs.
+  //    We have to run two passes: first capture all matches & kick off awaits,
+  //    then substitute in the resolved URLs.
+  const tasks = [];
+  out = out.replace(/\b(src|poster|data-src)=(["'])([^"']+)\2/gi,
+    (m, attr, q, val) => {
+      const abs = resolveLocalUrl(val, baseDir);
+      if (!abs) return m;
+      const tok = `__PDFASSET_${tasks.length}__`;
+      tasks.push({ tok, abs, attr, q, val });
+      return `${attr}=${q}${tok}${q}`;
+    });
+
+  for (const t of tasks) {
+    const r = await fileToDataUrlMaybeCompressed(t.abs);
+    if (!r) {
+      skipped.push({ url: t.val, reason: 'read failed' });
+      out = out.replace(t.tok, t.val);
+      continue;
+    }
+    inlinedCount++;
+    if (r.compressed) {
+      compressedCount++;
+      bytesSaved += (r.origBytes - r.bytes);
+    }
+    out = out.replace(t.tok, r.dataUrl);
+  }
+
+  // 4. Rewrite url(...) inside any inline style blocks. Keep sync (CSS bg images
+  //    are typically small SVGs / icons; not worth async there).
+  out = inlineCssUrls(out, baseDir);
+
+  return { html: out, stats: { inlinedCount, strippedScripts, inlinedStylesheets, compressedCount, bytesSaved, skipped: skipped.slice(0,5) } };
+}
+
 
 // Inject a tiny boot script into <head> that:
 //  (a) waits for all <img> to settle before signaling readiness via document.title
@@ -206,16 +315,17 @@ function injectImageLoadWait(html) {
   return boot + '\n' + html;
 }
 
-function renderPdf(html, cb) {
+async function renderPdf(html, cb) {
   // Drop the supplied HTML into a temp file, run Chrome headless --print-to-pdf, return the bytes.
   const tmpDir  = fs.mkdtempSync(path.join(os.tmpdir(), 'zu-quote-'));
   const tmpHtml = path.join(tmpDir, 'render.html');
   const tmpPdf  = path.join(tmpDir, 'render.pdf');
 
   // P1.1: inline all local assets as data-URLs so the temp HTML is self-contained.
-  const { html: inlined, stats } = inlineLocalAssets(html, ROOT);
+  // P1.6: async variant compresses raster images > 200KB to JPEG q70 to keep PDF < 1MB.
+  const { html: inlined, stats } = await inlineLocalAssetsAsync(html, ROOT);
   const final = injectImageLoadWait(inlined);
-  console.log(`[pdf] inlined assets=${stats.inlinedCount} stylesheets=${stats.inlinedStylesheets} stripped_scripts=${stats.strippedScripts}` + (stats.skipped.length ? ` skipped=${JSON.stringify(stats.skipped)}` : ''));
+  console.log(`[pdf] inlined assets=${stats.inlinedCount} compressed=${stats.compressedCount} bytes_saved=${stats.bytesSaved} stylesheets=${stats.inlinedStylesheets} stripped_scripts=${stats.strippedScripts}` + (stats.skipped.length ? ` skipped=${JSON.stringify(stats.skipped)}` : ''));
 
   fs.writeFileSync(tmpHtml, final);
   const args = [
@@ -246,17 +356,30 @@ const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(u.pathname);
 
   // POST /pdf  ->  body is HTML, return PDF
+  // P1.6: filename via Content-Disposition.
+  //   Format: ZuildUp_Quote_<sanitized_lastname>_<YYYY-MM-DD>.pdf
+  //   Source of truth: ?customer_last=...&date=YYYY-MM-DD query params (sent by client).
+  //   Sanitization: keep [A-Za-z0-9_], replace others with _, collapse __+, trim, fall back to 'Untitled'.
   if (req.method === 'POST' && pathname === '/pdf') {
     let chunks = [];
     req.on('data', c => chunks.push(c));
-    req.on('end', () => {
+    req.on('end', async () => {
       const html = Buffer.concat(chunks).toString('utf8');
-      renderPdf(html, (err, pdf) => {
-        if (err) {
-          console.error('PDF FAIL:', err.message);
-          return send(res, 500, err.message);
-        }
-        const fname = (u.query.filename || 'zuildup-quote') + '.pdf';
+      try {
+        const pdf = await new Promise((resolve, reject) => {
+          renderPdf(html, (err, buf) => err ? reject(err) : resolve(buf));
+        });
+        // P1.6: build filename
+        const lastRaw = (u.query.customer_last || u.query.filename || '').toString().trim();
+        const dateRaw = (u.query.date || new Date().toISOString().slice(0,10)).toString().trim();
+        const sanitize = s => {
+          let v = (s || '').replace(/[^A-Za-z0-9_]+/g, '_');
+          v = v.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+          return v;
+        };
+        const last = sanitize(lastRaw) || 'Untitled';
+        const dat  = sanitize(dateRaw) || new Date().toISOString().slice(0,10).replace(/-/g, '_');
+        const fname = `ZuildUp_Quote_${last}_${dat}.pdf`;
         res.writeHead(200, {
           'Content-Type':'application/pdf',
           'Content-Disposition':`attachment; filename="${fname}"`,
@@ -264,7 +387,10 @@ const server = http.createServer((req, res) => {
           'Cache-Control':'no-store',
         });
         res.end(pdf);
-      });
+      } catch (err) {
+        console.error('PDF FAIL:', err.message);
+        return send(res, 500, err.message);
+      }
     });
     return;
   }

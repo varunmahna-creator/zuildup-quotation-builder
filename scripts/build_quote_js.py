@@ -74,6 +74,8 @@ const defaultState = () => ({
   scope: 'full',                 // 'full' | 'structure_only'
   rows: [],                      // [{id, override:{label?, rate?, rate_text?, brands?, description?, location?}, _custom?:bool}]
   notes: '',
+  // P1.6: DRAFT watermark toggle. When true, every PDF page gets a diagonal "DRAFT" overlay.
+  draft: false,
   quoteId: 'ZB-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase(),
   createdAt: new Date().toISOString().slice(0,10),
 });
@@ -610,6 +612,17 @@ async function bootForm() {
     document.getElementById('notes-count').textContent = `${v.length}/2000`;
   };
   document.getElementById('notes-count').textContent = `${(state.notes||'').length}/2000`;
+
+  // ---- P1.6: DRAFT watermark toggle ----
+  const draftCb = document.getElementById('f-draft');
+  if (draftCb) {
+    draftCb.checked = !!state.draft;
+    draftCb.onchange = e => {
+      state.draft = !!e.target.checked;
+      saveState(state);
+    };
+  }
+
 
   // ---- Scope toggle ----
   for (const btn of $('f-scope').querySelectorAll('button')) {
@@ -1242,6 +1255,7 @@ async function bootForm() {
   }
 
   // ---- Download PDF ----
+  // P1.6: filename via Content-Disposition (server computes from customer_last + date).
   async function downloadPdf() {
     const btn = document.getElementById('dl');
     btn.disabled = true; btn.textContent = 'Building PDF…';
@@ -1249,8 +1263,15 @@ async function bootForm() {
       const iframe = document.getElementById('preview');
       const doc = iframe.contentDocument;
       const html = '<!doctype html>' + doc.documentElement.outerHTML;
-      const fname = ['zuildup-quote', state.quoteId, (state.customer.name||'unnamed').replace(/\s+/g,'_')].join('-');
-      const r = await fetch('/pdf?filename=' + encodeURIComponent(fname), {
+      // Derive last name (final whitespace-separated token of customer.name) for filename.
+      const fullName = (state.customer.name || '').trim();
+      const lastName = fullName ? fullName.split(/\s+/).pop() : '';
+      const dateStr  = (state.createdAt || new Date().toISOString().slice(0,10));
+      const qs = new URLSearchParams({
+        customer_last: lastName,
+        date: dateStr,
+      }).toString();
+      const r = await fetch('/pdf?' + qs, {
         method: 'POST', headers: { 'Content-Type': 'text/html' }, body: html,
       });
       if (!r.ok) {
@@ -1258,10 +1279,14 @@ async function bootForm() {
         alert('PDF render failed:\n' + t.slice(0,400));
         return;
       }
+      // Read filename from Content-Disposition (P1.6).
+      const cd = r.headers.get('Content-Disposition') || '';
+      const m = /filename="([^"]+)"/i.exec(cd);
+      const fname = m ? m[1] : ('ZuildUp_Quote_' + (lastName || 'Untitled') + '_' + dateStr + '.pdf');
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = fname + '.pdf';
+      a.href = url; a.download = fname;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -1320,9 +1345,8 @@ function renderQuote(state, about) {
   ];
   const sortedCats = catOrder.filter(c => byCat[c]).concat(Object.keys(byCat).filter(c => !catOrder.includes(c)));
 
-  return `
+  let html = `
 ${quoteCss()}
-
 ${renderCover(state, customer, showCustomer)}
 ${about ? renderAboutPage(state, about) : ''}
 ${renderAreaPage(state, c)}
@@ -1330,12 +1354,35 @@ ${renderCostPage(state, c)}
 ${renderSpecPages(state, sortedCats, byCat)}
 ${state.notes && state.notes.trim() ? renderNotesPage(state) : ''}
 `;
+  // P1.6: inject DRAFT watermark <div> as a real DOM node into every .pg
+  // when state.draft === true. Real DOM nodes (not CSS ::after) so the text
+  // appears in the printed PDF's text layer and QC tools can detect it via
+  // pdftotext/PyMuPDF extraction.
+  if (state.draft) {
+    html = html.replace(/<\/section>/g, '<div class="draft-watermark">DRAFT</div></section>');
+  }
+  return html;
 }
 
 function quoteCss() {
   return `
 <style>
   @page { size: A4; margin: 0; }
+  /* P1.6: DRAFT watermark — real DOM nodes (not ::after) so PDF text-layer extraction
+     can detect the watermark for testing. The renderer post-processes the HTML to
+     append <div class="draft-watermark">DRAFT</div> inside each .pg when state.draft is true. */
+  .draft-watermark {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 110px; font-weight: 800; letter-spacing: 0.18em;
+    color: rgba(192, 57, 43, 0.12);
+    transform: rotate(-30deg);
+    pointer-events: none; z-index: 999;
+    text-align: center;
+    user-select: none;
+  }
+  .pg.cover .draft-watermark { color: rgba(255,255,255,0.10); }
   :root { --navy:#0A1F44; --gold:#C9A24D; --offwhite:#F9FAF7; --ink:#1B1F2A; --muted:#5C6373; --rule:rgba(10,31,68,0.10); }
   body { margin: 0; font-family: 'Inter', system-ui, sans-serif; color: var(--ink); background: var(--offwhite); -webkit-font-smoothing: antialiased; }
 
