@@ -406,6 +406,24 @@ async function bootForm() {
   $('picker-search').oninput = () => renderPicker();
   $('dl').onclick = downloadPdf;
 
+  // P1.4: New Quote — wipes current quote and reloads to empty state.
+  // Foundation for P1.5 (named save/load). Sales hits this when starting a fresh customer.
+  const newQuoteBtn = document.getElementById('new-quote');
+  if (newQuoteBtn) {
+    newQuoteBtn.onclick = () => {
+      const total = state.rows.length;
+      const customerName = (state.customer?.name || '').trim();
+      const msg = total === 0 && !customerName
+        ? 'Start a new quote? (Current state is already empty.)'
+        : 'Clear current quote and start fresh?\n\n' +
+          (customerName ? `Customer: ${customerName}\n` : '') +
+          `Rows: ${total}\n\nThis cannot be undone. (P1.5 will add Save/Load.)`;
+      if (!confirm(msg)) return;
+      try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+      location.reload();
+    };
+  }
+
   function reflectModeUi(mode) {
     const isStruct = mode === 'structure';
     document.getElementById('cost-sqft-row').style.display    = isStruct ? 'none' : '';
@@ -439,8 +457,13 @@ async function bootForm() {
         ? escapeHtml(rateText)
         : (rate > 0 ? fmtINR(rate) : '<em class="set-rate">Set rate</em>');
 
+      // P1.4: a row is "unedited" if NO override field has been set. Sales should
+      // see at a glance how many rows still need attention.
+      const isUnedited = !o || (Object.keys(o).length === 0);
+
       const el = document.createElement('div');
-      el.className = 'spec' + (row._custom ? ' custom' : '');
+      el.className = 'spec' + (row._custom ? ' custom' : '') + (isUnedited ? ' unedited' : '');
+      el.tabIndex = 0; // focusable so we can return focus on Esc/Done
       el.dataset.idx = idx;
       el.draggable = true;
       el.innerHTML = `
@@ -466,9 +489,32 @@ async function bootForm() {
         }
         toggleEdit(el, idx);
       };
+      // Keyboard: Enter on a focused unedited row opens the editor.
+      el.addEventListener('keydown', (ev) => {
+        if (el.classList.contains('editing')) return; // editor handles its own keys
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          toggleEdit(el, idx);
+        }
+      });
       list.appendChild(el);
     });
-    $('spec-count').textContent = state.rows.length + ' items';
+    // P1.4: counter — "23 items · 12 need rates" so sales sees progress at a glance.
+    const total = state.rows.length;
+    let needRate = 0;
+    state.rows.forEach(row => {
+      const o = row.override || {};
+      const hasRate = (o.rate_text && o.rate_text.trim()) || (typeof o.rate === 'number' && o.rate > 0);
+      if (!hasRate) needRate++;
+    });
+    const counterEl = $('spec-count');
+    if (total === 0) {
+      counterEl.textContent = '0 items';
+    } else if (needRate === 0) {
+      counterEl.innerHTML = `${total} items <span class="ok">· all rates set</span>`;
+    } else {
+      counterEl.innerHTML = `${total} items <span class="needs-rate">· ${needRate} ${needRate === 1 ? 'needs' : 'need'} rate</span>`;
+    }
     enableDragReorder(list);
   }
 
@@ -522,25 +568,75 @@ async function bootForm() {
       state.rows[idx].override[f] = e.target.value;
       saveState(state);
     });
+
+    // P1.4: helper — close current editor cleanly. Returns the saved-row idx so
+    // caller can reopen an adjacent row. `restoreFocus` controls whether we re-focus
+    // the spec card on close (true for Esc/Done, false when chaining to next row).
+    const closeEditor = (restoreFocus) => {
+      el.classList.remove('editing');
+      ed.remove();
+      document.removeEventListener('keydown', onEscClose);
+      renderSpecList();
+      if (restoreFocus) {
+        // After re-render, find the same idx by data-idx and focus it.
+        const card = document.querySelector('.spec[data-idx="'+idx+'"]');
+        if (card) card.focus({preventScroll: true});
+      }
+    };
+
     ed.addEventListener('click', e => {
       if (e.target.dataset.act === 'done') {
         e.stopPropagation();
-        el.classList.remove('editing');
-        ed.remove();
-        renderSpecList();
+        closeEditor(true);
       } else if (e.target.dataset.act === 'delete') {
         e.stopPropagation();
         if (!confirm('Delete this row?')) return;
         state.rows.splice(idx,1); flush();
       }
     });
-    document.addEventListener('keydown', function escClose(ev) {
+
+    function onEscClose(ev) {
       if (ev.key === 'Escape' && el.classList.contains('editing')) {
-        el.classList.remove('editing');
-        ed.remove(); renderSpecList();
-        document.removeEventListener('keydown', escClose);
+        ev.preventDefault();
+        closeEditor(true);
+      }
+    }
+    document.addEventListener('keydown', onEscClose);
+
+    // P1.4: Tab nav across rows. Tab from the LAST input → save + open row N+1.
+    // Shift+Tab from the FIRST input → save + open row N-1. Other Tabs do native nav.
+    const tabbables = Array.from(ed.querySelectorAll('input, textarea, select, button'));
+    const firstField = tabbables[0];
+    const lastField  = tabbables[tabbables.length - 1];
+    ed.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Tab') return;
+      const goNext = !ev.shiftKey && ev.target === lastField;
+      const goPrev = ev.shiftKey && ev.target === firstField;
+      if (!goNext && !goPrev) return;  // let native tab handle within-panel nav
+      const nextIdx = goNext ? idx + 1 : idx - 1;
+      if (nextIdx < 0 || nextIdx >= state.rows.length) return; // at boundary, fall through
+      ev.preventDefault();
+      closeEditor(false);
+      // After re-render, open the adjacent row's editor.
+      const adj = document.querySelector('.spec[data-idx="'+nextIdx+'"]');
+      if (adj) {
+        adj.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+        toggleEdit(adj, nextIdx);
       }
     });
+
+    // P1.4: auto-focus most-edited field. Custom rows → label first (need a name);
+    // catalog rows → rate first (most common edit).
+    setTimeout(() => {
+      const focusField = row._custom ? 'label' : 'rate';
+      const target = ed.querySelector('input[data-f="' + focusField + '"]');
+      if (target) {
+        target.focus();
+        if (target.type !== 'number') target.select();
+      }
+      // Ensure the editor is visible on screen without snapping the page.
+      el.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+    }, 0);
   }
 
   function enableDragReorder(container) {
@@ -587,15 +683,20 @@ async function bootForm() {
       `;
       el.onclick = () => {
         const id = 'custom.' + Math.random().toString(36).slice(2,8);
+        // P1.4: blank label (not "New custom item") — auto-focus drops sales right into typing.
         state.rows.push({
           id, _custom: true,
-          override: { label: 'New custom item', rate: 0, brands: [], description: '', category_label: 'Custom' },
+          override: { label: '', category_label: 'Custom' },
         });
         flush(); closePicker();
-        // open the new row's editor
+        // Open the new row's editor (auto-focus on label per toggleEdit's _custom branch).
         setTimeout(() => {
-          const last = document.querySelectorAll('.spec');
-          if (last.length) toggleEdit(last[last.length-1], state.rows.length-1);
+          const newIdx = state.rows.length - 1;
+          const card = document.querySelector('.spec[data-idx="'+newIdx+'"]');
+          if (card) {
+            card.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+            toggleEdit(card, newIdx);
+          }
         }, 50);
       };
       body.appendChild(el);

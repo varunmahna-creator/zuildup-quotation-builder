@@ -606,3 +606,79 @@ P1.2 had this on the deferred list (₹1,00,000 source vs ₹2,50,000 override).
 - **#16 — Distinguish namespace RO from filesystem RO:** `mount | grep ' / '` shows BOTH the namespace flag AND the underlying device flag. Sandbox bind-mounts of `/` as ro are NOT a wedged FS — writes inside `/opt/openclaw/...` work fine.
 - **#17 — Verify the actual blocker before halting:** discipline says stop on suspected FS issues, but a 30-second `touch /opt/openclaw/workspace/...test_write && rm` would have shown writes work. **Stop → verify → escalate-or-proceed.** Stop-without-verify burns a coordination cycle.
 
+
+---
+
+## P1.4 — Sales UX Polish — 2026-04-29
+
+**Tag:** `phase2-step-9-sales-ux-polish`
+**Goal:** With P1.3's modular catalog in place (rows default to `Set rate`), polish the editing workflow so sales can fill 25+ rows fast without friction.
+
+### 6 changes shipped
+
+1. **Visual edited / unedited treatment + counter** (`scripts/build_quote_js.py` `renderSpecList`) — every spec card gets `.unedited` class when `row.override` is empty (no field set). CSS in `app/index.html` gives unedited rows a dashed border + faint tinted background + slightly-muted label, so sales sees at a glance which rows still need work. Spec-list header now shows `"N items · M need rate"` (gold/amber) or `"N items · all rates set"` (green) — instant progress signal.
+
+2. **Tab / Shift+Tab keyboard chain across rows** (`toggleEdit`) — Tab from the LAST input field in the editor saves and opens row N+1's editor. Shift+Tab from the FIRST input opens row N-1. Tabbing inside the panel still does native between-fields nav. Boundary rows (first/last) just fall through to the page's normal Tab order. Closes the existing editor cleanly via `closeEditor(false)` and `scrollIntoView({block:'nearest', behavior:'smooth'})` on the next card before opening it.
+
+3. **Focus management** — On editor open, auto-focus is `data-f="rate"` for catalog rows (most-edited) and `data-f="label"` for custom rows (need a name first). On Done/Esc, focus returns to the spec card itself (`tabIndex=0` on `.spec`, plus `card.focus({preventScroll:true})` after re-render). `Enter` / `Space` on a focused card opens the editor — pure-keyboard workflow now possible end-to-end.
+
+4. **localStorage refresh survival — verified.** `flush()` is called on every state mutation, `loadState()` runs on init. Driven via real Chrome (not just code-read): seed → `Page.navigate` reload → assert `state.rows.length === 3` and customer name persists. PASS.
+
+5. **Custom row UX polish** — when "+ Custom" is clicked, the new row is pushed with empty `override.label` (was `'New custom item'`) and `category_label: 'Custom'`. Editor auto-opens via the `setTimeout` already in place, but now uses the new `data-idx` selector + `scrollIntoView` for a cleaner UX. Auto-focus on `label` field (per change #3) means sales just starts typing.
+
+6. **"New Quote" button** (`app/index.html` toolbar + `build_quote_js.py` wire-up) — top-right secondary button (white-on-navy outline) next to the navy "Download PDF" CTA. Confirms with a contextual message showing customer name + row count, then clears `localStorage[STORE_KEY]` and reloads to a clean state. Foundation for P1.5's Save / Load buttons in the same toolbar slot.
+
+### Verification — drove headless Chrome via CDP, real keystrokes
+
+`/tmp/_p14_uitest.py` — 10 assertions, **10/10 PASS**:
+
+| # | Test | Result |
+|---|---|---|
+| T1 | App loads (title, `#spec-list` exists) | PASS |
+| T2 | Refresh survives — 3 rows + customer name persist after `Page.navigate` reload | PASS |
+| T3 | Click spec card → editor opens, `data-f="rate"` is `document.activeElement` | PASS |
+| T4 | Tab from last input → row N+1's editor opens, focus inside row 1 | PASS |
+| T5 | Shift+Tab from first input → row N-1 reopens | PASS |
+| T6 | Esc closes editor, focus returns to `.spec[data-idx="0"]` | PASS |
+| T7a | Counter shows `"3 items · 3 need rate"` before edits | PASS |
+| T7b | Counter updates to `"3 items · 2 need rate"` after setting rate=55000 on row 0 | PASS |
+| T8 | "+ Custom" → row 4 created blank-label, editor open, label-focused | PASS |
+| T9 | "New Quote" + auto-confirm → state wiped, customer name empty after reload | PASS |
+
+### PDF parity (no regression)
+
+P1.3's `_p13_preview.html` fixture (15 rows, no overrides) re-rendered through P1.4 build:
+- 8 pages, **314 KB** (identical to P1.3 baseline)
+- 15 "Set rate" pill matches
+- **0** ">Included<" matches
+- **0** brand badges on the rendered PDF
+- 15 `spec-card unedited` matches (all template rows correctly tagged)
+
+Inverted catalog fidelity test (`tests/test_catalog_fidelity.py`): **PASS** (P1.4 didn't touch catalog).
+
+### Visual evidence
+
+`/opt/openclaw/workspace/_p14_screenshot.png` — three rows in the spec list:
+- Row 1 (Steel, override applied): solid border, white bg, real rate `₹55,000/MT cap (Rathi 500FE)`, brand badge `Rathi Steel 500FE`
+- Rows 2 + 3 (unedited): dashed border, faint tinted background, italic `Set rate` pill, italic `suggested: …` hint
+- Counter at top: `"3 items · 2 need rate"` (gold/amber)
+
+Vision-QC confirmed digit-by-digit reading: counter text correct, dashed-vs-solid border distinction correct, "suggested:" italic styling correct.
+
+### Files changed in P1.4
+
+- `scripts/build_quote_js.py` — `renderSpecList` (`.unedited` class, smarter counter, Enter/Space keyboard); `toggleEdit` (Tab/Shift-Tab nav, auto-focus by row type, `closeEditor` helper, return-focus on Esc/Done, `scrollIntoView`); custom-row `onclick` (empty label, `data-idx` selector); `'new-quote'` button wire-up.
+- `app/index.html` — `.right .toolbar .secondary` button styles, `.spec.unedited` styles, `.spec:focus` outline, `.specs-head .count .needs-rate / .ok` colors, `<button class="secondary" id="new-quote">` in toolbar.
+- `app/quote.js` — regenerated.
+
+### What did NOT change
+
+- Catalog (`catalog/catalog.json`) — untouched.
+- Customer-facing PDF output — byte-for-byte identical with P1.3 baseline.
+- `tests/test_catalog_fidelity.py` — untouched, still passes.
+- `scripts/build_catalog.py` — untouched.
+
+### Next: P1.5 — Quote save/load + multi-customer
+
+The `New Quote` button in the toolbar is the leftmost slot in a future row of `New Quote · Save · Load · Duplicate · Export JSON · Import JSON` controls. Storage strategy still client-side (`localStorage` keyed by quote ID; migrate to IndexedDB if cumulative >5 MB).
+

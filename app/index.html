@@ -108,6 +108,16 @@ textarea { resize: vertical; min-height: 60px; }
 .right .toolbar .download { background: var(--navy); color: white; border: none; padding: 9px 18px; border-radius: 6px; font: inherit; font-weight: 500; font-size: 13px; cursor: pointer; letter-spacing: 0.02em; }
 .right .toolbar .download:disabled { opacity: 0.5; cursor: not-allowed; }
 .right .toolbar .download:hover:not(:disabled) { background: #13315A; }
+/* P1.4: secondary toolbar button + unedited rows + counter */
+.right .toolbar .secondary { background: white; color: var(--navy); border: 1px solid var(--rule); padding: 8px 14px; border-radius: 6px; font: inherit; font-weight: 500; font-size: 12.5px; cursor: pointer; margin-right: 8px; }
+.right .toolbar .secondary:hover { background: rgba(10,31,68,0.04); border-color: rgba(10,31,68,0.30); }
+.right .toolbar > span.title { margin-right: auto; }
+.spec.unedited { background: rgba(10,31,68,0.025); border-style: dashed; }
+.spec.unedited .label { color: rgba(10,31,68,0.70); }
+.spec.unedited .meta, .spec.unedited .rate { opacity: 0.85; }
+.spec:focus { outline: 2px solid rgba(10,31,68,0.35); outline-offset: 1px; }
+.specs-head .count .needs-rate { color: #B8860B; font-weight: 500; }
+.specs-head .count .ok { color: #2E7D32; font-weight: 500; }
 .preview-stack { padding: 16px 0 60px; }
 iframe.preview { width: 794px; border: none; display: block; height: 1123px; margin: 0 auto; background: white; box-shadow: 0 6px 28px rgba(0,0,0,0.10); }
 </style>
@@ -207,6 +217,7 @@ iframe.preview { width: 794px; border: none; display: block; height: 1123px; mar
 <main class="right">
   <div class="toolbar">
     <span class="title">Live Preview · A4</span>
+    <button class="secondary" id="new-quote" title="Clear current quote and start fresh">New Quote</button>
     <button class="download" id="dl">Download PDF</button>
   </div>
   <div class="preview-stack">
