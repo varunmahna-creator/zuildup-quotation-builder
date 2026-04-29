@@ -3,7 +3,7 @@
 ## Login
 - **URL:** https://zuildup-quotes-586295767597.asia-south1.run.app
 - **Username:** `zuildup-sales`
-- **Password:** _(see channel pin / DM from Varun)_
+- **Password:** `zuildup`
 
 The browser will prompt for credentials on first visit. Most browsers remember
 them per-session.
@@ -39,10 +39,10 @@ them per-session.
 Toggle **DRAFT** on the toolbar to add a diagonal "DRAFT" watermark on every
 PDF page. Default: off (final copy).
 
-## Feedback button (💬)
-Use the toolbar **💬 Feedback** button to send notes back to the team. It
-includes a redacted state summary (build mode, row count, etc.) but **NEVER**
-includes customer name, phone, address, or financial figures.
+## Reporting issues
+If something feels off — broken layout, wrong calculation, missing item — tell
+Varun on **WhatsApp**. We'll prioritise based on impact.
+
 
 ## Known limits
 - One customer per saved slot (~5 MB localStorage; the app warns at ~80% full).
@@ -53,8 +53,7 @@ includes customer name, phone, address, or financial figures.
 - DRAFT watermark is on EVERY page, not removable without unticking the toggle.
 
 ## Troubleshooting
-- **Blank PDF / spinner forever** → reload, try again. If persistent, click
-  💬 Feedback with a description.
+- **Blank PDF / spinner forever** → reload, try again. If persistent, ping Varun on WhatsApp.
 - **"Saving…" stuck** → use Save button manually. Refresh to verify state
   survived.
 - **Lost a quote** → check Load list. If gone, Export every important quote

@@ -329,3 +329,37 @@ URL=$(gcloud run services describe zuildup-quotes --region asia-south1 --format=
 PASS=$(cat /tmp/zuildup_auth_pass.txt)  # if /tmp got wiped, get from Varun
 curl -s -u zuildup-sales:$PASS -o /dev/null -w 'live=%{http_code}\n' $URL
 ```
+
+
+---
+
+## Deploy follow-up — 2026-04-29 ~08:50 UTC
+
+Two changes per Varun, **no new tag** (minor follow-up to `phase2-deployed`):
+
+### 1. Password simplified
+- Was: random 20-char (rotated)
+- Now: `zuildup` (per Varun's call — simpler for sales onboarding)
+- Applied via `gcloud run services update --update-env-vars AUTH_PASS=zuildup`
+- Verified: new pass returns 200, old pass returns 401
+- Revision: `zuildup-quotes-00003-h8f`
+
+### 2. Feedback button removed
+Varun decided not to ship the in-app feedback button — sales will report friction
+over WhatsApp directly. Less surface area to maintain. Removed:
+- `<button id="feedback-btn">` from `app/index.html`
+- `<div id="feedback-modal">` from `app/index.html`
+- Feedback handler block in `scripts/build_quote_js.py` (~75 lines)
+- `app/quote.js` regenerated (no `feedback-btn`, `fbBtn`, `/feedback` tokens)
+- `handleFeedback()` function + `/feedback` POST route from `app/server.js`
+- Updated `docs/SALES_QUICKSTART.md` — replaced "Feedback button" section with
+  "Reporting issues" pointing to WhatsApp
+- `FEEDBACK_WEBHOOK` env var removed from Cloud Run service (no-op since never set)
+
+Redeployed; revision `zuildup-quotes-00004+` live after second deploy.
+
+### Smoke tests after follow-up
+- `/` valid creds (zuildup-sales:zuildup) → 200 ✅
+- Old creds → 401 ✅
+- `/feedback` POST → 404 ✅ (route gone)
+- `curl / | grep -i feedback` → 0 matches ✅

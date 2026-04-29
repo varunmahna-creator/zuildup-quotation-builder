@@ -354,7 +354,7 @@ async function renderPdf(html, cb) {
 
 // --- Production basic auth gate ---------------------------------------------
 // Activated only when AUTH_USER / AUTH_PASS env vars are both set.
-// Single shared credential — sales team uses one login. /feedback is also gated.
+// Single shared credential — sales team uses one login.
 function requireAuth(req, res) {
   const user = process.env.AUTH_USER;
   const pass = process.env.AUTH_PASS;
@@ -387,55 +387,6 @@ function requireAuth(req, res) {
   return true;
 }
 
-// --- /feedback route -------------------------------------------------------
-// Forwards a sales-side comment + redacted state summary to a Discord webhook
-// configured via env var FEEDBACK_WEBHOOK. Returns 503 if not configured.
-async function handleFeedback(req, res) {
-  let chunks = [];
-  for await (const c of req) chunks.push(c);
-  let body;
-  try { body = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'); }
-  catch (_) { body = {}; }
-  const webhook = process.env.FEEDBACK_WEBHOOK;
-  if (!webhook) {
-    res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-    res.end(JSON.stringify({ ok: false, error: 'feedback_disabled' }));
-    return;
-  }
-  const comment = (body.comment || '').toString().slice(0, 1500);
-  const stateSummary = body.state_summary || {};
-  const pageUrl = (body.url || '').toString().slice(0, 200);
-  const summaryStr = JSON.stringify(stateSummary, null, 2).slice(0, 1400);
-  const payload = {
-    content: [
-      '**ZuildUp Quote Builder Feedback**',
-      `Time: \`${new Date().toISOString()}\``,
-      pageUrl ? `URL: ${pageUrl}` : null,
-      '',
-      '**Comment:**',
-      comment || '_(empty)_',
-      '',
-      '**State summary:**',
-      '```json',
-      summaryStr,
-      '```',
-    ].filter(Boolean).join('\n').slice(0, 1900),
-  };
-  try {
-    const resp = await fetch(webhook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!resp.ok) throw new Error(`webhook ${resp.status}`);
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-    res.end(JSON.stringify({ ok: true }));
-  } catch (err) {
-    console.error('FEEDBACK FAIL:', err.message);
-    res.writeHead(502, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-    res.end(JSON.stringify({ ok: false, error: err.message }));
-  }
-}
 
 const server = http.createServer((req, res) => {
   const u = url.parse(req.url, true);
@@ -487,12 +438,6 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
-
-  // POST /feedback  ->  forward to Discord webhook (P-deploy)
-  if (req.method === 'POST' && pathname === '/feedback') {
-    return handleFeedback(req, res);
-  }
-
   // GET /  ->  index.html
   if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
     return serveStatic(req, res, '/app/index.html');
