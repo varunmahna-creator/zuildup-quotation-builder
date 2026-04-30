@@ -76,6 +76,9 @@ const defaultState = () => ({
     zoneCRate:    null,          // override Zone C (default = 600 ₹/sqft)
     zoneDRate:    null,          // override Zone D (default = 15 ₹/L)
     basementRate: null,          // override Zone E basement (default = 2700 ₹/sqft)
+    // P3 v2 (A): per-line-item rate overrides. Key '<zone>:<item.name>' -> ₹/sqft (or ₹/L for Zone D).
+    // null/missing => use zone default. Lets sales charge Terrace ₹650 while keeping Ramp/Setback at ₹600.
+    itemRates: {},
   },
   scope: 'full',                 // 'full' | 'structure_only'
   rows: [],                      // [{id, override:{label?, rate?, rate_text?, brands?, description?, location?}, _custom?:bool}]
@@ -84,6 +87,11 @@ const defaultState = () => ({
   draft: false,
   // P3 #6: specs layout — 'grid' (default cards) or 'table' (compact table form).
   specsLayout: 'grid',
+  // P3 v2 (C): per-category open/close state in left-rail spec list.
+  // Default: all collapsed. Lives in state but excluded from PDF render.
+  _uiCatOpen: {},
+  // Picker UI: which category sections are open (default all collapsed).
+  _uiPickerOpen: {},
   // P3 #7: per-line area overrides. Key '<zone>:<item.name>' -> integer sq.ft (or L for Zone D).
   areaOverrides: {},
   quoteId: '',  // P3 #2: assigned by server (/api/next-quote-id) on first save
@@ -104,7 +112,7 @@ function loadState() {
           ...d, ...s,
           customer: { ...d.customer, ...(s.customer||{}) },
           build:    { ...d.build,    ...(s.build||{})    },
-          pricing:  { ...d.pricing,  ...(s.pricing||{})  },
+          pricing:  { ...d.pricing,  ...(s.pricing||{}), itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) }  },
         };
       }
       // Stale active id — clear it.
@@ -122,7 +130,7 @@ function loadState() {
       ...d, ...s,
       customer: { ...d.customer, ...(s.customer||{}) },
       build:    { ...d.build,    ...(s.build||{})    },
-      pricing:  { ...d.pricing,  ...(s.pricing||{})  },
+      pricing:  { ...d.pricing,  ...(s.pricing||{}), itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) } },
     };
   } catch(e) { return defaultState(); }
 }
@@ -472,12 +480,27 @@ function calcPackage(state) {
   const totalE = b.hasBasement ? floorArea : 0;
   const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: 'Enclosed Area', area: totalE }] : [];
 
-  // Costs (P3 #4: locals reflect override-or-formula)
-  const costA = totalA * baseRate;
-  const costB = totalB * bRate;
-  const costC = totalC * cRate;
-  const costD = totalD * dRate;
-  const costE = totalE * eRate;
+  // P3 v2 (A): per-line-item rates. Each item gets item.rate (override or zone default)
+  // and item.cost (area * rate). Zone cost = sum(items.cost). Zone label shows "varies"
+  // if any item rate differs from the zone default.
+  const itemRates = (state.pricing.itemRates) || {};
+  const enrichZone = (key, items, defaultRate) => {
+    let varies = false;
+    for (const it of items) {
+      const ovr = itemRates[key + ':' + it.name];
+      const r = (ovr != null && ovr !== '' && !isNaN(parseInt(ovr))) ? parseInt(ovr) : defaultRate;
+      if (r !== defaultRate) varies = true;
+      it.rate = r;
+      it.cost = it.area * r;
+    }
+    return { cost: items.reduce((s, it) => s + it.cost, 0), varies };
+  };
+  const _zA = enrichZone('A', zoneAItems, baseRate);
+  const _zB = enrichZone('B', zoneBItems, bRate);
+  const _zC = enrichZone('C', zoneCItems, cRate);
+  const _zD = enrichZone('D', zoneDItems, dRate);
+  const _zE = enrichZone('E', zoneEItems, eRate);
+  const costA = _zA.cost, costB = _zB.cost, costC = _zC.cost, costD = _zD.cost, costE = _zE.cost;
   const liftCost = b.hasLift ? LIFT_COST : 0;
   const zoneSubtotal = costA + costB + costC + costD + costE;
   // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
@@ -489,11 +512,11 @@ function calcPackage(state) {
     buildLabel: hasStilt ? `Stilt + ${numFloors} Floors` : `Ground + ${numFloors-1}`,
     floorArea,
     zones: {
-      A: { items: zoneAItems, total: totalA, rate: baseRate, cost: costA, rateLabel: `₹${ni(baseRate)}/sqft` },
-      B: { items: zoneBItems, total: totalB, rate: bRate,    cost: costB, rateLabel: `₹${ni(bRate)}/sqft` },
-      C: { items: zoneCItems, total: totalC, rate: cRate,    cost: costC, rateLabel: `₹${ni(cRate)}/sqft` },
-      D: { items: zoneDItems, total: totalD, rate: dRate,    cost: costD, rateLabel: `₹${ni(dRate)}/L`, unit: 'L' },
-      E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: eRate, cost: costE, rateLabel: `₹${ni(eRate)}/sqft` } : null,
+      A: { items: zoneAItems, total: totalA, rate: baseRate, cost: costA, varies: _zA.varies, rateLabel: _zA.varies ? 'varies' : `₹${ni(baseRate)}/sqft` },
+      B: { items: zoneBItems, total: totalB, rate: bRate,    cost: costB, varies: _zB.varies, rateLabel: _zB.varies ? 'varies' : `₹${ni(bRate)}/sqft` },
+      C: { items: zoneCItems, total: totalC, rate: cRate,    cost: costC, varies: _zC.varies, rateLabel: _zC.varies ? 'varies' : `₹${ni(cRate)}/sqft` },
+      D: { items: zoneDItems, total: totalD, rate: dRate,    cost: costD, varies: _zD.varies, rateLabel: _zD.varies ? 'varies' : `₹${ni(dRate)}/L`, unit: 'L' },
+      E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: eRate, cost: costE, varies: _zE.varies, rateLabel: _zE.varies ? 'varies' : `₹${ni(eRate)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
     zoneSubtotal,
@@ -551,11 +574,24 @@ function calcStructure(state) {
   const totalE = b.hasBasement ? floorArea : 0;
   const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: 'Enclosed Area', area: totalE }] : [];
 
-  // Costs (no Zone C in structure mode)
-  const costA = totalA * strRate;
-  const costB = totalB * STRUCT_B_RATE;
-  const costD = totalD * dRate;
-  const costE = totalE * eRate;
+  // P3 v2 (A): per-line-item rates in structure mode.
+  const itemRates = (state.pricing.itemRates) || {};
+  const enrichZone = (key, items, defaultRate) => {
+    let varies = false;
+    for (const it of items) {
+      const ovr = itemRates[key + ':' + it.name];
+      const r = (ovr != null && ovr !== '' && !isNaN(parseInt(ovr))) ? parseInt(ovr) : defaultRate;
+      if (r !== defaultRate) varies = true;
+      it.rate = r;
+      it.cost = it.area * r;
+    }
+    return { cost: items.reduce((s, it) => s + it.cost, 0), varies };
+  };
+  const _zA = enrichZone('A', zoneAItems, strRate);
+  const _zB = enrichZone('B', zoneBItems, STRUCT_B_RATE);
+  const _zD = enrichZone('D', zoneDItems, dRate);
+  const _zE = enrichZone('E', zoneEItems, eRate);
+  const costA = _zA.cost, costB = _zB.cost, costD = _zD.cost, costE = _zE.cost;
   const liftCost = b.hasLift ? LIFT_COST : 0;
   const zoneSubtotal = costA + costB + costD + costE;
   // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
@@ -567,11 +603,11 @@ function calcStructure(state) {
     buildLabel: `Structure Only · Stilt + ${numFloors}`,
     floorArea,
     zones: {
-      A: { items: zoneAItems, total: totalA, rate: strRate,        cost: costA, rateLabel: `₹${ni(strRate)}/sqft` },
-      B: { items: zoneBItems, total: totalB, rate: STRUCT_B_RATE,  cost: costB, rateLabel: `₹${ni(STRUCT_B_RATE)}/sqft` },
+      A: { items: zoneAItems, total: totalA, rate: strRate,       cost: costA, varies: _zA.varies, rateLabel: _zA.varies ? 'varies' : `₹${ni(strRate)}/sqft` },
+      B: { items: zoneBItems, total: totalB, rate: STRUCT_B_RATE, cost: costB, varies: _zB.varies, rateLabel: _zB.varies ? 'varies' : `₹${ni(STRUCT_B_RATE)}/sqft` },
       C: null,
-      D: { items: zoneDItems, total: totalD, rate: dRate, cost: costD, rateLabel: `₹${ni(dRate)}/L`, unit: 'L' },
-      E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: eRate, cost: costE, rateLabel: `₹${ni(eRate)}/sqft` } : null,
+      D: { items: zoneDItems, total: totalD, rate: dRate, cost: costD, varies: _zD.varies, rateLabel: _zD.varies ? 'varies' : `₹${ni(dRate)}/L`, unit: 'L' },
+      E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: eRate, cost: costE, varies: _zE.varies, rateLabel: _zE.varies ? 'varies' : `₹${ni(eRate)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
     zoneSubtotal,
@@ -721,7 +757,7 @@ async function bootForm() {
     }
   }
 
-  function flush() { saveState(state); renderSpecList(); applyValidation(); renderAreaOverridesPanel(); }
+  function flush() { saveState(state); renderSpecList(); applyValidation(); renderAreaOverridesPanel(); renderItemRatesPanel(); }
 
   // ---- Customer field listeners ----
   $('f-salutation').oninput = e => { state.customer.salutation = e.target.value; flush(); };
@@ -740,7 +776,8 @@ async function bootForm() {
       const v = e.target.value.trim();
       state.pricing[key] = (v === '') ? null : (parseInt(v) || 0);
       flush();
-      renderAreaOverridesPanel();  // recompute since totals will change
+      renderAreaOverridesPanel();
+  renderItemRatesPanel();  // recompute since totals will change
     };
   });
   // P3 #6: layout toggle
@@ -1186,6 +1223,75 @@ async function bootForm() {
     });
   }
 
+  // ---- P3 v2 (A): Per-line-item rate overrides panel (inside Pricing fieldset) ----
+  function renderItemRatesPanel() {
+    const list = document.getElementById('item-rate-list');
+    if (!list) return;
+    state.pricing.itemRates ||= {};
+    let c;
+    try { c = computeQuote(state); }
+    catch (_) {
+      list.innerHTML = '<p style="font-size:11px;color:var(--muted);margin:0;">Enter pricing & build details to see line items.</p>';
+      return;
+    }
+    if (!state.build.plotSqYards || !state.build.coverage) {
+      list.innerHTML = '<p style="font-size:11px;color:var(--muted);margin:0;">Enter plot dimensions & coverage to see line items.</p>';
+      return;
+    }
+    const html = [];
+    let hasOverride = false;
+    const zoneDefaults = {
+      A: c.zones.A?.rate, B: c.zones.B?.rate, C: c.zones.C?.rate, D: c.zones.D?.rate, E: c.zones.E?.rate,
+    };
+    for (const k of ['A','B','C','D','E']) {
+      const z = c.zones?.[k];
+      if (!z || !z.items?.length) continue;
+      // Get the *default* (zone) rate, not the per-item rate, so placeholder
+      // shows the fallback, not the current override.
+      let zoneDefault = zoneDefaults[k];
+      // Re-compute zone default ignoring item overrides: read from pricing inputs.
+      const p = state.pricing;
+      const baseFormula = parseInt(p.costPerSqft) || 0;
+      const ovr = (v, fb) => (v != null && v !== '' && !isNaN(parseInt(v))) ? parseInt(v) : fb;
+      const isStruct = state.build.buildType === 'structure' || state.scope === 'structure_only';
+      const strR = parseInt(p.structureRate) || 0;
+      if (k === 'A') zoneDefault = isStruct ? strR : ovr(p.zoneARate, baseFormula);
+      else if (k === 'B') zoneDefault = isStruct ? 500 : ovr(p.zoneBRate, Math.round(baseFormula * 0.5));
+      else if (k === 'C') zoneDefault = ovr(p.zoneCRate, 600);
+      else if (k === 'D') zoneDefault = ovr(p.zoneDRate, 15);
+      else if (k === 'E') zoneDefault = ovr(p.basementRate, 2700);
+      const unit = z.unit ? '/' + z.unit : '/sqft';
+      html.push(`<div class="aov-zone"><div class="aov-zone-hdr">Zone ${k} <span class="aov-rate">default ₹${ni(zoneDefault)}${unit}</span></div>`);
+      z.items.forEach(it => {
+        const key = k + ':' + it.name;
+        const v = state.pricing.itemRates[key] ?? '';
+        if (v !== '') hasOverride = true;
+        html.push(`
+          <div class="aov-row">
+            <span class="aov-name">${escapeHtml(it.name)}</span>
+            <input type="number" min="0" data-itemrate-key="${escapeAttr(key)}" value="${v === '' ? '' : escapeAttr(String(v))}" placeholder="${escapeAttr('₹' + ni(zoneDefault))}" style="width:90px;">
+            <span class="aov-unit">${escapeHtml(unit.replace('/', ''))}</span>
+          </div>
+        `);
+      });
+      html.push('</div>');
+    }
+    list.innerHTML = html.join('');
+    // Auto-open <details> if any override is set
+    const details = document.getElementById('item-rate-overrides');
+    if (details && hasOverride) details.open = true;
+    list.querySelectorAll('input[data-itemrate-key]').forEach(inp => {
+      inp.oninput = e => {
+        const key = inp.dataset.itemrateKey;
+        const val = e.target.value.trim();
+        if (val === '') delete state.pricing.itemRates[key];
+        else state.pricing.itemRates[key] = parseInt(val) || 0;
+        saveState(state);
+      };
+      inp.onblur = e => { renderItemRatesPanel(); };
+    });
+  }
+
   // ---- Spec list (P3 #9: grouped by category) ----
   function renderSpecList() {
     const list = $('spec-list');
@@ -1204,12 +1310,24 @@ async function bootForm() {
       'Paint & Polish','General Aspects','Custom',
     ];
     const sortedCats = catOrder.filter(c => groups[c]).concat(Object.keys(groups).filter(c => !catOrder.includes(c)));
+    state._uiCatOpen ||= {};
     for (const cat of sortedCats) {
+      const isOpen = !!state._uiCatOpen[cat];
       const hdr = document.createElement('div');
-      hdr.className = 'spec-cat-hdr';
-      hdr.innerHTML = `<span class="cat-name">${escapeHtml(cat)}</span><span class="cat-count">${groups[cat].length}</span>`;
+      hdr.className = 'spec-cat-hdr collapsible' + (isOpen ? ' open' : '');
+      hdr.innerHTML = `<span class="cat-name"><span class="chev">${isOpen ? '▾' : '▸'}</span> ${escapeHtml(cat)}</span><span class="cat-count">${groups[cat].length}</span>`;
+      hdr.style.cursor = 'pointer';
       list.appendChild(hdr);
-      groups[cat].forEach(idx => buildSpecCard(list, idx));
+      const body = document.createElement('div');
+      body.className = 'spec-cat-body';
+      body.style.display = isOpen ? '' : 'none';
+      list.appendChild(body);
+      hdr.onclick = () => {
+        state._uiCatOpen[cat] = !state._uiCatOpen[cat];
+        saveState(state);
+        renderSpecList();
+      };
+      groups[cat].forEach(idx => buildSpecCard(body, idx));
     }
     const total = state.rows.length;
     let needRate = 0;
@@ -1510,11 +1628,25 @@ async function bootForm() {
       'Paint & Polish','General Aspects','Custom',
     ];
     const sortedCats = catOrder.filter(c => groups[c]).concat(Object.keys(groups).filter(c => !catOrder.includes(c)));
+    state._uiPickerOpen ||= {};
+    // If user is searching, force-open all cats so they can see matches.
+    const forceOpen = !!q;
     for (const cat of sortedCats) {
+      const isOpen = forceOpen || !!state._uiPickerOpen[cat];
       const hdr = document.createElement('div');
-      hdr.className = 'picker-cat-hdr';
-      hdr.innerHTML = `<span>${escapeHtml(cat)}</span><span class="cat-count">${groups[cat].length}</span>`;
+      hdr.className = 'picker-cat-hdr collapsible' + (isOpen ? ' open' : '');
+      hdr.innerHTML = `<span><span class="chev">${isOpen ? '▾' : '▸'}</span> ${escapeHtml(cat)}</span><span class="cat-count">${groups[cat].length}</span>`;
+      hdr.style.cursor = 'pointer';
       body.appendChild(hdr);
+      const inner = document.createElement('div');
+      inner.className = 'picker-cat-body';
+      inner.style.display = isOpen ? '' : 'none';
+      body.appendChild(inner);
+      hdr.onclick = () => {
+        state._uiPickerOpen[cat] = !state._uiPickerOpen[cat];
+        saveState(state);
+        renderPicker();
+      };
       for (const it of groups[cat]) {
         const el = document.createElement('div'); el.className = 'item';
         el.innerHTML = `
@@ -1528,7 +1660,7 @@ async function bootForm() {
           state.rows.push({ id: it.id, override: {} });
           flush(); closePicker();
         };
-        body.appendChild(el);
+        inner.appendChild(el);
       }
     }
   }
@@ -1806,6 +1938,10 @@ function quoteCss() {
   .calc-table tfoot td { padding: 10px; }
   .calc-table tfoot .sub { background: rgba(10,31,68,0.04); font-weight: 600; }
   .calc-table tfoot .grand { background: var(--navy); color: white; font-weight: 700; font-size: 13.5px; }
+  /* P3 v2: per-item rows in cost table when zone has rate variations */
+  .calc-table tbody tr.cost-zone-hdr td { background: rgba(10,31,68,0.04); color: var(--navy); font-weight: 600; padding: 8px 10px; border-top: 1.5px solid var(--rule); }
+  .calc-table tbody tr.cost-item-row td { padding: 5px 10px; font-size: 11.5px; border-bottom: 0.5px dashed var(--rule); }
+  .calc-table tbody tr.cost-zone-sub td { background: rgba(10,31,68,0.02); padding: 6px 10px; border-bottom: 1px solid var(--rule); }
 
   .params-row { display:flex; flex-wrap:wrap; gap: 4mm 8mm; padding: 6px 0 9mm; border-bottom: 1px solid var(--rule); margin-bottom: 6mm; font-size: 11.5px; color: var(--muted); }
   .params-row b { color: var(--ink); font-weight: 600; margin-right: 4px; }
@@ -1965,26 +2101,47 @@ function renderAreaPage(state, c) {
   };
   const totalArea = (c.zones.A?.total || 0) + (c.zones.B?.total || 0) + (c.zones.C?.total || 0) + (c.zones.E?.total || 0);
 
-  return `
+  // Bug fix: count rendered rows. If high (basement+lift+all 5 zones), split
+  // into 2 pages with clean breaks. Threshold ~16 rows; 4-floor stilt+basement
+  // produces ~18-22 rows reliably.
+  const rowCount =
+      (c.zones.A?.items.length || 0) + 1
+    + (c.zones.B?.items.length || 0) + 1
+    + (c.zones.C ? (c.zones.C.items.length + 1) : 0)
+    + (c.zones.D?.items.length || 0) + 1
+    + (c.zones.E ? (c.zones.E.items.length + 1) : 0);
+  const splitPage = rowCount > 14;
+
+  const headerBlock = `
+    <div class="pg-head">
+      ${logoSvg({ size:'large' })}
+      <div class="breadcrumb"><span class="current">Area Calculation</span></div>
+    </div>
+    <div class="eyebrow">Step 1</div>
+    <h1 class="section">Area Calculation</h1>
+    <p class="lede">Built-up area derived from plot dimensions, coverage and the chosen build configuration. Each zone bills at a different rate (see Cost Calculation).</p>
+
+    <div class="params-row">
+      <span><b>Plot:</b> ${c.plotSqYards} sq.yd / ${ni(c.plotSqFt)} sq.ft</span>
+      <span><b>Dims:</b> ${c.breadth}ft × ${c.depth}ft</span>
+      <span><b>Coverage:</b> ${c.coverage}%</span>
+      <span><b>Floor Area:</b> ${ni(c.floorArea)} sq.ft</span>
+      <span><b>Build:</b> ${escapeHtml(c.buildLabel)}</span>
+      ${state.build.hasBasement ? '<span><b>Basement:</b> Yes</span>' : ''}
+      ${state.build.hasLift ? '<span><b>Lift:</b> Yes</span>' : ''}
+    </div>`;
+
+  const continuationHeader = `
+    <div class="pg-head">
+      ${logoSvg({ size:'large' })}
+      <div class="breadcrumb"><span class="current">Area Calculation (cont.)</span></div>
+    </div>
+    <h1 class="section" style="margin-top:8mm;">Area Calculation <span style="color:var(--gold);font-size:0.7em;">(continued)</span></h1>`;
+
+  if (!splitPage) {
+    return `
 <section class="pg">
-  <div class="pg-head">
-    ${logoSvg({ size:'large' })}
-    <div class="breadcrumb"><span class="current">Area Calculation</span></div>
-  </div>
-  <div class="eyebrow">Step 1</div>
-  <h1 class="section">Area Calculation</h1>
-  <p class="lede">Built-up area derived from plot dimensions, coverage and the chosen build configuration. Each zone bills at a different rate (see Cost Calculation).</p>
-
-  <div class="params-row">
-    <span><b>Plot:</b> ${c.plotSqYards} sq.yd / ${ni(c.plotSqFt)} sq.ft</span>
-    <span><b>Dims:</b> ${c.breadth}ft × ${c.depth}ft</span>
-    <span><b>Coverage:</b> ${c.coverage}%</span>
-    <span><b>Floor Area:</b> ${ni(c.floorArea)} sq.ft</span>
-    <span><b>Build:</b> ${escapeHtml(c.buildLabel)}</span>
-    ${state.build.hasBasement ? '<span><b>Basement:</b> Yes</span>' : ''}
-    ${state.build.hasLift ? '<span><b>Lift:</b> Yes</span>' : ''}
-  </div>
-
+  ${headerBlock}
   <table class="calc-table">
     <thead><tr><th>Area</th><th>Description</th><th class="r">Est. Size</th></tr></thead>
     <tbody>
@@ -1998,8 +2155,38 @@ function renderAreaPage(state, c) {
       <tr class="sub"><td colspan="2">Total Built-up Area (excluding water tank capacity)</td><td class="r">${ni(totalArea)} sq.ft</td></tr>
     </tfoot>
   </table>
-
   <div class="pg-foot"><span>Area Calculation</span><span>+91 92172 63051 · info@zuildup.com</span></div>
+</section>`;
+  }
+
+  // Split: page 1 = Zones A + B, page 2 = C + D + E + grand total.
+  return `
+<section class="pg">
+  ${headerBlock}
+  <table class="calc-table">
+    <thead><tr><th>Area</th><th>Description</th><th class="r">Est. Size</th></tr></thead>
+    <tbody>
+      ${zoneRows('A', c.zones.A)}
+      ${zoneRows('B', c.zones.B)}
+    </tbody>
+  </table>
+  <p class="lede" style="color:var(--muted);font-size:11px;margin-top:auto;">Continued on next page →</p>
+  <div class="pg-foot"><span>Area Calculation (1/2)</span><span>+91 92172 63051 · info@zuildup.com</span></div>
+</section>
+<section class="pg">
+  ${continuationHeader}
+  <table class="calc-table">
+    <thead><tr><th>Area</th><th>Description</th><th class="r">Est. Size</th></tr></thead>
+    <tbody>
+      ${c.zones.C ? zoneRows('C', c.zones.C) : ''}
+      ${zoneRows('D', c.zones.D)}
+      ${c.zones.E ? zoneRows('E', c.zones.E) : ''}
+    </tbody>
+    <tfoot>
+      <tr class="sub"><td colspan="2">Total Built-up Area (excluding water tank capacity)</td><td class="r">${ni(totalArea)} sq.ft</td></tr>
+    </tfoot>
+  </table>
+  <div class="pg-foot"><span>Area Calculation (2/2)</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>`;
 }
 
@@ -2007,6 +2194,11 @@ function renderCostPage(state, c) {
   const costRow = (key, zone) => {
     if (!zone) return '';
     const tag = `<span class="zone-tag z${key.toLowerCase()}">${key}</span>`;
+    // P3 v2 (A): if zone has per-item rate overrides, expand into one row per item.
+    if (zone.varies) {
+      const itemRows = zone.items.map(it => `<tr class="cost-item-row"><td style="padding-left:18px;color:var(--muted);font-size:11.5px;">— ${escapeHtml(it.name)}</td><td>${ni(it.area)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(it.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(it.cost)}</td></tr>`).join('');
+      return `<tr class="cost-zone-hdr"><td colspan="4">${tag} Zone ${key} <span style="color:var(--muted);font-size:11px;">— per-item rates</span></td></tr>${itemRows}<tr class="cost-zone-sub"><td colspan="3" style="text-align:right;color:var(--navy);font-weight:600;">Zone ${key} subtotal</td><td class="r"><b>${fmtINR(zone.cost)}</b></td></tr>`;
+    }
     return `<tr><td>${tag} Zone ${key}</td><td>${ni(zone.total)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(zone.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(zone.cost)}</td></tr>`;
   };
   return `
@@ -2053,6 +2245,7 @@ function renderSpecPages(state, sortedCats, byCat) {
 <section class="pg">
   <div class="pg-head">${logoSvg({ size:'large' })}<div class="breadcrumb"><span class="current">Specifications</span></div></div>
   <p class="lede" style="margin-top:30mm;text-align:center;">No specifications selected. Add rows from the catalog or create custom items.</p>
+  <div class="pg-foot"><span>Specifications</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>`;
   }
   // P3 #6: branch on state.specsLayout — 'grid' (default cards) or 'table' (compact rows).
@@ -2078,7 +2271,8 @@ function renderSpecPages(state, sortedCats, byCat) {
   }
 
   const isTable = state.specsLayout === 'table';
-  const sectionsHtml = sortedCats.map(cat => {
+  // Per-category section builder. Returns the inner HTML for one category.
+  const buildCatSection = (cat) => {
     if (isTable) {
       const rowsHtml = byCat[cat].map(({row, item: it}) => {
         const f = rowFields(row, it);
@@ -2123,19 +2317,44 @@ function renderSpecPages(state, sortedCats, byCat) {
           </td></tr>
         </tbody>
       </table>`;
-  }).join('');
-  return `
-<section class="pg">
+  };
+  // Bug fix: emit one .pg per category in grid mode (clean breaks, no blank
+  // pages). Table mode packs everything onto fewer pages — but each .pg now
+  // has explicit overflow protection.
+  const introBlock = `
+    <div class="eyebrow">Step 3</div>
+    <h1 class="section">Detailed Specifications</h1>
+    <p class="lede">Every line item, every brand, every rate. Brand options shown are indicative; final selection confirmed at the brand-picker stage.</p>`;
+
+  if (isTable) {
+    // Table mode: pack all categories into one flowing section. CSS handles
+    // intra-section page breaks via break-inside:avoid on each cat-block.
+    const sectionsHtml = sortedCats.map(buildCatSection).join('');
+    return `
+<section class="pg pg-specs-table">
   <div class="pg-head">
     ${logoSvg({ size:'large' })}
     <div class="breadcrumb"><span class="current">Detailed Specifications</span></div>
   </div>
-  <div class="eyebrow">Step 3</div>
-  <h1 class="section">Detailed Specifications</h1>
-  <p class="lede">Every line item, every brand, every rate. Brand options shown are indicative; final selection confirmed at the brand-picker stage.</p>
+  ${introBlock}
   ${sectionsHtml}
   <div class="pg-foot"><span>Specifications</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>`;
+  }
+
+  // Grid mode: ONE category per page. Eliminates blank-space-after-1-item bug.
+  // First cat shares the page with the intro block; subsequent cats each get
+  // their own clean .pg with header/footer.
+  return sortedCats.map((cat, i) => `
+<section class="pg pg-specs-grid">
+  <div class="pg-head">
+    ${logoSvg({ size:'large' })}
+    <div class="breadcrumb"><span class="current">Specifications · ${escapeHtml(cat)}</span></div>
+  </div>
+  ${i === 0 ? introBlock : ''}
+  ${buildCatSection(cat)}
+  <div class="pg-foot"><span>Specifications · ${escapeHtml(cat)}</span><span>+91 92172 63051 · info@zuildup.com</span></div>
+</section>`).join('');
 }
 
 function renderNotesPage(state) {
