@@ -79,6 +79,8 @@ const defaultState = () => ({
     // P3 v2 (A): per-line-item rate overrides. Key '<zone>:<item.name>' -> ₹/sqft (or ₹/L for Zone D).
     // null/missing => use zone default. Lets sales charge Terrace ₹650 while keeping Ramp/Setback at ₹600.
     itemRates: {},
+    // P3 v2.1: editable lift machine cost (default ₹12,00,000). null = default.
+    liftCost: null,
   },
   scope: 'full',                 // 'full' | 'structure_only'
   rows: [],                      // [{id, override:{label?, rate?, rate_text?, brands?, description?, location?}, _custom?:bool}]
@@ -501,7 +503,9 @@ function calcPackage(state) {
   const _zD = enrichZone('D', zoneDItems, dRate);
   const _zE = enrichZone('E', zoneEItems, eRate);
   const costA = _zA.cost, costB = _zB.cost, costC = _zC.cost, costD = _zD.cost, costE = _zE.cost;
-  const liftCost = b.hasLift ? LIFT_COST : 0;
+  // P3 v2.1: lift cost is editable via state.pricing.liftCost (null/'' = default LIFT_COST).
+  const liftOvr = state.pricing.liftCost;
+  const liftCost = b.hasLift ? ((liftOvr != null && liftOvr !== '' && !isNaN(parseInt(liftOvr))) ? parseInt(liftOvr) : LIFT_COST) : 0;
   const zoneSubtotal = costA + costB + costC + costD + costE;
   // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
   const grand = zoneSubtotal + liftCost;
@@ -592,7 +596,9 @@ function calcStructure(state) {
   const _zD = enrichZone('D', zoneDItems, dRate);
   const _zE = enrichZone('E', zoneEItems, eRate);
   const costA = _zA.cost, costB = _zB.cost, costD = _zD.cost, costE = _zE.cost;
-  const liftCost = b.hasLift ? LIFT_COST : 0;
+  // P3 v2.1: lift cost editable.
+  const liftOvr = state.pricing.liftCost;
+  const liftCost = b.hasLift ? ((liftOvr != null && liftOvr !== '' && !isNaN(parseInt(liftOvr))) ? parseInt(liftOvr) : LIFT_COST) : 0;
   const zoneSubtotal = costA + costB + costD + costE;
   // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
   const grand = zoneSubtotal + liftCost;
@@ -689,6 +695,8 @@ async function bootForm() {
   if ($('f-zone-c-rate'))   $('f-zone-c-rate').value   = state.pricing.zoneCRate    ?? '';
   if ($('f-zone-d-rate'))   $('f-zone-d-rate').value   = state.pricing.zoneDRate    ?? '';
   if ($('f-basement-rate')) $('f-basement-rate').value = state.pricing.basementRate ?? '';
+  if ($('f-lift-cost'))     $('f-lift-cost').value     = state.pricing.liftCost     ?? '';
+  if ($('f-lift-cost'))     $('f-lift-cost').value     = state.pricing.liftCost     ?? '';
   // P3 #6: layout toggle
   if ($('f-specs-layout'))  $('f-specs-layout').value  = state.specsLayout || 'grid';
   $('f-notes').value      = state.notes ?? '';
@@ -696,6 +704,10 @@ async function bootForm() {
     btn.classList.toggle('active', btn.dataset.v === state.scope);
   }
   reflectModeUi(state.build.buildType);
+  // P3 v2.1: initial lift-cost-row visibility based on saved state.
+  { const row = document.getElementById('lift-cost-row'); if (row) row.style.display = state.build.hasLift ? '' : 'none'; }
+  // P3 v2.1: initial lift-cost-row visibility based on saved state.
+  { const row = document.getElementById('lift-cost-row'); if (row) row.style.display = state.build.hasLift ? '' : 'none'; }
   // P1.7: applyValidation defined just below — call after first paint so initial state is reflected.
   setTimeout(() => { try { applyValidation(); } catch(_) {} }, 0);
 
@@ -762,7 +774,7 @@ async function bootForm() {
   // ---- Customer field listeners ----
   $('f-salutation').oninput = e => { state.customer.salutation = e.target.value; flush(); };
   // P3 #4: zone rate overrides
-  ['f-zone-a-rate','f-zone-b-rate','f-zone-c-rate','f-zone-d-rate','f-basement-rate'].forEach(id => {
+  ['f-zone-a-rate','f-zone-b-rate','f-zone-c-rate','f-zone-d-rate','f-basement-rate','f-lift-cost'].forEach(id => {
     const el = $(id);
     if (!el) return;
     const key = ({
@@ -771,6 +783,7 @@ async function bootForm() {
       'f-zone-c-rate':    'zoneCRate',
       'f-zone-d-rate':    'zoneDRate',
       'f-basement-rate':  'basementRate',
+      'f-lift-cost':      'liftCost',
     })[id];
     el.oninput = e => {
       const v = e.target.value.trim();
@@ -791,7 +804,12 @@ async function bootForm() {
   $('f-coverage').oninput = e => { state.build.coverage = +e.target.value || 0; flush(); };
   $('f-floors').oninput   = e => { state.build.floors = +e.target.value || 1; flush(); };
   $('f-basement').onchange= e => { state.build.hasBasement = !!e.target.checked; flush(); };
-  $('f-lift').onchange    = e => { state.build.hasLift = !!e.target.checked; flush(); };
+  $('f-lift').onchange    = e => {
+    state.build.hasLift = !!e.target.checked;
+    const row = document.getElementById('lift-cost-row');
+    if (row) row.style.display = state.build.hasLift ? '' : 'none';
+    flush();
+  };
   $('f-build-type').onchange = e => {
     state.build.buildType = e.target.value;
     reflectModeUi(state.build.buildType);
