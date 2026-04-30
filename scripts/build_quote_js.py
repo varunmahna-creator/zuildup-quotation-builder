@@ -1854,8 +1854,10 @@ ${renderSpecPages(state, sortedCats, byCat)}
 function quoteCss() {
   return `
 <style>
-  /* P3 #5: load fonts in iframe + PDF so on-screen and downloaded match. */
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+  /* P3 #5 + P3 v2.2: fonts embedded directly as base64 woff2 so the PDF
+     never depends on network. Variable-font woff2 ~85KB total. The @import
+     stays as a fallback for the form-page preview when on a fast network. */
+__EMBEDDED_FONTS_CSS_MARKER__
   @page { size: A4; margin: 0; }
   /* P1.6: DRAFT watermark — real DOM nodes (not ::after) so PDF text-layer extraction
      can detect the watermark for testing. The renderer post-processes the HTML to
@@ -1877,6 +1879,22 @@ function quoteCss() {
 
   .pg { width: 210mm; min-height: 297mm; padding: 22mm 20mm; box-sizing: border-box; background: var(--offwhite); page-break-after: always; position: relative; }
   .pg:last-child { page-break-after: auto; }
+  /* P3 v2.2: unified spec-flow. min-height removed so content flows naturally
+     across physical pages without forcing 297mm boundaries. Each category
+     block stays together when possible (break-inside: avoid-page). */
+  .pg.pg-specs-flow { min-height: 0; padding-bottom: 16mm; }
+  .pg.pg-specs-flow .pg-foot { position: static; margin-top: 10mm; padding-top: 4mm; border-top: 1px solid var(--rule); }
+  /* Keep breadcrumb header with the following content — never orphan. */
+  .pg.pg-specs-flow .pg-head,
+  .pg.pg-specs-flow .eyebrow,
+  .pg.pg-specs-flow .section,
+  .pg.pg-specs-flow .lede { break-after: avoid-page; page-break-after: avoid; }
+  /* Cat-section: keep header with at least the first card; allow break inside
+     a long category only AT card boundaries (.spec-card has break-inside avoid). */
+  .pg.pg-specs-flow .cat-section { break-inside: auto; page-break-inside: auto; margin-top: 6mm; }
+  .pg.pg-specs-flow .cat-section thead { break-after: avoid-page; page-break-after: avoid; }
+  .pg.pg-specs-flow .cat-section h2 { break-after: avoid-page; page-break-after: avoid; }
+  /* For the spec-grid: each .spec-card is atomic. Already break-inside avoid in main rules. */
 
   /* Cover */
   .pg.cover { padding: 0; height: 297mm; overflow: hidden; background: var(--navy); }
@@ -2344,12 +2362,14 @@ function renderSpecPages(state, sortedCats, byCat) {
     <h1 class="section">Detailed Specifications</h1>
     <p class="lede">Every line item, every brand, every rate. Brand options shown are indicative; final selection confirmed at the brand-picker stage.</p>`;
 
-  if (isTable) {
-    // Table mode: pack all categories into one flowing section. CSS handles
-    // intra-section page breaks via break-inside:avoid on each cat-block.
-    const sectionsHtml = sortedCats.map(buildCatSection).join('');
-    return `
-<section class="pg pg-specs-table">
+  // P3 v2.2: unified single-section flow for BOTH grid and table modes.
+  // Categories pack onto pages naturally — small ones share, large ones split
+  // at category-block boundaries (browser paginates). No blank-space and no
+  // orphan-header pages.
+  const sectionsHtml = sortedCats.map(buildCatSection).join('');
+  const modeClass = isTable ? 'pg-specs-table' : 'pg-specs-grid';
+  return `
+<section class="pg pg-specs-flow ${modeClass}">
   <div class="pg-head">
     ${logoSvg({ size:'large' })}
     <div class="breadcrumb"><span class="current">Detailed Specifications</span></div>
@@ -2358,21 +2378,6 @@ function renderSpecPages(state, sortedCats, byCat) {
   ${sectionsHtml}
   <div class="pg-foot"><span>Specifications</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>`;
-  }
-
-  // Grid mode: ONE category per page. Eliminates blank-space-after-1-item bug.
-  // First cat shares the page with the intro block; subsequent cats each get
-  // their own clean .pg with header/footer.
-  return sortedCats.map((cat, i) => `
-<section class="pg pg-specs-grid">
-  <div class="pg-head">
-    ${logoSvg({ size:'large' })}
-    <div class="breadcrumb"><span class="current">Specifications · ${escapeHtml(cat)}</span></div>
-  </div>
-  ${i === 0 ? introBlock : ''}
-  ${buildCatSection(cat)}
-  <div class="pg-foot"><span>Specifications · ${escapeHtml(cat)}</span><span>+91 92172 63051 · info@zuildup.com</span></div>
-</section>`).join('');
 }
 
 function renderNotesPage(state) {
@@ -2402,8 +2407,17 @@ for p in parts[1:]:
     # Each PART variable starts with a literal newline; collapse to one
     out += p.lstrip("\n").rstrip() + "\n"
 
+# P3 v2.2: embed fonts as base64 woff2 inline in quoteCss().
+# Read at build time so the generator stays declarative.
+import os as _os
+_FONTS_CSS_PATH = _os.path.join(_os.path.dirname(__file__), "..", "app", "assets", "embedded_fonts.css")
+with open(_FONTS_CSS_PATH, "r") as _ff:
+    _embedded_fonts_css = _ff.read()
+out = out.replace("__EMBEDDED_FONTS_CSS_MARKER__", _embedded_fonts_css)
+
 with open(OUT_PATH, "w") as f:
     f.write(out)
 
 print(f"WROTE {OUT_PATH}")
+print(f"  embedded fonts: {len(_embedded_fonts_css)} bytes")
 print(f"  size: {len(out)} bytes  ({sum(1 for _ in out.splitlines())} lines)")
