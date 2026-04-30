@@ -438,6 +438,29 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  // POST /api/next-quote-id  -> { id: "ZUI-2026-1020" }
+  // P3 #2: persistent counter on disk. Seed from QUOTE_COUNTER_SEED (default 1020).
+  if (req.method === 'POST' && pathname === '/api/next-quote-id') {
+    try {
+      const ctrFile = process.env.QUOTE_COUNTER_FILE || '/tmp/zuildup_quote_counter';
+      const seed = parseInt(process.env.QUOTE_COUNTER_SEED || '1020', 10);
+      let n = seed;
+      try {
+        const raw = fs.readFileSync(ctrFile, 'utf8').trim();
+        const parsed = parseInt(raw, 10);
+        if (!isNaN(parsed) && parsed >= seed) n = parsed + 1;
+      } catch (_) { /* first run: use seed */ }
+      fs.writeFileSync(ctrFile, String(n));
+      const year = new Date().getFullYear();
+      const id = 'ZUI-' + year + '-' + n;
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ id }));
+    } catch (e) {
+      console.error('[quote-id] FAIL:', e.message);
+      send(res, 500, 'counter error: ' + e.message);
+    }
+    return;
+  }
   // GET /  ->  index.html
   if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
     return serveStatic(req, res, '/app/index.html');
