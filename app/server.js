@@ -373,12 +373,38 @@ async function renderPdf(html, cb) {
 }
 
 // --- Production basic auth gate ---------------------------------------------
-// Activated only when AUTH_USER / AUTH_PASS env vars are both set.
-// Single shared credential — sales team uses one login.
+// Phase 4 (per-rep logins): supports multiple credential pairs.
+// Priority of credential sources:
+//   1. AUTH_USERS_JSON  — JSON dict of { username: password }
+//   2. AUTH_USER + AUTH_PASS  — legacy single-user fallback
+//   3. None set  — dev mode (no auth)
+let _AUTH_USERS = null;
+function _loadAuthUsers() {
+  if (_AUTH_USERS !== null) return _AUTH_USERS;
+  const j = process.env.AUTH_USERS_JSON;
+  if (j) {
+    try {
+      const parsed = JSON.parse(j);
+      if (parsed && typeof parsed === 'object') {
+        _AUTH_USERS = parsed;
+        console.log('[auth] loaded ' + Object.keys(parsed).length + ' user(s) from AUTH_USERS_JSON');
+        return _AUTH_USERS;
+      }
+    } catch (e) {
+      console.warn('[auth] AUTH_USERS_JSON parse failed:', e.message);
+    }
+  }
+  if (process.env.AUTH_USER && process.env.AUTH_PASS) {
+    _AUTH_USERS = { [process.env.AUTH_USER]: process.env.AUTH_PASS };
+    return _AUTH_USERS;
+  }
+  _AUTH_USERS = {};
+  return _AUTH_USERS;
+}
+
 function requireAuth(req, res) {
-  const user = process.env.AUTH_USER;
-  const pass = process.env.AUTH_PASS;
-  if (!user || !pass) return true; // dev mode
+  const users = _loadAuthUsers();
+  if (!users || Object.keys(users).length === 0) return true;
   const header = req.headers['authorization'] || '';
   if (!header.startsWith('Basic ')) {
     res.writeHead(401, {
@@ -395,7 +421,8 @@ function requireAuth(req, res) {
   const idx = decoded.indexOf(':');
   const u = idx >= 0 ? decoded.slice(0, idx) : '';
   const p = idx >= 0 ? decoded.slice(idx + 1) : '';
-  if (u !== user || p !== pass) {
+  const expected = users[u];
+  if (!expected || expected !== p) {
     res.writeHead(401, {
       'WWW-Authenticate': 'Basic realm="ZuildUp"',
       'Content-Type': 'text/plain; charset=utf-8',
