@@ -33,14 +33,22 @@ A web-based quotation/cost-estimate builder for **ZuildUp's** sales team to gene
 ### Live Production
 - **URL:** https://zuildup-quotes-zim2owjloq-el.a.run.app
 - **Aliased to:** https://zuildup-quotes-586295767597.asia-south1.run.app
-- **Auth:** `zuildup-sales` / `zuildup` (Basic Auth; simple password per Varun's call on Apr 29)
+- **Auth (per-rep, Phase 4.1):** Basic Auth, one login per sales rep
+  - `varun` / `varun123`
+  - `karan` / `karan123`
+  - `avish` / `avish123`
+  - `vaishali` / `vaishali123`
+  - `rajat` / `rajat123`
+  - `zuildup-sales` / `zuildup` (legacy fallback during transition; remove later)
+  - Configured via `AUTH_USERS_JSON` env var on Cloud Run service
 - **Platform:** Google Cloud Run
 - **GCP project:** `zuildup-quotes`
 - **Region:** `asia-south1` (Mumbai)
 - **Service name:** `zuildup-quotes`
 
 ### Current revision
-- **Active:** `zuildup-quotes-00013-zqv` (deployed 2026-05-01 10:50 UTC, Phase 4 — Firestore-backed quote library)
+- **Active:** `zuildup-quotes-00014-v2v` (deployed 2026-05-01 ~11:10 UTC, Phase 4.1 — per-rep logins)
+- Previous: `00013-zqv` (Phase 4 cross-device quote library, 2026-05-01 10:50)
 - Previous: `00012-ztc` (v2.3 ₹ fix, 2026-05-01 09:15)
 - Previous: `00011-jq5` (v2.2 layout fixes)
 
@@ -132,6 +140,12 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 ---
 
 ## 5. Phase History (Most Recent First)
+
+### Phase 4.1 (May 1) — Per-rep logins
+- 5 individual logins (varun/karan/avish/vaishali/rajat) instead of one shared `zuildup-sales` account.
+- Each quote's `author` field now records the actual creator's username; `last_edited_by` tracks who last touched it.
+- Server: `requireAuth` now checks against `AUTH_USERS_JSON` env var (a JSON dict). Falls back to legacy `AUTH_USER`/`AUTH_PASS` single-user mode if not set.
+- Backward compat: `zuildup-sales` / `zuildup` still works as a temporary fallback. Plan to remove it after the team has switched over.
 
 ### Phase 4 (May 1) — Cross-device quote library (Firestore-backed)
 - **The problem:** quotes lived only in `localStorage`. Sales team (Karan, Avish, Varun) couldn't revisit a quote on another device or browser. If a rep cleared cache or switched laptops, work was lost.
