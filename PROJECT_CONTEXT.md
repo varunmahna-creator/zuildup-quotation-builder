@@ -1,7 +1,7 @@
 # ZuildUp Quotation Builder — Full Project Context
 
-**Last updated:** 2026-05-01 (post v2.3 deploy)
-**Status:** 🟢 LIVE in production, Phase 3 v2.3 shipping
+**Last updated:** 2026-05-01 (post Phase 4 deploy)
+**Status:** 🟢 LIVE in production, Phase 4 cross-device quote library shipping
 
 This doc consolidates everything needed to resume work on this project from cold context. Read this + the channel brief (`/opt/openclaw/workspace/discord-briefs/zuildup-quotation.md`) and you're caught up.
 
@@ -40,9 +40,9 @@ A web-based quotation/cost-estimate builder for **ZuildUp's** sales team to gene
 - **Service name:** `zuildup-quotes`
 
 ### Current revision
-- **Active:** `zuildup-quotes-00012-ztc` (deployed 2026-05-01 09:15:52 UTC, v2.3 ₹ fix)
-- Previous: `00011-jq5` (v2.2 layout fixes, 2026-05-01 morning)
-- Previous: `00010-ptl` (v2.1 lift machine cost editable)
+- **Active:** `zuildup-quotes-00013-zqv` (deployed 2026-05-01 10:50 UTC, Phase 4 — Firestore-backed quote library)
+- Previous: `00012-ztc` (v2.3 ₹ fix, 2026-05-01 09:15)
+- Previous: `00011-jq5` (v2.2 layout fixes)
 
 ### Local Source
 - **Path:** `/opt/openclaw/workspace/zuildup/quotation-builder/`
@@ -90,10 +90,22 @@ Cloud Run: zuildup-quotes (Node 20, Express)
 | `Dockerfile` | Node 20 Alpine, runs `node app/server.js` | — |
 | `package.json` | Deps: only `sharp` (image compression for embedded photos) | — |
 
+### Phase 4 storage stack
+- **Source of truth:** Firestore Native (project `zuildup-quotes`, location `asia-south1`, database `(default)`, collection `quotes`).
+- **Document shape:** `{id, name, customer_name, author, last_edited_by, created_at, modified_at, row_count, state: <full quote state>}`. Document id == slot id (`q_<ts>_<rand>`).
+- **Hot cache:** localStorage in browser. `QuoteStorage` writes there first (sync), pushes to cloud in background.
+- **Boot sync:** `QuoteStorage.syncFromCloud()` runs at start of `bootForm()` and again when Load modal opens. 4s timeout — if cloud is slow, falls through to local cache.
+- **Failure mode:** 3 consecutive API failures disable cloud sync for the session. Rep keeps using localStorage; nothing breaks.
+
+### Local dev with Firestore
+- Need either `gcloud auth application-default login` (uses your gcloud creds) OR `GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json`.
+- Set `GOOGLE_CLOUD_PROJECT=zuildup-quotes` env var (or `FIRESTORE_PROJECT_ID`).
+- Local writes hit the SAME Firestore as production — be careful with test data (use clearly-prefixed names).
+
 ### Boot dev environment
 ```bash
 cd /opt/openclaw/workspace/zuildup/quotation-builder
-nohup node app/server.js > /tmp/_qb_server.log 2>&1 &
+PORT=8124 GOOGLE_CLOUD_PROJECT=zuildup-quotes nohup node app/server.js > /tmp/_qb_server.log 2>&1 &
 # Server on http://localhost:8124
 
 # For headless PDF tests:
@@ -120,6 +132,20 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 ---
 
 ## 5. Phase History (Most Recent First)
+
+### Phase 4 (May 1) — Cross-device quote library (Firestore-backed)
+- **The problem:** quotes lived only in `localStorage`. Sales team (Karan, Avish, Varun) couldn't revisit a quote on another device or browser. If a rep cleared cache or switched laptops, work was lost.
+- **The fix:** server-side quote storage in Firestore (Native, asia-south1).
+  - 5 new endpoints under `/api/quotes` (GET list, GET id, POST, PUT, DELETE) behind existing Basic Auth.
+  - Each quote carries `author` (creator's auth username) + `last_edited_by` so the team knows who built/touched it. Quotes are TEAM-SHARED — any authenticated user sees all quotes.
+  - `QuoteStorage` keeps its **synchronous** API (so all 25+ existing call sites work unchanged) but now does background `_apiPush` on save/_touch/delete.
+  - On boot AND when the Load modal opens, `syncFromCloud()` pulls remote-newer quotes into local cache + pushes local-only quotes up (one-time migration of pre-Phase-4 data).
+  - Auto-save (`_touch`) is debounced 1.5s before API push to avoid hammering Firestore on every keystroke.
+  - "Saving…/Synced" indicator now shows pending pushes.
+  - Load modal lists author next to each quote (`by zuildup-sales`).
+- **GCP setup:** Firestore Native database created in `asia-south1`. Cloud Run service account `586295767597-compute@developer` granted `roles/datastore.user` (also has Editor inherited).
+- **Deps:** `@google-cloud/firestore` ^7.10 (auto-auth via metadata server on Cloud Run).
+- **End-to-end verified on live URL:** save quote on device A → clear localStorage → reload → quote auto-restores from Firestore. Delete propagates cloud-ward.
 
 ### Phase 3 (Apr 30 — May 1) — Sales-team feedback iteration
 - **v2 (`eb5b332`)**: per-line-item rates editable (sales asked for this), UI/PDF polish, 10 small UX changes
@@ -156,6 +182,7 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 - ~~₹ tofu / missing-glyph on cost sheet~~ → fixed in v2.3 (proper font subsets)
 
 ### 🟡 Watch
+- **Firestore quotas (Phase 4):** free tier is generous (50K reads, 20K writes/day) but watch out — `_touch` fires a write every 1.5s of typing. Consider further debounce if usage spikes.
 - **Embedded font subsets for non-Latin glyphs:** if anyone adds new currency/special chars (₿, ৳, ฿, etc.), they will tofu unless `used_chars.txt` is updated and `embedded_fonts.css` rebuilt. See section 8.
 - **Filesystem cache lag:** Workspace FS sometimes shows phantom ENOENT for fresh writes. Workaround: `sync; sleep 1; bash -lc 'ls ...'` and prefer `stat` over `ls`.
 - **Deploy != commit.** Always verify the live revision matches local HEAD via `gcloud run services describe zuildup-quotes --region asia-south1 --format='value(status.latestReadyRevisionName)'` before debugging "fix didn't work."
@@ -280,7 +307,7 @@ gcloud run services update-traffic zuildup-quotes \
 ### Compare local quote.js md5 vs live
 ```bash
 md5sum app/quote.js
-curl -s -u zuildup-sales:zuildup https://zuildup-quotes-zim2owjloq-el.a.run.app/quote.js | md5sum
+curl -s -u zuildup-sales:zuildup https://zuildup-quotes-zim2owjloq-el.a.run.app/app/quote.js | md5sum
 ```
 If they don't match, the deploy didn't go through.
 
