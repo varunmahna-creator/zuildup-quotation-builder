@@ -183,6 +183,144 @@ const QuoteStorage = {
   ACTIVE_KEY: 'zuildup.active_quote_id',
   PFX:        'zuildup.quotes.',
 
+  // ---- Phase 4: cloud sync (Firestore via /api/quotes) ----
+  _syncEnabled: true,        // toggle off if API repeatedly fails
+  _pendingPushes: 0,         // count of in-flight pushes (for indicator)
+  _failureCount: 0,          // consecutive API failures; >= 3 turns sync off
+  _lastSyncedAt: null,
+
+  _onSyncStateChange() {
+    try { window.dispatchEvent(new CustomEvent('quote-sync-state-changed', { detail: { pending: this._pendingPushes, enabled: this._syncEnabled } })); } catch (_) {}
+  },
+
+  /** Fire-and-forget API push. Resolves after the request completes (success or fail). */
+  async _apiPush(method, id, body) {
+    if (!this._syncEnabled) return null;
+    this._pendingPushes++;
+    this._onSyncStateChange();
+    try {
+      const url = id ? ('/api/quotes/' + encodeURIComponent(id)) : '/api/quotes';
+      const opts = { method, credentials: 'same-origin', headers: { 'Content-Type': 'application/json' } };
+      if (body !== undefined) opts.body = JSON.stringify(body);
+      const r = await fetch(url, opts);
+      if (!r.ok) {
+        this._failureCount++;
+        if (this._failureCount >= 3) { this._syncEnabled = false; console.warn('[QuoteStorage] sync disabled after 3 failures'); }
+        const txt = await r.text().catch(() => '');
+        throw new Error('http ' + r.status + ' ' + txt.slice(0, 200));
+      }
+      this._failureCount = 0;
+      this._lastSyncedAt = new Date().toISOString();
+      const j = await r.json().catch(() => null);
+      return j;
+    } catch (e) {
+      console.warn('[QuoteStorage] _apiPush failed', method, id, e.message);
+      return null;
+    } finally {
+      this._pendingPushes--;
+      this._onSyncStateChange();
+    }
+  },
+
+  /** Fetch a single full slot from cloud and write it to local. */
+  async _apiFetch(id) {
+    if (!this._syncEnabled) return null;
+    try {
+      const r = await fetch('/api/quotes/' + encodeURIComponent(id), { credentials: 'same-origin' });
+      if (!r.ok) return null;
+      const doc = await r.json();
+      // Persist the inner state into local slot, and merge index entry.
+      if (doc && doc.id && doc.state) {
+        localStorage.setItem(this._slotKey(doc.id), JSON.stringify(doc.state));
+        const idx = this._readIndex().filter(e => e.id !== doc.id);
+        const entry = {
+          id: doc.id,
+          name: doc.name || '',
+          customer_name: doc.customer_name || '',
+          author: doc.author || '',
+          created_at: doc.created_at || '',
+          modified_at: doc.modified_at || '',
+          row_count: doc.row_count || 0,
+        };
+        this._writeIndex([entry, ...idx]);
+      }
+      return doc;
+    } catch (_) { return null; }
+  },
+
+  /** Pull the full quote library from cloud and merge into localStorage.
+   *  - Quotes that exist remotely but not locally → fetched and stored.
+   *  - Quotes that exist remotely with newer modified_at → fetched and overwritten.
+   *  - Quotes that exist locally but not remotely → pushed up (migration).
+   *  Returns a summary { fetched, pushed, total }.
+   */
+  async syncFromCloud() {
+    if (!this._syncEnabled) return { fetched: 0, pushed: 0, total: 0, skipped: true };
+    let fetched = 0, pushed = 0;
+    try {
+      const r = await fetch('/api/quotes', { credentials: 'same-origin' });
+      if (!r.ok) {
+        this._failureCount++;
+        if (this._failureCount >= 3) this._syncEnabled = false;
+        return { fetched, pushed, total: 0, error: 'http ' + r.status };
+      }
+      this._failureCount = 0;
+      const j = await r.json();
+      const remote = (j && j.items) || [];
+      const remoteById = {};
+      for (const e of remote) remoteById[e.id] = e;
+
+      const localIdx = this._readIndex();
+      const localById = {};
+      for (const e of localIdx) localById[e.id] = e;
+
+      // 1) Fetch remote-only or remote-newer quotes
+      for (const r of remote) {
+        const local = localById[r.id];
+        if (!local || (r.modified_at || '') > (local.modified_at || '')) {
+          const got = await this._apiFetch(r.id);
+          if (got) fetched++;
+        } else {
+          // Update author/etc on local index from remote without re-fetching state body.
+          const merged = Object.assign({}, local, {
+            name: r.name || local.name,
+            customer_name: r.customer_name || local.customer_name,
+            author: r.author || local.author,
+            created_at: r.created_at || local.created_at,
+            modified_at: r.modified_at || local.modified_at,
+            row_count: (r.row_count !== undefined) ? r.row_count : local.row_count,
+          });
+          const others = this._readIndex().filter(e => e.id !== r.id);
+          this._writeIndex([merged, ...others]);
+        }
+      }
+
+      // 2) Push local-only quotes up to cloud (one-time migration of pre-Phase-4 data)
+      for (const local of localIdx) {
+        if (!remoteById[local.id]) {
+          const slotRaw = localStorage.getItem(this._slotKey(local.id));
+          if (!slotRaw) continue;
+          let state;
+          try { state = JSON.parse(slotRaw); } catch (_) { continue; }
+          // Use POST with explicit id so the slot gets the SAME id in cloud.
+          const doc = await this._apiPush('POST', null, {
+            id: local.id,
+            name: local.name,
+            state,
+          });
+          if (doc) pushed++;
+        }
+      }
+
+      this._lastSyncedAt = new Date().toISOString();
+      this._onSyncStateChange();
+      return { fetched, pushed, total: remote.length };
+    } catch (e) {
+      console.warn('[QuoteStorage] syncFromCloud failed', e.message);
+      return { fetched, pushed, total: 0, error: e.message };
+    }
+  },
+
   _genId() {
     const t = Date.now().toString(36);
     const r = Math.random().toString(36).slice(2, 8);
@@ -226,6 +364,8 @@ const QuoteStorage = {
       // bubble up to front
       const others = idx.filter(e => e.id !== id);
       this._writeIndex([entry, ...others]);
+      // Phase 4: push to cloud (background)
+      this._apiPush('PUT', id, { state: cloned, name: entry.name });
       return id;
     }
 
@@ -249,6 +389,8 @@ const QuoteStorage = {
       row_count: (cloned.rows || []).length,
     };
     this._writeIndex([newEntry, ...idx.filter(e => e.id !== id)]);
+    // Phase 4: push to cloud (background, with explicit id so cloud matches local)
+    this._apiPush('POST', null, { id, name: finalName, state: cloned });
     return id;
   },
 
@@ -266,6 +408,12 @@ const QuoteStorage = {
     entry.customer_name = (cloned.customer && cloned.customer.name) || entry.customer_name || '';
     entry.row_count    = (cloned.rows || []).length;
     this._writeIndex(idx);
+    // Phase 4: debounced push to cloud (background) — auto-save fires this on every keystroke,
+    // so we coalesce by waiting 1.5s of idle before pushing.
+    if (this._touchTimer) clearTimeout(this._touchTimer);
+    this._touchTimer = setTimeout(() => {
+      this._apiPush('PUT', id, { state: cloned, name: entry.name });
+    }, 1500);
   },
 
   load(id) {
@@ -287,6 +435,8 @@ const QuoteStorage = {
     const idx = this._readIndex().filter(e => e.id !== id);
     this._writeIndex(idx);
     if (this.activeId() === id) this.setActiveId('');
+    // Phase 4: push deletion to cloud
+    this._apiPush('DELETE', id);
   },
 
   /** Clone an existing slot's state into a brand-new slot. Returns the new id. */
@@ -660,6 +810,17 @@ if (isPreviewPage) bootPreview();
 // ============================================================================
 async function bootForm() {
   await loadCatalog();
+  // Phase 4: pull team's cloud-stored quotes into local cache before reading state.
+  // Best-effort — if it fails (offline / API down), we fall through to localStorage only.
+  try {
+    const sum = await Promise.race([
+      QuoteStorage.syncFromCloud(),
+      new Promise(resolve => setTimeout(() => resolve({ timeout: true }), 4000)),
+    ]);
+    if (sum && !sum.timeout) {
+      console.log('[QuoteStorage] sync on boot:', sum);
+    }
+  } catch (e) { console.warn('[QuoteStorage] boot sync failed', e); }
   let state = loadState();
 
   // P3 #2: ensure a server-assigned quote id (ZUI-YYYY-NNNN)
@@ -924,8 +1085,21 @@ async function bootForm() {
     const t = new Date(entry.modified_at);
     const hh = String(t.getHours()).padStart(2,'0');
     const mm = String(t.getMinutes()).padStart(2,'0');
-    setIndicator('saved', 'Saved ' + hh + ':' + mm);
+    const pending = QuoteStorage._pendingPushes || 0;
+    if (pending > 0) {
+      setIndicator('saving', 'Syncing\u2026');
+    } else if (!QuoteStorage._syncEnabled) {
+      setIndicator('saved', 'Saved ' + hh + ':' + mm + ' (local only)');
+    } else {
+      setIndicator('saved', 'Saved ' + hh + ':' + mm);
+    }
   }
+  // Phase 4: refresh indicator on every cloud-sync state change.
+  let __syncIndTimer = null;
+  window.addEventListener('quote-sync-state-changed', () => {
+    if (__syncIndTimer) clearTimeout(__syncIndTimer);
+    __syncIndTimer = setTimeout(refreshIndicatorIdle, 50);
+  });
 
   // Storage pressure check — call after any explicit save.
   // Browsers cap localStorage at ~5-10 MB. Warn at 4 MB.
@@ -1048,10 +1222,11 @@ async function bootForm() {
       const li = document.createElement('li');
       const cn = e.customer_name || '(no customer name)';
       const date = (e.modified_at || '').slice(0, 10);
+      const author = e.author ? ('by ' + e.author + ' · ') : '';
       li.innerHTML = `
         <span class="meta">
           <span class="name">${escapeHtml(e.name || cn)}</span>
-          <span class="sub">${escapeHtml(cn)} · saved ${escapeHtml(date)} · ${e.row_count || 0} rows</span>
+          <span class="sub">${escapeHtml(cn)} · ${escapeHtml(author)}saved ${escapeHtml(date)} · ${e.row_count || 0} rows</span>
         </span>
         <span class="row-acts">
           <button data-act="open" class="btn-primary">Open</button>
@@ -1088,7 +1263,18 @@ async function bootForm() {
   }
 
   const loadBtn = document.getElementById('load-quote');
-  if (loadBtn) loadBtn.onclick = () => { renderLoadList(); openModal(loadModal); };
+  if (loadBtn) loadBtn.onclick = async () => {
+    // Phase 4: force a fresh cloud pull so the rep sees teammates' latest quotes.
+    renderLoadList();
+    openModal(loadModal);
+    try {
+      await Promise.race([
+        QuoteStorage.syncFromCloud(),
+        new Promise(r => setTimeout(r, 3000)),
+      ]);
+    } catch (_) {}
+    renderLoadList();
+  };
   document.getElementById('load-close').onclick = () => closeModal(loadModal);
 
   // ---- Export JSON ----

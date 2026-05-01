@@ -25,6 +25,26 @@ let sharp;
 try { sharp = require('sharp'); }
 catch (_) { sharp = null; console.warn('[server] sharp not available — image compression disabled'); }
 
+// Phase 4: Firestore-backed cross-device quote library.
+// Falls back to no-op behavior if creds aren't available (dev / local).
+let Firestore = null;
+let firestore = null;
+try {
+  ({ Firestore } = require('@google-cloud/firestore'));
+  // Project picked up from GOOGLE_CLOUD_PROJECT or metadata server on Cloud Run.
+  // Locally needs GOOGLE_APPLICATION_CREDENTIALS or `gcloud auth application-default login`.
+  firestore = new Firestore({
+    projectId: process.env.FIRESTORE_PROJECT_ID || 'zuildup-quotes',
+    databaseId: '(default)',
+    ignoreUndefinedProperties: true,
+  });
+  console.log('[firestore] client initialized for project=' + (process.env.FIRESTORE_PROJECT_ID || 'zuildup-quotes'));
+} catch (e) {
+  console.warn('[firestore] not available:', e.message);
+}
+const QUOTES_COLLECTION = process.env.FIRESTORE_COLLECTION || 'quotes';
+
+
 const PORT  = process.env.PORT || 8124;
 const ROOT  = path.resolve(__dirname, '..');           // workspace root for assets
 const APP   = path.resolve(__dirname);                 // app/ dir
@@ -388,6 +408,69 @@ function requireAuth(req, res) {
 }
 
 
+// Phase 4: extract Basic Auth username for quote authoring.
+// Returns the username from the Authorization header (no auth check — caller must
+// have already passed requireAuth). Returns 'anonymous' if header is missing/invalid.
+function getAuthUser(req) {
+  try {
+    const header = req.headers['authorization'] || '';
+    if (!header.startsWith('Basic ')) return 'anonymous';
+    const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
+    const idx = decoded.indexOf(':');
+    if (idx < 0) return 'anonymous';
+    return decoded.slice(0, idx) || 'anonymous';
+  } catch (_) {
+    return 'anonymous';
+  }
+}
+
+// Phase 4: helper to read JSON body from a request. Returns parsed object.
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let chunks = [];
+    let total = 0;
+    const MAX = 10 * 1024 * 1024; // 10 MB cap (a quote is typically ~50 KB)
+    req.on('data', c => {
+      total += c.length;
+      if (total > MAX) {
+        req.destroy(new Error('body too large'));
+        return reject(new Error('body too large'));
+      }
+      chunks.push(c);
+    });
+    req.on('end', () => {
+      if (total === 0) return resolve(null);
+      try {
+        const text = Buffer.concat(chunks).toString('utf8');
+        resolve(JSON.parse(text));
+      } catch (e) {
+        reject(new Error('invalid JSON: ' + e.message));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+// Phase 4: server-side id generator (matches client format q_<ts36>_<rand6>).
+function genQuoteId() {
+  const t = Date.now().toString(36);
+  const r = Math.random().toString(36).slice(2, 8);
+  return 'q_' + t + '_' + r;
+}
+
+// Phase 4: build the index entry shape returned by the API.
+function indexEntryFromDoc(doc) {
+  return {
+    id: doc.id,
+    name: doc.name || '',
+    customer_name: doc.customer_name || '',
+    author: doc.author || 'anonymous',
+    created_at: doc.created_at || '',
+    modified_at: doc.modified_at || '',
+    row_count: doc.row_count || 0,
+  };
+}
+
 const server = http.createServer((req, res) => {
   const u = url.parse(req.url, true);
   const earlyPath = decodeURIComponent(u.pathname);
@@ -461,6 +544,157 @@ const server = http.createServer((req, res) => {
     }
     return;
   }
+  // ============================================================================
+  // Phase 4: /api/quotes — cross-device quote library backed by Firestore.
+  // ============================================================================
+  // GET    /api/quotes        -> list of index entries, newest-modified first
+  // GET    /api/quotes/:id    -> full quote slot { ...indexEntry, state: {...} }
+  // POST   /api/quotes        -> { name?, state }; creates new slot. Returns full slot.
+  // PUT    /api/quotes/:id    -> { name?, state }; overwrites slot. Returns full slot.
+  // DELETE /api/quotes/:id    -> removes slot. Returns { ok: true }.
+  //
+  // All endpoints behind Basic Auth. Author = Basic Auth username, stored on the doc.
+  // Quotes are TEAM-SHARED: any authenticated user sees & can edit all quotes.
+
+  // GET /api/quotes
+  if (req.method === 'GET' && pathname === '/api/quotes') {
+    if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+    (async () => {
+      try {
+        const snap = await firestore.collection(QUOTES_COLLECTION)
+          .orderBy('modified_at', 'desc').limit(500).get();
+        const items = snap.docs.map(d => indexEntryFromDoc(d.data()));
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ items }));
+      } catch (e) {
+        console.error('[api/quotes][LIST] FAIL:', e.message);
+        send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+      }
+    })();
+    return;
+  }
+
+  // GET /api/quotes/:id
+  {
+    const m = pathname.match(/^\/api\/quotes\/([A-Za-z0-9_-]+)$/);
+    if (req.method === 'GET' && m) {
+      const id = m[1];
+      if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+      (async () => {
+        try {
+          const doc = await firestore.collection(QUOTES_COLLECTION).doc(id).get();
+          if (!doc.exists) return send(res, 404, JSON.stringify({ error: 'not found' }), { 'Content-Type': 'application/json' });
+          const data = doc.data();
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify(data));
+        } catch (e) {
+          console.error('[api/quotes][GET] FAIL:', e.message);
+          send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+        }
+      })();
+      return;
+    }
+    // DELETE /api/quotes/:id
+    if (req.method === 'DELETE' && m) {
+      const id = m[1];
+      if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+      (async () => {
+        try {
+          await firestore.collection(QUOTES_COLLECTION).doc(id).delete();
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+          console.error('[api/quotes][DELETE] FAIL:', e.message);
+          send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+        }
+      })();
+      return;
+    }
+    // PUT /api/quotes/:id
+    if (req.method === 'PUT' && m) {
+      const id = m[1];
+      if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+      (async () => {
+        try {
+          const body = await readJsonBody(req);
+          if (!body || typeof body !== 'object') return send(res, 400, JSON.stringify({ error: 'body required' }), { 'Content-Type': 'application/json' });
+          const state = body.state;
+          if (!state || typeof state !== 'object') return send(res, 400, JSON.stringify({ error: 'state required' }), { 'Content-Type': 'application/json' });
+          const author = getAuthUser(req);
+          const now = new Date().toISOString();
+          const ref = firestore.collection(QUOTES_COLLECTION).doc(id);
+          const existing = await ref.get();
+          const existingData = existing.exists ? existing.data() : {};
+          const customer_name = (state.customer && state.customer.name) || existingData.customer_name || '';
+          const name = (typeof body.name === 'string' && body.name.trim())
+            ? body.name.trim()
+            : (existingData.name || (customer_name || 'Untitled') + ' — ' + now.slice(0,10));
+          const doc = {
+            id,
+            name,
+            customer_name,
+            author: existingData.author || author,
+            last_edited_by: author,
+            created_at: existingData.created_at || now,
+            modified_at: now,
+            row_count: Array.isArray(state.rows) ? state.rows.length : 0,
+            state,
+          };
+          await ref.set(doc);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify(doc));
+        } catch (e) {
+          console.error('[api/quotes][PUT] FAIL:', e.message);
+          send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+        }
+      })();
+      return;
+    }
+  }
+
+  // POST /api/quotes
+  if (req.method === 'POST' && pathname === '/api/quotes') {
+    if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+    (async () => {
+      try {
+        const body = await readJsonBody(req);
+        if (!body || typeof body !== 'object') return send(res, 400, JSON.stringify({ error: 'body required' }), { 'Content-Type': 'application/json' });
+        const state = body.state;
+        if (!state || typeof state !== 'object') return send(res, 400, JSON.stringify({ error: 'state required' }), { 'Content-Type': 'application/json' });
+
+        // Allow client to supply id (so localStorage and Firestore stay in sync on
+        // first save), else generate one server-side.
+        let id = (typeof body.id === 'string' && /^q_[A-Za-z0-9_-]+$/.test(body.id)) ? body.id : null;
+        if (!id) id = genQuoteId();
+
+        const author = getAuthUser(req);
+        const now = new Date().toISOString();
+        const customer_name = (state.customer && state.customer.name) || '';
+        const name = (typeof body.name === 'string' && body.name.trim())
+          ? body.name.trim()
+          : ((customer_name || 'Untitled') + ' — ' + now.slice(0,10));
+        const doc = {
+          id,
+          name,
+          customer_name,
+          author,
+          last_edited_by: author,
+          created_at: now,
+          modified_at: now,
+          row_count: Array.isArray(state.rows) ? state.rows.length : 0,
+          state,
+        };
+        await firestore.collection(QUOTES_COLLECTION).doc(id).set(doc);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(doc));
+      } catch (e) {
+        console.error('[api/quotes][POST] FAIL:', e.message);
+        send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+      }
+    })();
+    return;
+  }
+
   // GET /  ->  index.html
   if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
     return serveStatic(req, res, '/app/index.html');
