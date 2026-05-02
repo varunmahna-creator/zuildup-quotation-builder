@@ -532,32 +532,54 @@ function computeQuote(state) {
   return c;
 }
 
-// P3 #7: replace any zone-item area with state.areaOverrides[<zone>:<name>] when present;
-// recompute zone totals, zone costs, sub-totals, grand total.
+// P3 #7 / Phase 5: replace any zone-item area with state.areaOverrides[<zone>:<name>] when present;
+// recompute item costs (respecting per-item rate overrides), zone totals, zone costs,
+// sub-totals, grand total. Also marks overridden items so the renderer can swap the
+// description to a generic "as per design scope" string.
+//
+// Phase 5 fix history:
+//   - `dirty` flag was previously declared OUTSIDE the zone loop, leaking across zones
+//     and triggering `z.cost = z.total * z.rate` for every subsequent zone — wiping
+//     per-item rate overrides. Now scoped per-zone.
+//   - `it.cost` was not recomputed after area override, causing stale per-item costs
+//     in the cost-page render. Now recomputed as `it.area * it.rate`.
+//   - `z.cost` was previously `z.total * z.rate`, which discarded per-item rate
+//     variations. Now `Σ(it.cost)` for correctness under any rate override permutation.
 function applyAreaOverrides(c, state) {
   const ovrs = state.areaOverrides || {};
   if (!c.zones) return;
-  let dirty = false;
+  let anyDirty = false;
   for (const k of ['A','B','C','D','E']) {
     const z = c.zones[k];
     if (!z || !z.items) continue;
+    let zoneDirty = false;
     for (const it of z.items) {
       const key = k + ':' + it.name;
       const v = ovrs[key];
       if (v != null && v !== '' && !isNaN(parseInt(v))) {
         const newArea = parseInt(v);
+        // Mark as overridden whenever the user has supplied an explicit value,
+        // even if it numerically matches the computed area — the user
+        // *intended* to take ownership of this row.
+        it.areaOverridden = true;
+        // Issue 4: replace formula description with generic scope phrase.
+        it.desc = 'as per design scope';
         if (newArea !== it.area) {
           it.area = newArea;
-          dirty = true;
+          // Recompute item cost from new area × the item's own (possibly overridden) rate.
+          it.cost = it.area * (it.rate || 0);
+          zoneDirty = true;
         }
       }
     }
-    if (dirty) {
+    if (zoneDirty) {
       z.total = z.items.reduce((s, x) => s + (x.area || 0), 0);
-      z.cost  = z.total * (z.rate || 0);
+      // Sum item costs (respects per-item rate overrides). Do NOT use z.total * z.rate.
+      z.cost  = z.items.reduce((s, x) => s + (x.cost  || 0), 0);
+      anyDirty = true;
     }
   }
-  if (dirty) {
+  if (anyDirty) {
     let zoneSubtotal = 0;
     for (const k of ['A','B','C','D','E']) {
       if (c.zones[k]) zoneSubtotal += c.zones[k].cost || 0;
@@ -584,7 +606,10 @@ function calcPackage(state) {
   const floorArea  = Math.round(plotSqFt * b.coverage / 100);
   const numFloors  = b.floors;
 
-  const staircaseLevels = numFloors + (hasStilt ? 1 : 0) + (b.hasBasement ? 1 : 0);
+  // Phase 5 (Issue 3): unified staircase/lift count formula across all 3 calculator modes.
+  // Stops = each floor + stilt (if present) + basement (if present) + mumty (always — rooftop access).
+  // Examples: Stilt+4 → 4+1+0+1 = 6; Basement+Stilt+4 → 4+1+1+1 = 7; Ground+3 (no stilt) → 4+0+0+1 = 5.
+  const staircaseLevels = numFloors + (hasStilt ? 1 : 0) + (b.hasBasement ? 1 : 0) + 1;
   const waterTankFloors = numFloors;
 
   // Zone A — main floors + lift
@@ -691,8 +716,10 @@ function calcStructure(state) {
   const depth = b.breadth ? Math.round(plotSqFt / b.breadth) : 0;
   const floorArea = Math.round(plotSqFt * b.coverage / 100);
 
-  // Levels: floors + stilt + basement(opt) + mumty access
-  const staircaseLevels = numFloors + 1 + (b.hasBasement ? 1 : 0) + 1;
+  // Phase 5 (Issue 3): unified formula. Structure mode always has stilt; mumty (+1) always present.
+  // Same formula as calcPackage with hasStilt=true: numFloors + 1 (stilt) + basement? + 1 (mumty).
+  const hasStilt = true;
+  const staircaseLevels = numFloors + (hasStilt ? 1 : 0) + (b.hasBasement ? 1 : 0) + 1;
   const waterTankFloors = numFloors;
 
   // Zone A — main floors + stilt + lift (everything at structure rate)
