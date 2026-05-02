@@ -1,7 +1,7 @@
 # ZuildUp Quotation Builder — Full Project Context
 
-**Last updated:** 2026-05-01 (post Phase 4 deploy)
-**Status:** 🟢 LIVE in production, Phase 4 cross-device quote library shipping
+**Last updated:** 2026-05-02 (post Phase 5 deploy)
+**Status:** 🟢 LIVE in production. Phase 5 shipped: zone-sum QC fix, lift/staircase rework (mumty stop), Concrete spec section, area-override description.
 
 This doc consolidates everything needed to resume work on this project from cold context. Read this + the channel brief (`/opt/openclaw/workspace/discord-briefs/zuildup-quotation.md`) and you're caught up.
 
@@ -47,7 +47,8 @@ A web-based quotation/cost-estimate builder for **ZuildUp's** sales team to gene
 - **Service name:** `zuildup-quotes`
 
 ### Current revision
-- **Active:** `zuildup-quotes-00014-v2v` (deployed 2026-05-01 ~11:10 UTC, Phase 4.1 — per-rep logins)
+- **Active:** `zuildup-quotes-00015-55t` (deployed 2026-05-02, Phase 5 — sales-team feedback fixes)
+- Previous: `00014-v2v` (Phase 4.1 per-rep logins, 2026-05-01 11:10)
 - Previous: `00013-zqv` (Phase 4 cross-device quote library, 2026-05-01 10:50)
 - Previous: `00012-ztc` (v2.3 ₹ fix, 2026-05-01 09:15)
 - Previous: `00011-jq5` (v2.2 layout fixes)
@@ -140,6 +141,32 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 ---
 
 ## 5. Phase History (Most Recent First)
+
+### Phase 5 (May 2) — Sales-team feedback fixes (4 issues)
+Triggered by sales team reporting wrong zone sums, missing Concrete spec, off-by-one lift/staircase counts, and confusing line-item descriptions when areas were manually overridden.
+
+**Fixes:**
+1. **Concrete added to Structure specs.** New `structure.concrete` catalog entry (description/spec may be blank — section header always renders).
+2. **Zone sum QC.** `applyAreaOverrides` had three compounding bugs:
+   - `dirty` flag declared outside per-zone loop → leaked across zones, causing stale recomputes.
+   - `it.cost` not recomputed after `it.area = newArea` → stale per-item costs.
+   - `z.cost = z.total × z.rate` discarded per-item rate overrides — Lift at ₹3,000 silently reverted to zone-default ₹2,000 when ANY area in the zone was overridden.
+   - **Fix:** scoped `zoneDirty` per zone, `it.cost = it.area × it.rate`, `z.cost = Σ(item.cost)`. Σ(rows) == zone total under all override permutations.
+3. **Lift/staircase count rework.** All 3 calculator modes now use the same formula: `numFloors + (hasStilt ? 1 : 0) + (hasBasement ? 1 : 0) + 1` — the `+1` is the mumty stop (rooftop access, not billable as separate area but counted as a level for staircase steps + lift stops).
+   - Basement + Stilt + 4 Floors → 7 levels
+   - Stilt + 4 Floors → 6 levels
+   - `calcPackage` was missing the `+1`; `calcAreaBased` already had it.
+4. **Area-override description.** When `state.areaOverrides[zone:item]` is set, line description becomes generic `"as per design scope"` (replacing calc-method strings like "Floor Area (4500) − Lift (25) − Staircase (125)"). Rate-only overrides still keep the calc string.
+
+**Tests:** 13 new tests in `tests/test_phase5.py` lock all 4 invariants. Existing suite still green.
+
+**Live verification:** PDF rendered against live URL post-deploy confirms all 4 fixes manifest in customer artifact. md5 of local `app/quote.js` matches live (`10f00d32138dcaf3de492de141a13fe7`).
+
+**Commits:** `d1ad3f6` (code) + `0aa343f` (docs).
+
+**Open follow-ups:**
+- If sales also wants "as per design scope" on RATE-only overrides (not just area), it's a one-line addition in `enrichZone`. Out of scope this round.
+- Mumty is a stop (counted for staircase/lift) but not a billable area — flagging in case future scope changes this.
 
 ### Phase 4.1 (May 1) — Per-rep logins
 - 5 individual logins (varun/karan/avish/vaishali/rajat) instead of one shared `zuildup-sales` account.
