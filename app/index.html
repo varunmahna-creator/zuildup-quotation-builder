@@ -159,6 +159,30 @@ iframe.preview { width: 794px; border: none; display: block; height: 1123px; mar
 
 /* P1.7: validation hints + invalid input styling */
 input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 0 0 3px rgba(192,57,43,0.10) !important; }
+/* P3 #9: category headers in left rail */
+.spec-list .spec-cat-hdr { display: flex; justify-content: space-between; align-items: baseline; margin: 12px 0 6px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: white; }
+.spec-list .spec-cat-hdr:first-child { margin-top: 4px; }
+.spec-list .spec-cat-hdr.collapsible:hover { background: rgba(10,31,68,0.03); }
+.spec-list .spec-cat-hdr .cat-name { font-size: 10.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+.spec-list .spec-cat-hdr .cat-name .chev { color: var(--muted); display: inline-block; width: 10px; font-weight: 400; }
+.spec-list .spec-cat-hdr .cat-count { font-size: 10px; color: var(--muted); font-weight: 500; }
+.spec-list .spec-cat-body { padding: 4px 0 0; }
+/* P3 #9: category headers in picker dialog */
+.picker .panel .body .picker-cat-hdr { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 12px; margin-top: 6px; border: 1px solid var(--rule); border-radius: 6px; background: white; }
+.picker .panel .body .picker-cat-hdr:first-child { margin-top: 0; }
+.picker .panel .body .picker-cat-hdr.collapsible:hover { background: rgba(10,31,68,0.03); }
+.picker .panel .body .picker-cat-hdr span:first-child { font-size: 10.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+.picker .panel .body .picker-cat-hdr span:first-child .chev { color: var(--muted); display: inline-block; width: 10px; font-weight: 400; margin-right: 2px; }
+.picker .panel .body .picker-cat-hdr .cat-count { font-size: 10px; color: var(--muted); font-weight: 500; }
+.picker .panel .body .picker-cat-body { padding: 4px 0; }
+/* P3 #7: area override panel */
+#area-ovr-list .aov-zone { margin-bottom: 10px; }
+#area-ovr-list .aov-zone-hdr { font-size: 11px; font-weight: 600; color: var(--navy); margin-bottom: 4px; padding: 4px 0; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: baseline; }
+#area-ovr-list .aov-zone-hdr .aov-rate { font-size: 10px; color: var(--muted); font-weight: 500; }
+#area-ovr-list .aov-row { display: grid; grid-template-columns: 1fr 90px 40px; gap: 6px; align-items: center; margin: 3px 0; }
+#area-ovr-list .aov-name { font-size: 11.5px; color: var(--ink); }
+#area-ovr-list .aov-unit { font-size: 10.5px; color: var(--muted); }
+#area-ovr-list input { padding: 5px 8px; font-size: 11.5px; }
 .qb-hint { display: block; font-size: 10.5px; color: #c0392b; margin-top: 3px; font-weight: 500; letter-spacing: 0.01em; }
 .specs-head .count .empty-hint { color: #B8860B; font-weight: 500; }
 .right .toolbar .download:disabled { background: rgba(10,31,68,0.30); cursor: not-allowed; }
@@ -232,7 +256,31 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
       <label>Structure rate per sqft — ₹</label>
       <input id="f-struct-rate" type="number" min="0" placeholder="e.g. 1,250">
     </div>
-    <p style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:0;">GST and any liaisoning are quoted separately outside this document.</p>
+    <!-- P3 v2: zone-rate overrides now always visible (was inside collapsible <details>). -->
+    <p style="font-size:10.5px;color:var(--muted);font-weight:600;margin:10px 0 4px;letter-spacing:0.04em;text-transform:uppercase;">Zone Rate Overrides <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional, leave blank for default)</span></p>
+    <div class="row cols-3" style="margin-top:4px;">
+      <div><label>Zone A — ₹/sqft</label><input id="f-zone-a-rate" type="number" min="0" placeholder="auto"></div>
+      <div><label>Zone B — ₹/sqft</label><input id="f-zone-b-rate" type="number" min="0" placeholder="50% of A"></div>
+      <div><label>Zone C — ₹/sqft</label><input id="f-zone-c-rate" type="number" min="0" placeholder="600"></div>
+    </div>
+    <div class="row cols-3" style="margin-top:8px;">
+      <div><label>Zone D — ₹/L</label><input id="f-zone-d-rate" type="number" min="0" placeholder="15"></div>
+      <div id="basement-rate-row" style="display:none;"><label>Basement — ₹/sqft</label><input id="f-basement-rate" type="number" min="0" placeholder="2700"></div>
+      <div id="lift-cost-row" style="display:none;"><label>Lift Machine — ₹</label><input id="f-lift-cost" type="number" min="0" placeholder="12,00,000"></div>
+    </div>
+    <!-- P3 v2: per-line-item rate overrides (Terrace, Ramp, Setback, Stilt, Balcony, Staircase, Lift, Basement, Water Tank, individual floors). -->
+    <details id="item-rate-overrides" style="margin-top:10px;">
+      <summary style="cursor:pointer;font-size:11px;color:var(--muted);font-weight:600;padding:4px 0;letter-spacing:0.04em;text-transform:uppercase;">Per-Line-Item Rate Overrides <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">(optional)</span></summary>
+      <p style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:4px 0 6px;">Override the rate for a specific item (e.g. Terrace at ₹650 even though Zone C default is ₹600). Leave blank to use the zone default above.</p>
+      <div id="item-rate-list"></div>
+    </details>
+    <p style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:8px 0 0;">GST and any liaisoning are quoted separately outside this document.</p>
+  </fieldset>
+
+  <fieldset id="area-ovr-fs" style="display:none;">
+    <legend>Area Overrides (optional)</legend>
+    <p style="font-size:10.5px;color:var(--muted);margin:0 0 8px;line-height:1.5;">Override the computed area of any line item (e.g. 2nd floor at 50% coverage). Leave blank to use the auto-calculated area.</p>
+    <div id="area-ovr-list"></div>
   </fieldset>
 
   <fieldset>
@@ -259,6 +307,13 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
 <main class="right">
   <div class="toolbar">
     <span class="title">Live Preview · A4</span>
+    <label class="layout-toggle" title="Specifications layout: grid (cards) or table (compact rows)" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin:0 8px;cursor:pointer;user-select:none;">
+      Specifications layout:
+      <select id="f-specs-layout" style="font:inherit;font-size:12px;padding:5px 8px;border:1px solid var(--rule);border-radius:6px;background:white;color:var(--ink);">
+        <option value="grid">Grid (cards)</option>
+        <option value="table">Table</option>
+      </select>
+    </label>
     <button class="secondary" id="new-quote" title="Clear current quote and start fresh">New Quote</button>
     <button class="secondary" id="save-quote" title="Save quote (Ctrl/Cmd+S)">Save</button>
     <button class="secondary" id="load-quote" title="Open a saved quote">Load</button>

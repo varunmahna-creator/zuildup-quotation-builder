@@ -70,13 +70,33 @@ const defaultState = () => ({
   pricing: {
     costPerSqft: null,           // ₹/sqft for Zone A (full-build modes)
     structureRate: null,         // ₹/sqft for structure-only mode
+    // P3 #3 + #4: per-zone rate overrides (null/'' => formula default).
+    zoneARate:    null,          // override Zone A (default = costPerSqft)
+    zoneBRate:    null,          // override Zone B (default = 50% of A)
+    zoneCRate:    null,          // override Zone C (default = 600 ₹/sqft)
+    zoneDRate:    null,          // override Zone D (default = 15 ₹/L)
+    basementRate: null,          // override Zone E basement (default = 2700 ₹/sqft)
+    // P3 v2 (A): per-line-item rate overrides. Key '<zone>:<item.name>' -> ₹/sqft (or ₹/L for Zone D).
+    // null/missing => use zone default. Lets sales charge Terrace ₹650 while keeping Ramp/Setback at ₹600.
+    itemRates: {},
+    // P3 v2.1: editable lift machine cost (default ₹12,00,000). null = default.
+    liftCost: null,
   },
   scope: 'full',                 // 'full' | 'structure_only'
   rows: [],                      // [{id, override:{label?, rate?, rate_text?, brands?, description?, location?}, _custom?:bool}]
   notes: '',
   // P1.6: DRAFT watermark toggle. When true, every PDF page gets a diagonal "DRAFT" overlay.
   draft: false,
-  quoteId: 'ZB-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase(),
+  // P3 #6: specs layout — 'grid' (default cards) or 'table' (compact table form).
+  specsLayout: 'grid',
+  // P3 v2 (C): per-category open/close state in left-rail spec list.
+  // Default: all collapsed. Lives in state but excluded from PDF render.
+  _uiCatOpen: {},
+  // Picker UI: which category sections are open (default all collapsed).
+  _uiPickerOpen: {},
+  // P3 #7: per-line area overrides. Key '<zone>:<item.name>' -> integer sq.ft (or L for Zone D).
+  areaOverrides: {},
+  quoteId: '',  // P3 #2: assigned by server (/api/next-quote-id) on first save
   createdAt: new Date().toISOString().slice(0,10),
 });
 
@@ -94,7 +114,7 @@ function loadState() {
           ...d, ...s,
           customer: { ...d.customer, ...(s.customer||{}) },
           build:    { ...d.build,    ...(s.build||{})    },
-          pricing:  { ...d.pricing,  ...(s.pricing||{})  },
+          pricing:  { ...d.pricing,  ...(s.pricing||{}), itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) }  },
         };
       }
       // Stale active id — clear it.
@@ -112,10 +132,26 @@ function loadState() {
       ...d, ...s,
       customer: { ...d.customer, ...(s.customer||{}) },
       build:    { ...d.build,    ...(s.build||{})    },
-      pricing:  { ...d.pricing,  ...(s.pricing||{})  },
+      pricing:  { ...d.pricing,  ...(s.pricing||{}), itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) } },
     };
   } catch(e) { return defaultState(); }
 }
+// P3 #2: fetch a server-assigned ZUI-YYYY-NNNN quote id. Mutates state.quoteId.
+async function ensureQuoteId(state) {
+  if (state.quoteId && state.quoteId.startsWith('ZUI-')) return state.quoteId;
+  try {
+    const r = await fetch('/api/next-quote-id', { method: 'POST' });
+    if (!r.ok) throw new Error('http ' + r.status);
+    const j = await r.json();
+    state.quoteId = j.id;
+    return j.id;
+  } catch (e) {
+    const yr = new Date().getFullYear();
+    state.quoteId = 'ZUI-' + yr + '-LOCAL';
+    return state.quoteId;
+  }
+}
+
 function saveState(s) {
   localStorage.setItem(STORE_KEY, JSON.stringify(s));
   // P1.5: if there's an active named quote, also persist into the named slot
@@ -146,6 +182,144 @@ const QuoteStorage = {
   IDX_KEY:    'zuildup.quotes.index',
   ACTIVE_KEY: 'zuildup.active_quote_id',
   PFX:        'zuildup.quotes.',
+
+  // ---- Phase 4: cloud sync (Firestore via /api/quotes) ----
+  _syncEnabled: true,        // toggle off if API repeatedly fails
+  _pendingPushes: 0,         // count of in-flight pushes (for indicator)
+  _failureCount: 0,          // consecutive API failures; >= 3 turns sync off
+  _lastSyncedAt: null,
+
+  _onSyncStateChange() {
+    try { window.dispatchEvent(new CustomEvent('quote-sync-state-changed', { detail: { pending: this._pendingPushes, enabled: this._syncEnabled } })); } catch (_) {}
+  },
+
+  /** Fire-and-forget API push. Resolves after the request completes (success or fail). */
+  async _apiPush(method, id, body) {
+    if (!this._syncEnabled) return null;
+    this._pendingPushes++;
+    this._onSyncStateChange();
+    try {
+      const url = id ? ('/api/quotes/' + encodeURIComponent(id)) : '/api/quotes';
+      const opts = { method, credentials: 'same-origin', headers: { 'Content-Type': 'application/json' } };
+      if (body !== undefined) opts.body = JSON.stringify(body);
+      const r = await fetch(url, opts);
+      if (!r.ok) {
+        this._failureCount++;
+        if (this._failureCount >= 3) { this._syncEnabled = false; console.warn('[QuoteStorage] sync disabled after 3 failures'); }
+        const txt = await r.text().catch(() => '');
+        throw new Error('http ' + r.status + ' ' + txt.slice(0, 200));
+      }
+      this._failureCount = 0;
+      this._lastSyncedAt = new Date().toISOString();
+      const j = await r.json().catch(() => null);
+      return j;
+    } catch (e) {
+      console.warn('[QuoteStorage] _apiPush failed', method, id, e.message);
+      return null;
+    } finally {
+      this._pendingPushes--;
+      this._onSyncStateChange();
+    }
+  },
+
+  /** Fetch a single full slot from cloud and write it to local. */
+  async _apiFetch(id) {
+    if (!this._syncEnabled) return null;
+    try {
+      const r = await fetch('/api/quotes/' + encodeURIComponent(id), { credentials: 'same-origin' });
+      if (!r.ok) return null;
+      const doc = await r.json();
+      // Persist the inner state into local slot, and merge index entry.
+      if (doc && doc.id && doc.state) {
+        localStorage.setItem(this._slotKey(doc.id), JSON.stringify(doc.state));
+        const idx = this._readIndex().filter(e => e.id !== doc.id);
+        const entry = {
+          id: doc.id,
+          name: doc.name || '',
+          customer_name: doc.customer_name || '',
+          author: doc.author || '',
+          created_at: doc.created_at || '',
+          modified_at: doc.modified_at || '',
+          row_count: doc.row_count || 0,
+        };
+        this._writeIndex([entry, ...idx]);
+      }
+      return doc;
+    } catch (_) { return null; }
+  },
+
+  /** Pull the full quote library from cloud and merge into localStorage.
+   *  - Quotes that exist remotely but not locally → fetched and stored.
+   *  - Quotes that exist remotely with newer modified_at → fetched and overwritten.
+   *  - Quotes that exist locally but not remotely → pushed up (migration).
+   *  Returns a summary { fetched, pushed, total }.
+   */
+  async syncFromCloud() {
+    if (!this._syncEnabled) return { fetched: 0, pushed: 0, total: 0, skipped: true };
+    let fetched = 0, pushed = 0;
+    try {
+      const r = await fetch('/api/quotes', { credentials: 'same-origin' });
+      if (!r.ok) {
+        this._failureCount++;
+        if (this._failureCount >= 3) this._syncEnabled = false;
+        return { fetched, pushed, total: 0, error: 'http ' + r.status };
+      }
+      this._failureCount = 0;
+      const j = await r.json();
+      const remote = (j && j.items) || [];
+      const remoteById = {};
+      for (const e of remote) remoteById[e.id] = e;
+
+      const localIdx = this._readIndex();
+      const localById = {};
+      for (const e of localIdx) localById[e.id] = e;
+
+      // 1) Fetch remote-only or remote-newer quotes
+      for (const r of remote) {
+        const local = localById[r.id];
+        if (!local || (r.modified_at || '') > (local.modified_at || '')) {
+          const got = await this._apiFetch(r.id);
+          if (got) fetched++;
+        } else {
+          // Update author/etc on local index from remote without re-fetching state body.
+          const merged = Object.assign({}, local, {
+            name: r.name || local.name,
+            customer_name: r.customer_name || local.customer_name,
+            author: r.author || local.author,
+            created_at: r.created_at || local.created_at,
+            modified_at: r.modified_at || local.modified_at,
+            row_count: (r.row_count !== undefined) ? r.row_count : local.row_count,
+          });
+          const others = this._readIndex().filter(e => e.id !== r.id);
+          this._writeIndex([merged, ...others]);
+        }
+      }
+
+      // 2) Push local-only quotes up to cloud (one-time migration of pre-Phase-4 data)
+      for (const local of localIdx) {
+        if (!remoteById[local.id]) {
+          const slotRaw = localStorage.getItem(this._slotKey(local.id));
+          if (!slotRaw) continue;
+          let state;
+          try { state = JSON.parse(slotRaw); } catch (_) { continue; }
+          // Use POST with explicit id so the slot gets the SAME id in cloud.
+          const doc = await this._apiPush('POST', null, {
+            id: local.id,
+            name: local.name,
+            state,
+          });
+          if (doc) pushed++;
+        }
+      }
+
+      this._lastSyncedAt = new Date().toISOString();
+      this._onSyncStateChange();
+      return { fetched, pushed, total: remote.length };
+    } catch (e) {
+      console.warn('[QuoteStorage] syncFromCloud failed', e.message);
+      return { fetched, pushed, total: 0, error: e.message };
+    }
+  },
 
   _genId() {
     const t = Date.now().toString(36);
@@ -190,6 +364,8 @@ const QuoteStorage = {
       // bubble up to front
       const others = idx.filter(e => e.id !== id);
       this._writeIndex([entry, ...others]);
+      // Phase 4: push to cloud (background)
+      this._apiPush('PUT', id, { state: cloned, name: entry.name });
       return id;
     }
 
@@ -213,6 +389,8 @@ const QuoteStorage = {
       row_count: (cloned.rows || []).length,
     };
     this._writeIndex([newEntry, ...idx.filter(e => e.id !== id)]);
+    // Phase 4: push to cloud (background, with explicit id so cloud matches local)
+    this._apiPush('POST', null, { id, name: finalName, state: cloned });
     return id;
   },
 
@@ -230,6 +408,12 @@ const QuoteStorage = {
     entry.customer_name = (cloned.customer && cloned.customer.name) || entry.customer_name || '';
     entry.row_count    = (cloned.rows || []).length;
     this._writeIndex(idx);
+    // Phase 4: debounced push to cloud (background) — auto-save fires this on every keystroke,
+    // so we coalesce by waiting 1.5s of idle before pushing.
+    if (this._touchTimer) clearTimeout(this._touchTimer);
+    this._touchTimer = setTimeout(() => {
+      this._apiPush('PUT', id, { state: cloned, name: entry.name });
+    }, 1500);
   },
 
   load(id) {
@@ -251,6 +435,8 @@ const QuoteStorage = {
     const idx = this._readIndex().filter(e => e.id !== id);
     this._writeIndex(idx);
     if (this.activeId() === id) this.setActiveId('');
+    // Phase 4: push deletion to cloud
+    this._apiPush('DELETE', id);
   },
 
   /** Clone an existing slot's state into a brand-new slot. Returns the new id. */
@@ -340,14 +526,58 @@ function defaultRowsFor(scope) {
 // ============================================================================
 function computeQuote(state) {
   const bt = state.build.buildType;
-  return bt === 'structure' ? calcStructure(state) : calcPackage(state);
+  const c = bt === 'structure' ? calcStructure(state) : calcPackage(state);
+  // P3 #7: apply per-line area overrides. Mutates `c` in place.
+  applyAreaOverrides(c, state);
+  return c;
+}
+
+// P3 #7: replace any zone-item area with state.areaOverrides[<zone>:<name>] when present;
+// recompute zone totals, zone costs, sub-totals, grand total.
+function applyAreaOverrides(c, state) {
+  const ovrs = state.areaOverrides || {};
+  if (!c.zones) return;
+  let dirty = false;
+  for (const k of ['A','B','C','D','E']) {
+    const z = c.zones[k];
+    if (!z || !z.items) continue;
+    for (const it of z.items) {
+      const key = k + ':' + it.name;
+      const v = ovrs[key];
+      if (v != null && v !== '' && !isNaN(parseInt(v))) {
+        const newArea = parseInt(v);
+        if (newArea !== it.area) {
+          it.area = newArea;
+          dirty = true;
+        }
+      }
+    }
+    if (dirty) {
+      z.total = z.items.reduce((s, x) => s + (x.area || 0), 0);
+      z.cost  = z.total * (z.rate || 0);
+    }
+  }
+  if (dirty) {
+    let zoneSubtotal = 0;
+    for (const k of ['A','B','C','D','E']) {
+      if (c.zones[k]) zoneSubtotal += c.zones[k].cost || 0;
+    }
+    c.zoneSubtotal = zoneSubtotal;
+    c.grandTotal = zoneSubtotal + (c.lift ? c.lift.cost : 0);
+  }
 }
 
 function calcPackage(state) {
   const b = state.build, p = state.pricing;
   const hasStilt = b.buildType === 'stilt';
-  const baseRate = parseInt(p.costPerSqft) || 0;     // user-entered ₹/sqft
-  const bRate    = Math.round(baseRate * 0.50);
+  const baseFormula = parseInt(p.costPerSqft) || 0;
+  // P3 #4: per-zone overrides — null/'' => formula default, otherwise direct ₹/sqft.
+  const ovr = (v, fallback) => (v != null && v !== '' && !isNaN(parseInt(v))) ? parseInt(v) : fallback;
+  const baseRate = ovr(p.zoneARate,    baseFormula);
+  const bRate    = ovr(p.zoneBRate,    Math.round(baseFormula * 0.50));
+  const cRate    = ovr(p.zoneCRate,    C_RATE);
+  const dRate    = ovr(p.zoneDRate,    WATER_TANK_RATE);
+  const eRate    = ovr(p.basementRate, BASEMENT_RATE);
 
   const plotSqFt   = b.plotSqYards * 9;
   const depth      = b.breadth ? Math.round(plotSqFt / b.breadth) : 0;
@@ -402,13 +632,30 @@ function calcPackage(state) {
   const totalE = b.hasBasement ? floorArea : 0;
   const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: 'Enclosed Area', area: totalE }] : [];
 
-  // Costs
-  const costA = totalA * baseRate;
-  const costB = totalB * bRate;
-  const costC = totalC * C_RATE;
-  const costD = totalD * WATER_TANK_RATE;
-  const costE = totalE * BASEMENT_RATE;
-  const liftCost = b.hasLift ? LIFT_COST : 0;
+  // P3 v2 (A): per-line-item rates. Each item gets item.rate (override or zone default)
+  // and item.cost (area * rate). Zone cost = sum(items.cost). Zone label shows "varies"
+  // if any item rate differs from the zone default.
+  const itemRates = (state.pricing.itemRates) || {};
+  const enrichZone = (key, items, defaultRate) => {
+    let varies = false;
+    for (const it of items) {
+      const ovr = itemRates[key + ':' + it.name];
+      const r = (ovr != null && ovr !== '' && !isNaN(parseInt(ovr))) ? parseInt(ovr) : defaultRate;
+      if (r !== defaultRate) varies = true;
+      it.rate = r;
+      it.cost = it.area * r;
+    }
+    return { cost: items.reduce((s, it) => s + it.cost, 0), varies };
+  };
+  const _zA = enrichZone('A', zoneAItems, baseRate);
+  const _zB = enrichZone('B', zoneBItems, bRate);
+  const _zC = enrichZone('C', zoneCItems, cRate);
+  const _zD = enrichZone('D', zoneDItems, dRate);
+  const _zE = enrichZone('E', zoneEItems, eRate);
+  const costA = _zA.cost, costB = _zB.cost, costC = _zC.cost, costD = _zD.cost, costE = _zE.cost;
+  // P3 v2.1: lift cost is editable via state.pricing.liftCost (null/'' = default LIFT_COST).
+  const liftOvr = state.pricing.liftCost;
+  const liftCost = b.hasLift ? ((liftOvr != null && liftOvr !== '' && !isNaN(parseInt(liftOvr))) ? parseInt(liftOvr) : LIFT_COST) : 0;
   const zoneSubtotal = costA + costB + costC + costD + costE;
   // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
   const grand = zoneSubtotal + liftCost;
@@ -419,11 +666,11 @@ function calcPackage(state) {
     buildLabel: hasStilt ? `Stilt + ${numFloors} Floors` : `Ground + ${numFloors-1}`,
     floorArea,
     zones: {
-      A: { items: zoneAItems, total: totalA, rate: baseRate, cost: costA, rateLabel: `100% (₹${ni(baseRate)}/sqft)` },
-      B: { items: zoneBItems, total: totalB, rate: bRate,    cost: costB, rateLabel: `50% (₹${ni(bRate)}/sqft)` },
-      C: { items: zoneCItems, total: totalC, rate: C_RATE,   cost: costC, rateLabel: `₹${ni(C_RATE)}/sqft` },
-      D: { items: zoneDItems, total: totalD, rate: WATER_TANK_RATE, cost: costD, rateLabel: `₹${ni(WATER_TANK_RATE)}/L`, unit: 'L' },
-      E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: BASEMENT_RATE, cost: costE, rateLabel: `₹${ni(BASEMENT_RATE)}/sqft` } : null,
+      A: { items: zoneAItems, total: totalA, rate: baseRate, cost: costA, varies: _zA.varies, rateLabel: _zA.varies ? 'varies' : `₹${ni(baseRate)}/sqft` },
+      B: { items: zoneBItems, total: totalB, rate: bRate,    cost: costB, varies: _zB.varies, rateLabel: _zB.varies ? 'varies' : `₹${ni(bRate)}/sqft` },
+      C: { items: zoneCItems, total: totalC, rate: cRate,    cost: costC, varies: _zC.varies, rateLabel: _zC.varies ? 'varies' : `₹${ni(cRate)}/sqft` },
+      D: { items: zoneDItems, total: totalD, rate: dRate,    cost: costD, varies: _zD.varies, rateLabel: _zD.varies ? 'varies' : `₹${ni(dRate)}/L`, unit: 'L' },
+      E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: eRate, cost: costE, varies: _zE.varies, rateLabel: _zE.varies ? 'varies' : `₹${ni(eRate)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
     zoneSubtotal,
@@ -434,6 +681,10 @@ function calcPackage(state) {
 function calcStructure(state) {
   const b = state.build, p = state.pricing;
   const strRate = parseInt(p.structureRate) || 0;
+  // P3 #3/4: overrides apply in structure mode too (Zone D, basement).
+  const ovr = (v, fallback) => (v != null && v !== '' && !isNaN(parseInt(v))) ? parseInt(v) : fallback;
+  const dRate = ovr(p.zoneDRate,    WATER_TANK_RATE);
+  const eRate = ovr(p.basementRate, BASEMENT_RATE);
   const numFloors = b.floors;
 
   const plotSqFt = b.plotSqYards * 9;
@@ -477,12 +728,27 @@ function calcStructure(state) {
   const totalE = b.hasBasement ? floorArea : 0;
   const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: 'Enclosed Area', area: totalE }] : [];
 
-  // Costs (no Zone C in structure mode)
-  const costA = totalA * strRate;
-  const costB = totalB * STRUCT_B_RATE;
-  const costD = totalD * WATER_TANK_RATE;
-  const costE = totalE * BASEMENT_RATE;
-  const liftCost = b.hasLift ? LIFT_COST : 0;
+  // P3 v2 (A): per-line-item rates in structure mode.
+  const itemRates = (state.pricing.itemRates) || {};
+  const enrichZone = (key, items, defaultRate) => {
+    let varies = false;
+    for (const it of items) {
+      const ovr = itemRates[key + ':' + it.name];
+      const r = (ovr != null && ovr !== '' && !isNaN(parseInt(ovr))) ? parseInt(ovr) : defaultRate;
+      if (r !== defaultRate) varies = true;
+      it.rate = r;
+      it.cost = it.area * r;
+    }
+    return { cost: items.reduce((s, it) => s + it.cost, 0), varies };
+  };
+  const _zA = enrichZone('A', zoneAItems, strRate);
+  const _zB = enrichZone('B', zoneBItems, STRUCT_B_RATE);
+  const _zD = enrichZone('D', zoneDItems, dRate);
+  const _zE = enrichZone('E', zoneEItems, eRate);
+  const costA = _zA.cost, costB = _zB.cost, costD = _zD.cost, costE = _zE.cost;
+  // P3 v2.1: lift cost editable.
+  const liftOvr = state.pricing.liftCost;
+  const liftCost = b.hasLift ? ((liftOvr != null && liftOvr !== '' && !isNaN(parseInt(liftOvr))) ? parseInt(liftOvr) : LIFT_COST) : 0;
   const zoneSubtotal = costA + costB + costD + costE;
   // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
   const grand = zoneSubtotal + liftCost;
@@ -493,11 +759,11 @@ function calcStructure(state) {
     buildLabel: `Structure Only · Stilt + ${numFloors}`,
     floorArea,
     zones: {
-      A: { items: zoneAItems, total: totalA, rate: strRate,        cost: costA, rateLabel: `100% (₹${ni(strRate)}/sqft)` },
-      B: { items: zoneBItems, total: totalB, rate: STRUCT_B_RATE,  cost: costB, rateLabel: `₹${ni(STRUCT_B_RATE)}/sqft` },
+      A: { items: zoneAItems, total: totalA, rate: strRate,       cost: costA, varies: _zA.varies, rateLabel: _zA.varies ? 'varies' : `₹${ni(strRate)}/sqft` },
+      B: { items: zoneBItems, total: totalB, rate: STRUCT_B_RATE, cost: costB, varies: _zB.varies, rateLabel: _zB.varies ? 'varies' : `₹${ni(STRUCT_B_RATE)}/sqft` },
       C: null,
-      D: { items: zoneDItems, total: totalD, rate: WATER_TANK_RATE, cost: costD, rateLabel: `₹${ni(WATER_TANK_RATE)}/L`, unit: 'L' },
-      E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: BASEMENT_RATE, cost: costE, rateLabel: `₹${ni(BASEMENT_RATE)}/sqft` } : null,
+      D: { items: zoneDItems, total: totalD, rate: dRate, cost: costD, varies: _zD.varies, rateLabel: _zD.varies ? 'varies' : `₹${ni(dRate)}/L`, unit: 'L' },
+      E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: eRate, cost: costE, varies: _zE.varies, rateLabel: _zE.varies ? 'varies' : `₹${ni(eRate)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
     zoneSubtotal,
@@ -544,7 +810,24 @@ if (isPreviewPage) bootPreview();
 // ============================================================================
 async function bootForm() {
   await loadCatalog();
+  // Phase 4: pull team's cloud-stored quotes into local cache before reading state.
+  // Best-effort — if it fails (offline / API down), we fall through to localStorage only.
+  try {
+    const sum = await Promise.race([
+      QuoteStorage.syncFromCloud(),
+      new Promise(resolve => setTimeout(() => resolve({ timeout: true }), 4000)),
+    ]);
+    if (sum && !sum.timeout) {
+      console.log('[QuoteStorage] sync on boot:', sum);
+    }
+  } catch (e) { console.warn('[QuoteStorage] boot sync failed', e); }
   let state = loadState();
+
+  // P3 #2: ensure a server-assigned quote id (ZUI-YYYY-NNNN)
+  if (!state.quoteId || !state.quoteId.startsWith('ZUI-')) {
+    await ensureQuoteId(state);
+    saveState(state);
+  }
 
   // First-load seed for rows when scope is set but rows empty
   if (!state.rows.length) {
@@ -565,13 +848,27 @@ async function bootForm() {
   $('f-build-type').value = state.build.buildType;
   $('f-basement').checked = !!state.build.hasBasement;
   $('f-lift').checked     = !!state.build.hasLift;
-  $('f-cost-sqft').value  = state.pricing.costPerSqft ?? '';
-  $('f-struct-rate').value= state.pricing.structureRate ?? '';
+  $('f-cost-sqft').value   = state.pricing.costPerSqft ?? '';
+  $('f-struct-rate').value = state.pricing.structureRate ?? '';
+  // P3 #4: zone rate overrides (empty input = formula default)
+  if ($('f-zone-a-rate'))   $('f-zone-a-rate').value   = state.pricing.zoneARate    ?? '';
+  if ($('f-zone-b-rate'))   $('f-zone-b-rate').value   = state.pricing.zoneBRate    ?? '';
+  if ($('f-zone-c-rate'))   $('f-zone-c-rate').value   = state.pricing.zoneCRate    ?? '';
+  if ($('f-zone-d-rate'))   $('f-zone-d-rate').value   = state.pricing.zoneDRate    ?? '';
+  if ($('f-basement-rate')) $('f-basement-rate').value = state.pricing.basementRate ?? '';
+  if ($('f-lift-cost'))     $('f-lift-cost').value     = state.pricing.liftCost     ?? '';
+  if ($('f-lift-cost'))     $('f-lift-cost').value     = state.pricing.liftCost     ?? '';
+  // P3 #6: layout toggle
+  if ($('f-specs-layout'))  $('f-specs-layout').value  = state.specsLayout || 'grid';
   $('f-notes').value      = state.notes ?? '';
   for (const btn of $('f-scope').querySelectorAll('button')) {
     btn.classList.toggle('active', btn.dataset.v === state.scope);
   }
   reflectModeUi(state.build.buildType);
+  // P3 v2.1: initial lift-cost-row visibility based on saved state.
+  { const row = document.getElementById('lift-cost-row'); if (row) row.style.display = state.build.hasLift ? '' : 'none'; }
+  // P3 v2.1: initial lift-cost-row visibility based on saved state.
+  { const row = document.getElementById('lift-cost-row'); if (row) row.style.display = state.build.hasLift ? '' : 'none'; }
   // P1.7: applyValidation defined just below — call after first paint so initial state is reflected.
   setTimeout(() => { try { applyValidation(); } catch(_) {} }, 0);
 
@@ -633,10 +930,32 @@ async function bootForm() {
     }
   }
 
-  function flush() { saveState(state); renderSpecList(); applyValidation(); }
+  function flush() { saveState(state); renderSpecList(); applyValidation(); renderAreaOverridesPanel(); renderItemRatesPanel(); }
 
   // ---- Customer field listeners ----
   $('f-salutation').oninput = e => { state.customer.salutation = e.target.value; flush(); };
+  // P3 #4: zone rate overrides
+  ['f-zone-a-rate','f-zone-b-rate','f-zone-c-rate','f-zone-d-rate','f-basement-rate','f-lift-cost'].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    const key = ({
+      'f-zone-a-rate':    'zoneARate',
+      'f-zone-b-rate':    'zoneBRate',
+      'f-zone-c-rate':    'zoneCRate',
+      'f-zone-d-rate':    'zoneDRate',
+      'f-basement-rate':  'basementRate',
+      'f-lift-cost':      'liftCost',
+    })[id];
+    el.oninput = e => {
+      const v = e.target.value.trim();
+      state.pricing[key] = (v === '') ? null : (parseInt(v) || 0);
+      flush();
+      renderAreaOverridesPanel();
+  renderItemRatesPanel();  // recompute since totals will change
+    };
+  });
+  // P3 #6: layout toggle
+  if ($('f-specs-layout')) $('f-specs-layout').onchange = e => { state.specsLayout = e.target.value; flush(); };
   $('f-name').oninput        = e => { state.customer.name = e.target.value; flush(); };
   $('f-address').oninput     = e => { state.customer.address = e.target.value; flush(); };
 
@@ -646,7 +965,12 @@ async function bootForm() {
   $('f-coverage').oninput = e => { state.build.coverage = +e.target.value || 0; flush(); };
   $('f-floors').oninput   = e => { state.build.floors = +e.target.value || 1; flush(); };
   $('f-basement').onchange= e => { state.build.hasBasement = !!e.target.checked; flush(); };
-  $('f-lift').onchange    = e => { state.build.hasLift = !!e.target.checked; flush(); };
+  $('f-lift').onchange    = e => {
+    state.build.hasLift = !!e.target.checked;
+    const row = document.getElementById('lift-cost-row');
+    if (row) row.style.display = state.build.hasLift ? '' : 'none';
+    flush();
+  };
   $('f-build-type').onchange = e => {
     state.build.buildType = e.target.value;
     reflectModeUi(state.build.buildType);
@@ -761,8 +1085,21 @@ async function bootForm() {
     const t = new Date(entry.modified_at);
     const hh = String(t.getHours()).padStart(2,'0');
     const mm = String(t.getMinutes()).padStart(2,'0');
-    setIndicator('saved', 'Saved ' + hh + ':' + mm);
+    const pending = QuoteStorage._pendingPushes || 0;
+    if (pending > 0) {
+      setIndicator('saving', 'Syncing\u2026');
+    } else if (!QuoteStorage._syncEnabled) {
+      setIndicator('saved', 'Saved ' + hh + ':' + mm + ' (local only)');
+    } else {
+      setIndicator('saved', 'Saved ' + hh + ':' + mm);
+    }
   }
+  // Phase 4: refresh indicator on every cloud-sync state change.
+  let __syncIndTimer = null;
+  window.addEventListener('quote-sync-state-changed', () => {
+    if (__syncIndTimer) clearTimeout(__syncIndTimer);
+    __syncIndTimer = setTimeout(refreshIndicatorIdle, 50);
+  });
 
   // Storage pressure check — call after any explicit save.
   // Browsers cap localStorage at ~5-10 MB. Warn at 4 MB.
@@ -885,10 +1222,11 @@ async function bootForm() {
       const li = document.createElement('li');
       const cn = e.customer_name || '(no customer name)';
       const date = (e.modified_at || '').slice(0, 10);
+      const author = e.author ? ('by ' + e.author + ' · ') : '';
       li.innerHTML = `
         <span class="meta">
           <span class="name">${escapeHtml(e.name || cn)}</span>
-          <span class="sub">${escapeHtml(cn)} · saved ${escapeHtml(date)} · ${e.row_count || 0} rows</span>
+          <span class="sub">${escapeHtml(cn)} · ${escapeHtml(author)}saved ${escapeHtml(date)} · ${e.row_count || 0} rows</span>
         </span>
         <span class="row-acts">
           <button data-act="open" class="btn-primary">Open</button>
@@ -925,7 +1263,18 @@ async function bootForm() {
   }
 
   const loadBtn = document.getElementById('load-quote');
-  if (loadBtn) loadBtn.onclick = () => { renderLoadList(); openModal(loadModal); };
+  if (loadBtn) loadBtn.onclick = async () => {
+    // Phase 4: force a fresh cloud pull so the rep sees teammates' latest quotes.
+    renderLoadList();
+    openModal(loadModal);
+    try {
+      await Promise.race([
+        QuoteStorage.syncFromCloud(),
+        new Promise(r => setTimeout(r, 3000)),
+      ]);
+    } catch (_) {}
+    renderLoadList();
+  };
   document.getElementById('load-close').onclick = () => closeModal(loadModal);
 
   // ---- Export JSON ----
@@ -1019,136 +1368,310 @@ async function bootForm() {
     document.getElementById('cost-sqft-row').style.display    = isStruct ? 'none' : '';
     document.getElementById('struct-rate-row').style.display  = isStruct ? '' : 'none';
     document.getElementById('floors-label').textContent       = (mode === 'nostilt') ? 'Number of floors (incl. ground)' : 'Floors above stilt';
+    // P3 #3: show basement rate input only when basement checked
+    const bRow = document.getElementById('basement-rate-row');
+    if (bRow) bRow.style.display = state.build.hasBasement ? '' : 'none';
+    // P3 #4: hide Zone A override in structure mode
+    const zaRow = document.getElementById('f-zone-a-rate');
+    if (zaRow && zaRow.parentElement) zaRow.parentElement.style.display = isStruct ? 'none' : '';
+    const zbRow = document.getElementById('f-zone-b-rate');
+    if (zbRow && zbRow.parentElement) zbRow.parentElement.style.display = isStruct ? 'none' : '';
+    const zcRow = document.getElementById('f-zone-c-rate');
+    if (zcRow && zcRow.parentElement) zcRow.parentElement.style.display = isStruct ? 'none' : '';
   }
 
-  // ---- Spec list ----
+  // ---- P3 #7: Area Overrides panel (left rail) ----
+  function renderAreaOverridesPanel() {
+    const fs = document.getElementById('area-ovr-fs');
+    const list = document.getElementById('area-ovr-list');
+    if (!fs || !list) return;
+    // Hide if no plot/coverage entered yet
+    if (!state.build.plotSqYards || !state.build.coverage) { fs.style.display = 'none'; return; }
+    fs.style.display = '';
+    state.areaOverrides ||= {};
+    let c;
+    try { c = computeQuote(state); }
+    catch (_) { list.innerHTML = '<p style="font-size:11px;color:var(--muted);">Enter pricing to see line items.</p>'; return; }
+    const html = [];
+    for (const k of ['A','B','C','D','E']) {
+      const z = c.zones?.[k];
+      if (!z || !z.items?.length) continue;
+      html.push(`<div class="aov-zone"><div class="aov-zone-hdr">Zone ${k} <span class="aov-rate">${escapeHtml(z.rateLabel || '')}</span></div>`);
+      z.items.forEach(it => {
+        const key = k + ':' + it.name;
+        const v = state.areaOverrides[key] ?? '';
+        const unit = z.unit ? z.unit : 'sqft';
+        const computed = (state.areaOverrides[key] != null && state.areaOverrides[key] !== '') ? null : it.area;
+        const placeholder = `auto: ${ni(computed != null ? computed : it.area)}`;
+        html.push(`
+          <div class="aov-row">
+            <span class="aov-name">${escapeHtml(it.name)}</span>
+            <input type="number" min="0" data-aov-key="${escapeAttr(key)}" value="${v === '' ? '' : escapeAttr(String(v))}" placeholder="${escapeAttr(placeholder)}" style="width:90px;">
+            <span class="aov-unit">${escapeHtml(unit)}</span>
+          </div>
+        `);
+      });
+      html.push('</div>');
+    }
+    list.innerHTML = html.join('');
+    list.querySelectorAll('input[data-aov-key]').forEach(inp => {
+      inp.oninput = e => {
+        const key = inp.dataset.aovKey;
+        const val = e.target.value.trim();
+        if (val === '') delete state.areaOverrides[key];
+        else state.areaOverrides[key] = parseInt(val) || 0;
+        saveState(state);
+        // Don't re-render the whole panel on each keystroke — only re-show preview.
+      };
+      inp.onblur = e => { renderAreaOverridesPanel(); };
+    });
+  }
+
+  // ---- P3 v2 (A): Per-line-item rate overrides panel (inside Pricing fieldset) ----
+  function renderItemRatesPanel() {
+    const list = document.getElementById('item-rate-list');
+    if (!list) return;
+    state.pricing.itemRates ||= {};
+    let c;
+    try { c = computeQuote(state); }
+    catch (_) {
+      list.innerHTML = '<p style="font-size:11px;color:var(--muted);margin:0;">Enter pricing & build details to see line items.</p>';
+      return;
+    }
+    if (!state.build.plotSqYards || !state.build.coverage) {
+      list.innerHTML = '<p style="font-size:11px;color:var(--muted);margin:0;">Enter plot dimensions & coverage to see line items.</p>';
+      return;
+    }
+    const html = [];
+    let hasOverride = false;
+    const zoneDefaults = {
+      A: c.zones.A?.rate, B: c.zones.B?.rate, C: c.zones.C?.rate, D: c.zones.D?.rate, E: c.zones.E?.rate,
+    };
+    for (const k of ['A','B','C','D','E']) {
+      const z = c.zones?.[k];
+      if (!z || !z.items?.length) continue;
+      // Get the *default* (zone) rate, not the per-item rate, so placeholder
+      // shows the fallback, not the current override.
+      let zoneDefault = zoneDefaults[k];
+      // Re-compute zone default ignoring item overrides: read from pricing inputs.
+      const p = state.pricing;
+      const baseFormula = parseInt(p.costPerSqft) || 0;
+      const ovr = (v, fb) => (v != null && v !== '' && !isNaN(parseInt(v))) ? parseInt(v) : fb;
+      const isStruct = state.build.buildType === 'structure' || state.scope === 'structure_only';
+      const strR = parseInt(p.structureRate) || 0;
+      if (k === 'A') zoneDefault = isStruct ? strR : ovr(p.zoneARate, baseFormula);
+      else if (k === 'B') zoneDefault = isStruct ? 500 : ovr(p.zoneBRate, Math.round(baseFormula * 0.5));
+      else if (k === 'C') zoneDefault = ovr(p.zoneCRate, 600);
+      else if (k === 'D') zoneDefault = ovr(p.zoneDRate, 15);
+      else if (k === 'E') zoneDefault = ovr(p.basementRate, 2700);
+      const unit = z.unit ? '/' + z.unit : '/sqft';
+      html.push(`<div class="aov-zone"><div class="aov-zone-hdr">Zone ${k} <span class="aov-rate">default ₹${ni(zoneDefault)}${unit}</span></div>`);
+      z.items.forEach(it => {
+        const key = k + ':' + it.name;
+        const v = state.pricing.itemRates[key] ?? '';
+        if (v !== '') hasOverride = true;
+        html.push(`
+          <div class="aov-row">
+            <span class="aov-name">${escapeHtml(it.name)}</span>
+            <input type="number" min="0" data-itemrate-key="${escapeAttr(key)}" value="${v === '' ? '' : escapeAttr(String(v))}" placeholder="${escapeAttr('₹' + ni(zoneDefault))}" style="width:90px;">
+            <span class="aov-unit">${escapeHtml(unit.replace('/', ''))}</span>
+          </div>
+        `);
+      });
+      html.push('</div>');
+    }
+    list.innerHTML = html.join('');
+    // Auto-open <details> if any override is set
+    const details = document.getElementById('item-rate-overrides');
+    if (details && hasOverride) details.open = true;
+    list.querySelectorAll('input[data-itemrate-key]').forEach(inp => {
+      inp.oninput = e => {
+        const key = inp.dataset.itemrateKey;
+        const val = e.target.value.trim();
+        if (val === '') delete state.pricing.itemRates[key];
+        else state.pricing.itemRates[key] = parseInt(val) || 0;
+        saveState(state);
+      };
+      inp.onblur = e => { renderItemRatesPanel(); };
+    });
+  }
+
+  // ---- Spec list (P3 #9: grouped by category) ----
   function renderSpecList() {
     const list = $('spec-list');
     list.innerHTML = '';
+    const groups = {};
     state.rows.forEach((row, idx) => {
       const item = row._custom ? null : catalogItem(row.id);
       if (!row._custom && !item) return;
       const o = row.override || {};
-      const label = o.label ?? (item ? item.label : (row.id || 'Untitled'));
-      // P1.3: rate / brands are AUTHORITATIVE only when set in override. Catalog values
-      // are templates/suggestions and must not surface as committed values in the spec list.
-      const rate  = (o.rate !== undefined) ? o.rate : 0;
-      const rateText = (o.rate_text !== undefined) ? o.rate_text : '';
-      const overrideBrands = (o.brands !== undefined) ? o.brands : null;
-      const brands = overrideBrands ?? [];
-      const suggestedBrands = (item && Array.isArray(item.brands)) ? item.brands : [];
-      const desc  = o.description ?? (item ? item.description : '');
-      const cat   = item ? item.category_label : (o.category_label || 'Custom');
-      const loc   = o.location || '';
-      const brandMeta = brands.length
-        ? escapeHtml(brands.join(' · '))
-        : (suggestedBrands.length ? `<em class="suggest">suggested: ${escapeHtml(suggestedBrands.join(' · '))}</em>` : '<em class="suggest">brands — set in edit</em>');
-      const rateMeta = (rateText && rateText.trim())
-        ? escapeHtml(rateText)
-        : (rate > 0 ? fmtINR(rate) : '<em class="set-rate">Set rate</em>');
-
-      // P1.4: a row is "unedited" if NO override field has been set. Sales should
-      // see at a glance how many rows still need attention.
-      const isUnedited = !o || (Object.keys(o).length === 0);
-
-      const el = document.createElement('div');
-      el.className = 'spec' + (row._custom ? ' custom' : '') + (isUnedited ? ' unedited' : '');
-      el.tabIndex = 0; // focusable so we can return focus on Esc/Done
-      el.dataset.idx = idx;
-      el.draggable = true;
-      el.innerHTML = `
-        <span class="grip" title="drag to reorder">≡</span>
-        <span class="head">
-          <span class="label">${escapeHtml(label)}${loc ? ' <span class="loc">— '+escapeHtml(loc)+'</span>' : ''}</span>
-          <span class="meta">${escapeHtml(cat)} · ${brandMeta}</span>
-        </span>
-        <span class="rate">${rateMeta}</span>
-        <span class="row-actions">
-          <span class="dup" title="duplicate row" data-act="dup">⎘</span>
-          <span class="x" title="remove row" data-act="remove">×</span>
-        </span>
-      `;
-      el.onclick = (e) => {
-        const act = e.target.dataset.act;
-        if (act === 'remove') { state.rows.splice(idx,1); flush(); return; }
-        if (act === 'dup') {
-          const copy = JSON.parse(JSON.stringify(state.rows[idx]));
-          copy.override = copy.override || {};
-          state.rows.splice(idx+1, 0, copy);
-          flush(); return;
-        }
-        toggleEdit(el, idx);
-      };
-      // Keyboard: Enter on a focused unedited row opens the editor.
-      el.addEventListener('keydown', (ev) => {
-        if (el.classList.contains('editing')) return; // editor handles its own keys
-        if (ev.key === 'Enter' || ev.key === ' ') {
-          ev.preventDefault();
-          toggleEdit(el, idx);
-        }
-      });
-      list.appendChild(el);
+      const cat = item ? item.category_label : (o.category_label || 'Custom');
+      (groups[cat] ||= []).push(idx);
     });
-    // P1.4: counter — "23 items · 12 need rates" so sales sees progress at a glance.
+    const catOrder = [
+      'Design & Drawings','Structure','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
+      'Flooring','Electrical Work','Water Management','Ceiling & Elevation','Safety & Security',
+      'Paint & Polish','General Aspects','Custom',
+    ];
+    const sortedCats = catOrder.filter(c => groups[c]).concat(Object.keys(groups).filter(c => !catOrder.includes(c)));
+    state._uiCatOpen ||= {};
+    for (const cat of sortedCats) {
+      const isOpen = !!state._uiCatOpen[cat];
+      const hdr = document.createElement('div');
+      hdr.className = 'spec-cat-hdr collapsible' + (isOpen ? ' open' : '');
+      hdr.innerHTML = `<span class="cat-name"><span class="chev">${isOpen ? '▾' : '▸'}</span> ${escapeHtml(cat)}</span><span class="cat-count">${groups[cat].length}</span>`;
+      hdr.style.cursor = 'pointer';
+      list.appendChild(hdr);
+      const body = document.createElement('div');
+      body.className = 'spec-cat-body';
+      body.style.display = isOpen ? '' : 'none';
+      list.appendChild(body);
+      hdr.onclick = () => {
+        state._uiCatOpen[cat] = !state._uiCatOpen[cat];
+        saveState(state);
+        renderSpecList();
+      };
+      groups[cat].forEach(idx => buildSpecCard(body, idx));
+    }
     const total = state.rows.length;
     let needRate = 0;
     state.rows.forEach(row => {
       const o = row.override || {};
-      const hasRate = (o.rate_text && o.rate_text.trim()) || (typeof o.rate === 'number' && o.rate > 0);
+      const hasRate = (o.brand_rate && o.brand_rate.trim())
+        || (o.rate_text && o.rate_text.trim())
+        || (typeof o.rate === 'number' && o.rate > 0);
       if (!hasRate) needRate++;
     });
     const counterEl = $('spec-count');
     if (total === 0) {
       counterEl.textContent = '0 items';
     } else if (needRate === 0) {
-      counterEl.innerHTML = `${total} items <span class="ok">· all rates set</span>`;
+      counterEl.innerHTML = `${total} items <span class="ok">· all details set</span>`;
     } else {
-      counterEl.innerHTML = `${total} items <span class="needs-rate">· ${needRate} ${needRate === 1 ? 'needs' : 'need'} rate</span>`;
+      counterEl.innerHTML = `${total} items <span class="needs-rate">· ${needRate} ${needRate === 1 ? 'needs' : 'need'} details</span>`;
     }
     enableDragReorder(list);
   }
 
+  // P3 #9: build one row card and append to the list (used by renderSpecList).
+  function buildSpecCard(list, idx) {
+    const row = state.rows[idx];
+    const item = row._custom ? null : catalogItem(row.id);
+    if (!row._custom && !item) return;
+    const o = row.override || {};
+    const label = o.label ?? (item ? item.label : (row.id || 'Untitled'));
+    const brandRate = (o.brand_rate !== undefined) ? o.brand_rate : '';
+    const rate  = (o.rate !== undefined) ? o.rate : 0;
+    const rateText = (o.rate_text !== undefined) ? o.rate_text : '';
+    const overrideBrands = (o.brands !== undefined) ? o.brands : null;
+    const brands = overrideBrands ?? [];
+    const suggestedBrands = (item && Array.isArray(item.brands)) ? item.brands : [];
+    const loc   = o.location || '';
+
+    let metaHtml;
+    if (brandRate && brandRate.trim()) {
+      metaHtml = `<b>${escapeHtml(brandRate)}</b>`;
+    } else {
+      const brandMeta = brands.length
+        ? escapeHtml(brands.join(' · '))
+        : (suggestedBrands.length ? `<em class="suggest">suggested: ${escapeHtml(suggestedBrands.join(' · '))}</em>` : '<em class="suggest">set details</em>');
+      const rateMeta = (rateText && rateText.trim())
+        ? escapeHtml(rateText)
+        : (rate > 0 ? fmtINR(rate) : '<em class="set-rate">Set details</em>');
+      metaHtml = `${brandMeta} · ${rateMeta}`;
+    }
+
+    const isUnedited = !o || (Object.keys(o).length === 0);
+    const el = document.createElement('div');
+    el.className = 'spec' + (row._custom ? ' custom' : '') + (isUnedited ? ' unedited' : '');
+    el.tabIndex = 0;
+    el.dataset.idx = idx;
+    el.draggable = true;
+    el.innerHTML = `
+      <span class="grip" title="drag to reorder">≡</span>
+      <span class="head">
+        <span class="label">${escapeHtml(label)}${loc ? ' <span class="loc">— '+escapeHtml(loc)+'</span>' : ''}</span>
+        <span class="meta">${metaHtml}</span>
+      </span>
+      <span class="row-actions">
+        <span class="dup" title="duplicate row" data-act="dup">⎘</span>
+        <span class="x" title="remove row" data-act="remove">×</span>
+      </span>
+    `;
+    el.onclick = (e) => {
+      const act = e.target.dataset.act;
+      if (act === 'remove') { state.rows.splice(idx,1); flush(); return; }
+      if (act === 'dup') {
+        const copy = JSON.parse(JSON.stringify(state.rows[idx]));
+        copy.override = copy.override || {};
+        state.rows.splice(idx+1, 0, copy);
+        flush(); return;
+      }
+      toggleEdit(el, idx);
+    };
+    el.addEventListener('keydown', (ev) => {
+      if (el.classList.contains('editing')) return;
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        toggleEdit(el, idx);
+      }
+    });
+    list.appendChild(el);
+  }
+
   function toggleEdit(el, idx) {
-    if (el.classList.contains('editing')) return; // editor stays open until Done
+    if (el.classList.contains('editing')) return;
     el.classList.add('editing');
     const row = state.rows[idx];
     const item = row._custom ? null : catalogItem(row.id);
     const o = row.override || {};
     const label = o.label ?? (item ? item.label : '');
-    const rate  = (o.rate !== undefined) ? o.rate : (item ? item.rate : 0);
-    const rateText = o.rate_text ?? (item ? item.rate_text : '') ?? '';
-    const brands = o.brands ?? (item ? item.brands : []) ?? [];
     const desc  = o.description ?? (item ? item.description : '');
     const cat   = (o.category_label) ?? (item ? item.category_label : 'Custom');
     const loc   = o.location || '';
 
+    // P3 #10: 3-field model — Label / Brand Name & Rate / Description.
+    // Auto-populate brand_rate from catalog on first open if override has none.
+    let brandRate = (o.brand_rate !== undefined) ? o.brand_rate : '';
+    if (brandRate === '' && item) {
+      // Compose from catalog: brands joined · rate_text or fmtINR(rate)
+      const cBrands = (item.brands || []);
+      const cRT = (item.rate_text || '');
+      const parts = [];
+      if (cBrands.length) parts.push(cBrands.join(' · '));
+      if (cRT && cRT.trim()) parts.push(cRT);
+      else if (item.rate > 0) parts.push(fmtINR(item.rate));
+      brandRate = parts.join(' · ');
+    }
+
     const ed = document.createElement('div');
     ed.className = 'editor';
     ed.innerHTML = `
-      <div><label>Label</label><input data-f="label" value="${escapeAttr(label)}"></div>
-      <div><label>Location / Room (optional)</label><input data-f="location" placeholder="e.g. Drawing Room, Bedroom 1" value="${escapeAttr(loc)}"></div>
-      <div><label>Rate (₹) — 0 if descriptive</label><input data-f="rate" type="number" value="${rate||0}"></div>
-      <div><label>Rate text (display)</label><input data-f="rate_text" placeholder="e.g. ₹35,000 per bathroom" value="${escapeAttr(rateText)}"></div>
-      <div class="full"><label>Brands (comma-separated)</label><input data-f="brands" value="${escapeAttr(brands.join(', '))}"></div>
+      <div class="full"><label>Label</label><input data-f="label" value="${escapeAttr(label)}"></div>
+      <div class="full"><label>Brand Name &amp; Rate <span style="font-weight:400;color:var(--muted);">(rendered bold in PDF)</span></label><input data-f="brand_rate" placeholder="e.g. Rathi Steel 500FE @ ₹35,000 per bathroom" value="${escapeAttr(brandRate)}"></div>
       <div class="full"><label>Description</label><textarea data-f="description" rows="3">${escapeHtml(desc)}</textarea></div>
+      <div><label>Location / Room (optional)</label><input data-f="location" placeholder="e.g. Drawing Room" value="${escapeAttr(loc)}"></div>
       ${row._custom ? `<div><label>Category</label><select data-f="category_label">
         <option>Custom</option><option>Bathroom & Toilet</option><option>Kitchen</option><option>Doors, Windows & Wardrobe</option>
         <option>Flooring</option><option>Electrical Work</option><option>Water Management</option><option>Ceiling & Elevation</option>
         <option>Safety & Security</option><option>Paint & Polish</option><option>Structure</option><option>Design & Drawings</option>
         <option>General Aspects</option>
-      </select></div>` : ''}
+      </select></div>` : '<div></div>'}
       <div class="ed-actions"><button data-act="done" class="btn-primary">Done</button>${row._custom ? '<button data-act="delete" class="btn-danger">Delete row</button>' : ''}</div>
     `;
     el.appendChild(ed);
     if (row._custom) ed.querySelector('select[data-f="category_label"]').value = cat;
+    // P3 #10: persist the auto-populated brand_rate immediately so the form preview reflects it.
+    if ((o.brand_rate === undefined) && brandRate) {
+      state.rows[idx].override ??= {};
+      state.rows[idx].override.brand_rate = brandRate;
+      saveState(state);
+    }
     ed.addEventListener('input', e => {
       const f = e.target.dataset.f;
       if (!f) return;
       state.rows[idx].override ??= {};
-      let v = e.target.value;
-      if (f === 'rate') v = +v || 0;
-      if (f === 'brands') v = v.split(',').map(s=>s.trim()).filter(Boolean);
-      state.rows[idx].override[f] = v;
+      state.rows[idx].override[f] = e.target.value;
       saveState(state);
     });
     ed.addEventListener('change', e => {
@@ -1215,10 +1738,10 @@ async function bootForm() {
       }
     });
 
-    // P1.4: auto-focus most-edited field. Custom rows → label first (need a name);
-    // catalog rows → rate first (most common edit).
+    // P3 #10: auto-focus the most-edited field. Custom rows → label first;
+    // catalog rows → brand_rate first (the only thing sales typically tweaks).
     setTimeout(() => {
-      const focusField = row._custom ? 'label' : 'rate';
+      const focusField = row._custom ? 'label' : 'brand_rate';
       const target = ed.querySelector('input[data-f="' + focusField + '"]');
       if (target) {
         target.focus();
@@ -1273,13 +1796,11 @@ async function bootForm() {
       `;
       el.onclick = () => {
         const id = 'custom.' + Math.random().toString(36).slice(2,8);
-        // P1.4: blank label (not "New custom item") — auto-focus drops sales right into typing.
         state.rows.push({
           id, _custom: true,
           override: { label: '', category_label: 'Custom' },
         });
         flush(); closePicker();
-        // Open the new row's editor (auto-focus on label per toggleEdit's _custom branch).
         setTimeout(() => {
           const newIdx = state.rows.length - 1;
           const card = document.querySelector('.spec[data-idx="'+newIdx+'"]');
@@ -1292,26 +1813,59 @@ async function bootForm() {
       body.appendChild(el);
       return;
     }
+    // P3 #9: group catalog results by category in the picker too.
     const q = document.getElementById('picker-search').value.toLowerCase().trim();
-    for (const it of (CATALOG?.items || [])) {
-      if (state.scope === 'structure_only' && !it.scope.includes('structure_only')) continue;
-      if (q && !(it.label.toLowerCase().includes(q) || it.category_label.toLowerCase().includes(q))) continue;
-      const el = document.createElement('div'); el.className = 'item';
-      el.innerHTML = `
-        <span class="l">
-          <span class="lab">${escapeHtml(it.label)}</span><br>
-          <span class="cat">${escapeHtml(it.category_label)}</span>
-        </span>
-        <span class="r">${it.rate_text || (it.rate>0 ? fmtINR(it.rate) : 'descriptive')}</span>
-      `;
-      el.onclick = () => {
-        state.rows.push({ id: it.id, override: {} });
-        flush(); closePicker();
-      };
-      body.appendChild(el);
-    }
-    if (!body.children.length) {
+    const filtered = (CATALOG?.items || []).filter(it => {
+      if (state.scope === 'structure_only' && !it.scope.includes('structure_only')) return false;
+      if (q && !(it.label.toLowerCase().includes(q) || it.category_label.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    if (!filtered.length) {
       body.innerHTML = '<div class="item" style="color:var(--muted);"><span class="l">No matches</span><span class="r"></span></div>';
+      return;
+    }
+    const groups = {};
+    filtered.forEach(it => { (groups[it.category_label] ||= []).push(it); });
+    const catOrder = [
+      'Design & Drawings','Structure','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
+      'Flooring','Electrical Work','Water Management','Ceiling & Elevation','Safety & Security',
+      'Paint & Polish','General Aspects','Custom',
+    ];
+    const sortedCats = catOrder.filter(c => groups[c]).concat(Object.keys(groups).filter(c => !catOrder.includes(c)));
+    state._uiPickerOpen ||= {};
+    // If user is searching, force-open all cats so they can see matches.
+    const forceOpen = !!q;
+    for (const cat of sortedCats) {
+      const isOpen = forceOpen || !!state._uiPickerOpen[cat];
+      const hdr = document.createElement('div');
+      hdr.className = 'picker-cat-hdr collapsible' + (isOpen ? ' open' : '');
+      hdr.innerHTML = `<span><span class="chev">${isOpen ? '▾' : '▸'}</span> ${escapeHtml(cat)}</span><span class="cat-count">${groups[cat].length}</span>`;
+      hdr.style.cursor = 'pointer';
+      body.appendChild(hdr);
+      const inner = document.createElement('div');
+      inner.className = 'picker-cat-body';
+      inner.style.display = isOpen ? '' : 'none';
+      body.appendChild(inner);
+      hdr.onclick = () => {
+        state._uiPickerOpen[cat] = !state._uiPickerOpen[cat];
+        saveState(state);
+        renderPicker();
+      };
+      for (const it of groups[cat]) {
+        const el = document.createElement('div'); el.className = 'item';
+        el.innerHTML = `
+          <span class="l">
+            <span class="lab">${escapeHtml(it.label)}</span><br>
+            <span class="cat">${escapeHtml(it.category_label)}</span>
+          </span>
+          <span class="r">${it.rate_text || (it.rate>0 ? fmtINR(it.rate) : 'descriptive')}</span>
+        `;
+        el.onclick = () => {
+          state.rows.push({ id: it.id, override: {} });
+          flush(); closePicker();
+        };
+        inner.appendChild(el);
+      }
     }
   }
 
@@ -1324,10 +1878,12 @@ async function bootForm() {
       toast('Add at least one spec line item to download.', 'warn');
       return;
     }
-    // P1.7: warn if any row has no rate set.
+    // P3 #10: warn if any row has no brand_rate (or legacy rate) set.
     const noRate = state.rows.filter(r => {
       const o = r.override || {};
-      const has = (o.rate_text && o.rate_text.trim()) || (typeof o.rate === 'number' && o.rate > 0);
+      const has = (o.brand_rate && o.brand_rate.trim())
+        || (o.rate_text && o.rate_text.trim())
+        || (typeof o.rate === 'number' && o.rate > 0);
       return !has;
     }).length;
     if (noRate > 0) {
@@ -1412,6 +1968,7 @@ async function bootForm() {
   }
 
   renderSpecList();
+  renderAreaOverridesPanel();
 }
 """
 
@@ -1460,6 +2017,8 @@ function renderQuote(state, about) {
   ];
   const sortedCats = catOrder.filter(c => byCat[c]).concat(Object.keys(byCat).filter(c => !catOrder.includes(c)));
 
+  // P3 #8: notes/caveats now render at the bottom of the cost page (10-12 lines max);
+  // the standalone notes page is removed.
   let html = `
 ${quoteCss()}
 ${renderCover(state, customer, showCustomer)}
@@ -1467,7 +2026,6 @@ ${about ? renderAboutPage(state, about) : ''}
 ${renderAreaPage(state, c)}
 ${renderCostPage(state, c)}
 ${renderSpecPages(state, sortedCats, byCat)}
-${state.notes && state.notes.trim() ? renderNotesPage(state) : ''}
 `;
   // P1.6: inject DRAFT watermark <div> as a real DOM node into every .pg
   // when state.draft === true. Real DOM nodes (not CSS ::after) so the text
@@ -1482,6 +2040,10 @@ ${state.notes && state.notes.trim() ? renderNotesPage(state) : ''}
 function quoteCss() {
   return `
 <style>
+  /* P3 #5 + P3 v2.2: fonts embedded directly as base64 woff2 so the PDF
+     never depends on network. Variable-font woff2 ~85KB total. The @import
+     stays as a fallback for the form-page preview when on a fast network. */
+__EMBEDDED_FONTS_CSS_MARKER__
   @page { size: A4; margin: 0; }
   /* P1.6: DRAFT watermark — real DOM nodes (not ::after) so PDF text-layer extraction
      can detect the watermark for testing. The renderer post-processes the HTML to
@@ -1503,6 +2065,22 @@ function quoteCss() {
 
   .pg { width: 210mm; min-height: 297mm; padding: 22mm 20mm; box-sizing: border-box; background: var(--offwhite); page-break-after: always; position: relative; }
   .pg:last-child { page-break-after: auto; }
+  /* P3 v2.2: unified spec-flow. min-height removed so content flows naturally
+     across physical pages without forcing 297mm boundaries. Each category
+     block stays together when possible (break-inside: avoid-page). */
+  .pg.pg-specs-flow { min-height: 0; padding-bottom: 16mm; }
+  .pg.pg-specs-flow .pg-foot { position: static; margin-top: 10mm; padding-top: 4mm; border-top: 1px solid var(--rule); }
+  /* Keep breadcrumb header with the following content — never orphan. */
+  .pg.pg-specs-flow .pg-head,
+  .pg.pg-specs-flow .eyebrow,
+  .pg.pg-specs-flow .section,
+  .pg.pg-specs-flow .lede { break-after: avoid-page; page-break-after: avoid; }
+  /* Cat-section: keep header with at least the first card; allow break inside
+     a long category only AT card boundaries (.spec-card has break-inside avoid). */
+  .pg.pg-specs-flow .cat-section { break-inside: auto; page-break-inside: auto; margin-top: 6mm; }
+  .pg.pg-specs-flow .cat-section thead { break-after: avoid-page; page-break-after: avoid; }
+  .pg.pg-specs-flow .cat-section h2 { break-after: avoid-page; page-break-after: avoid; }
+  /* For the spec-grid: each .spec-card is atomic. Already break-inside avoid in main rules. */
 
   /* Cover */
   .pg.cover { padding: 0; height: 297mm; overflow: hidden; background: var(--navy); }
@@ -1582,6 +2160,10 @@ function quoteCss() {
   .calc-table tfoot td { padding: 10px; }
   .calc-table tfoot .sub { background: rgba(10,31,68,0.04); font-weight: 600; }
   .calc-table tfoot .grand { background: var(--navy); color: white; font-weight: 700; font-size: 13.5px; }
+  /* P3 v2: per-item rows in cost table when zone has rate variations */
+  .calc-table tbody tr.cost-zone-hdr td { background: rgba(10,31,68,0.04); color: var(--navy); font-weight: 600; padding: 8px 10px; border-top: 1.5px solid var(--rule); }
+  .calc-table tbody tr.cost-item-row td { padding: 5px 10px; font-size: 11.5px; border-bottom: 0.5px dashed var(--rule); }
+  .calc-table tbody tr.cost-zone-sub td { background: rgba(10,31,68,0.02); padding: 6px 10px; border-bottom: 1px solid var(--rule); }
 
   .params-row { display:flex; flex-wrap:wrap; gap: 4mm 8mm; padding: 6px 0 9mm; border-bottom: 1px solid var(--rule); margin-bottom: 6mm; font-size: 11.5px; color: var(--muted); }
   .params-row b { color: var(--ink); font-weight: 600; margin-right: 4px; }
@@ -1607,9 +2189,26 @@ function quoteCss() {
   .spec-card.unedited { background: rgba(10,31,68,0.015); border-style: dashed; }
   .spec-card.unedited .desc { color: rgba(10,31,68,0.55); font-style: italic; }
   .spec-card .desc { color: var(--ink); font-size: 10.5px; line-height: 1.5; margin: 2px 0 0; white-space: pre-line; }
+  /* P3 #10: brand-rate combined field (bold). */
+  .spec-card .brand-rate { font-size: 11px; color: var(--navy); font-weight: 600; margin: 4px 0 0; }
+  /* P3 #6: table layout. */
+  .spec-table-block { width: 100%; border-collapse: collapse; margin-bottom: 6mm; break-inside: avoid; }
+  .spec-table-block thead .cat-row th { text-align: left; padding: 4mm 0 1mm; border-bottom: 1px solid var(--rule); }
+  .spec-table-block thead .cat-row h2 { font-family: 'Fraunces', serif; font-size: 14px; color: var(--navy); margin: 0; font-weight: 500; }
+  .spec-table-block thead .cat-row h2 .count { color: var(--gold); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; margin-left: 8px; font-weight: 600; }
+  .spec-table-block thead .hdr th { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 2mm 2mm 1.5mm; border-bottom: 1px solid var(--rule); text-align: left; background: var(--offwhite); }
+  .spec-table-block tbody td { font-size: 10.5px; padding: 2mm; vertical-align: top; border-bottom: 0.5px solid var(--rule); }
+  .spec-table-block tbody .lab { font-weight: 600; color: var(--navy); width: 28%; }
+  .spec-table-block tbody .lab .loc { color: var(--gold); font-weight: 500; font-size: 10px; }
+  .spec-table-block tbody .br  { width: 28%; color: var(--navy); }
+  .spec-table-block tbody .desc { color: var(--ink); line-height: 1.45; white-space: pre-line; }
 
-  /* Notes page */
+  /* Notes page (legacy) */
   .notes-block { background: white; border: 1px solid var(--rule); border-radius: 8px; padding: 10mm; font-size: 12px; line-height: 1.65; white-space: pre-wrap; color: var(--ink); }
+  /* P3 #8: notes appended to cost page (cap content height ≤ ~14mm so it never overflows). */
+  .cost-notes-block { margin-top: 6mm; padding: 5mm 6mm; background: white; border: 1px solid var(--rule); border-radius: 8px; max-height: 30mm; overflow: hidden; break-inside: avoid; }
+  .cost-notes-eyebrow { font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 2mm; }
+  .cost-notes-body { font-size: 10.5px; line-height: 1.5; color: var(--ink); white-space: pre-wrap; }
 </style>
 `;
 }
@@ -1654,7 +2253,6 @@ function renderCover(state, customer, showCustomer) {
       <div class="cover-trust">${trust.map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>
     </div>
     <div class="cover-bot">
-      <span class="cover-pill">${escapeHtml(buildLabel(state).toUpperCase())}</span>
       <div class="cover-qid">Quote ID<span class="cover-qid-num">${escapeHtml(state.quoteId)}</span></div>
     </div>
   </div>
@@ -1725,26 +2323,47 @@ function renderAreaPage(state, c) {
   };
   const totalArea = (c.zones.A?.total || 0) + (c.zones.B?.total || 0) + (c.zones.C?.total || 0) + (c.zones.E?.total || 0);
 
-  return `
+  // Bug fix: count rendered rows. If high (basement+lift+all 5 zones), split
+  // into 2 pages with clean breaks. Threshold ~16 rows; 4-floor stilt+basement
+  // produces ~18-22 rows reliably.
+  const rowCount =
+      (c.zones.A?.items.length || 0) + 1
+    + (c.zones.B?.items.length || 0) + 1
+    + (c.zones.C ? (c.zones.C.items.length + 1) : 0)
+    + (c.zones.D?.items.length || 0) + 1
+    + (c.zones.E ? (c.zones.E.items.length + 1) : 0);
+  const splitPage = rowCount > 14;
+
+  const headerBlock = `
+    <div class="pg-head">
+      ${logoSvg({ size:'large' })}
+      <div class="breadcrumb"><span class="current">Area Calculation</span></div>
+    </div>
+    <div class="eyebrow">Step 1</div>
+    <h1 class="section">Area Calculation</h1>
+    <p class="lede">Built-up area derived from plot dimensions, coverage and the chosen build configuration. Each zone bills at a different rate (see Cost Calculation).</p>
+
+    <div class="params-row">
+      <span><b>Plot:</b> ${c.plotSqYards} sq.yd / ${ni(c.plotSqFt)} sq.ft</span>
+      <span><b>Dims:</b> ${c.breadth}ft × ${c.depth}ft</span>
+      <span><b>Coverage:</b> ${c.coverage}%</span>
+      <span><b>Floor Area:</b> ${ni(c.floorArea)} sq.ft</span>
+      <span><b>Build:</b> ${escapeHtml(c.buildLabel)}</span>
+      ${state.build.hasBasement ? '<span><b>Basement:</b> Yes</span>' : ''}
+      ${state.build.hasLift ? '<span><b>Lift:</b> Yes</span>' : ''}
+    </div>`;
+
+  const continuationHeader = `
+    <div class="pg-head">
+      ${logoSvg({ size:'large' })}
+      <div class="breadcrumb"><span class="current">Area Calculation (cont.)</span></div>
+    </div>
+    <h1 class="section" style="margin-top:8mm;">Area Calculation <span style="color:var(--gold);font-size:0.7em;">(continued)</span></h1>`;
+
+  if (!splitPage) {
+    return `
 <section class="pg">
-  <div class="pg-head">
-    ${logoSvg({ size:'large' })}
-    <div class="breadcrumb"><span class="current">Area Calculation</span></div>
-  </div>
-  <div class="eyebrow">Step 1</div>
-  <h1 class="section">Area Calculation</h1>
-  <p class="lede">Built-up area derived from plot dimensions, coverage and the chosen build configuration. Each zone bills at a different rate (see Cost Calculation).</p>
-
-  <div class="params-row">
-    <span><b>Plot:</b> ${c.plotSqYards} sq.yd / ${ni(c.plotSqFt)} sq.ft</span>
-    <span><b>Dims:</b> ${c.breadth}ft × ${c.depth}ft</span>
-    <span><b>Coverage:</b> ${c.coverage}%</span>
-    <span><b>Floor Area:</b> ${ni(c.floorArea)} sq.ft</span>
-    <span><b>Build:</b> ${escapeHtml(c.buildLabel)}</span>
-    ${state.build.hasBasement ? '<span><b>Basement:</b> Yes</span>' : ''}
-    ${state.build.hasLift ? '<span><b>Lift:</b> Yes</span>' : ''}
-  </div>
-
+  ${headerBlock}
   <table class="calc-table">
     <thead><tr><th>Area</th><th>Description</th><th class="r">Est. Size</th></tr></thead>
     <tbody>
@@ -1758,8 +2377,38 @@ function renderAreaPage(state, c) {
       <tr class="sub"><td colspan="2">Total Built-up Area (excluding water tank capacity)</td><td class="r">${ni(totalArea)} sq.ft</td></tr>
     </tfoot>
   </table>
-
   <div class="pg-foot"><span>Area Calculation</span><span>+91 92172 63051 · info@zuildup.com</span></div>
+</section>`;
+  }
+
+  // Split: page 1 = Zones A + B, page 2 = C + D + E + grand total.
+  return `
+<section class="pg">
+  ${headerBlock}
+  <table class="calc-table">
+    <thead><tr><th>Area</th><th>Description</th><th class="r">Est. Size</th></tr></thead>
+    <tbody>
+      ${zoneRows('A', c.zones.A)}
+      ${zoneRows('B', c.zones.B)}
+    </tbody>
+  </table>
+  <p class="lede" style="color:var(--muted);font-size:11px;margin-top:auto;">Continued on next page →</p>
+  <div class="pg-foot"><span>Area Calculation (1/2)</span><span>+91 92172 63051 · info@zuildup.com</span></div>
+</section>
+<section class="pg">
+  ${continuationHeader}
+  <table class="calc-table">
+    <thead><tr><th>Area</th><th>Description</th><th class="r">Est. Size</th></tr></thead>
+    <tbody>
+      ${c.zones.C ? zoneRows('C', c.zones.C) : ''}
+      ${zoneRows('D', c.zones.D)}
+      ${c.zones.E ? zoneRows('E', c.zones.E) : ''}
+    </tbody>
+    <tfoot>
+      <tr class="sub"><td colspan="2">Total Built-up Area (excluding water tank capacity)</td><td class="r">${ni(totalArea)} sq.ft</td></tr>
+    </tfoot>
+  </table>
+  <div class="pg-foot"><span>Area Calculation (2/2)</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>`;
 }
 
@@ -1767,6 +2416,11 @@ function renderCostPage(state, c) {
   const costRow = (key, zone) => {
     if (!zone) return '';
     const tag = `<span class="zone-tag z${key.toLowerCase()}">${key}</span>`;
+    // P3 v2 (A): if zone has per-item rate overrides, expand into one row per item.
+    if (zone.varies) {
+      const itemRows = zone.items.map(it => `<tr class="cost-item-row"><td style="padding-left:18px;color:var(--muted);font-size:11.5px;">— ${escapeHtml(it.name)}</td><td>${ni(it.area)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(it.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(it.cost)}</td></tr>`).join('');
+      return `<tr class="cost-zone-hdr"><td colspan="4">${tag} Zone ${key} <span style="color:var(--muted);font-size:11px;">— per-item rates</span></td></tr>${itemRows}<tr class="cost-zone-sub"><td colspan="3" style="text-align:right;color:var(--navy);font-weight:600;">Zone ${key} subtotal</td><td class="r"><b>${fmtINR(zone.cost)}</b></td></tr>`;
+    }
     return `<tr><td>${tag} Zone ${key}</td><td>${ni(zone.total)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(zone.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(zone.cost)}</td></tr>`;
   };
   return `
@@ -1795,7 +2449,13 @@ function renderCostPage(state, c) {
     </tfoot>
   </table>
 
-  <p class="lede" style="margin-top:8mm; color: var(--muted); font-size: 11px;">Final billed at actual brand and finish selection. GST and any liaisoning fees are quoted separately outside this document.</p>
+  <p class="lede" style="margin-top:6mm; color: var(--muted); font-size: 11px;">Final billed at actual brand and finish selection. GST and any liaisoning fees are quoted separately outside this document.</p>
+
+  ${(state.notes && state.notes.trim()) ? `
+  <div class="cost-notes-block">
+    <div class="cost-notes-eyebrow">Notes &amp; Caveats</div>
+    <div class="cost-notes-body">${escapeHtml(state.notes).split('\n').slice(0, 12).join('\n')}</div>
+  </div>` : ''}
 
   <div class="pg-foot"><span>Cost Calculation</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>`;
@@ -1807,29 +2467,63 @@ function renderSpecPages(state, sortedCats, byCat) {
 <section class="pg">
   <div class="pg-head">${logoSvg({ size:'large' })}<div class="breadcrumb"><span class="current">Specifications</span></div></div>
   <p class="lede" style="margin-top:30mm;text-align:center;">No specifications selected. Add rows from the catalog or create custom items.</p>
+  <div class="pg-foot"><span>Specifications</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>`;
   }
-  // Group all categories into a single continuous flow page (cards flow naturally with break-inside:avoid)
-  const sectionsHtml = sortedCats.map(cat => {
-    const cardArr = byCat[cat].map(({row, item: it}) => {
-      const o = row.override || {};
-      const lab = o.label ?? (it ? it.label : '');
-      // P1.3: pricing/brand authoritative ONLY when set in per-row override.
-      // Catalog values are template hints — they do not surface on the rendered PDF unless sales has accepted them.
+  // P3 #6: branch on state.specsLayout — 'grid' (default cards) or 'table' (compact rows).
+  // P3 #10: per-row rendering composes Label / Brand+Rate / Description from overrides.
+  function rowFields(row, it) {
+    const o = row.override || {};
+    const lab = o.label ?? (it ? it.label : '');
+    // P3 #10: brand_rate combined field (bold). Falls back to legacy brand+rate_text+rate composition.
+    let brandRate = (o.brand_rate !== undefined) ? o.brand_rate : '';
+    if (!brandRate) {
+      const brands = (o.brands !== undefined) ? (o.brands || []) : ((it && it.brands) || []);
+      const rt = (o.rate_text !== undefined) ? o.rate_text : ((it && it.rate_text) || '');
       const rate = (o.rate !== undefined) ? o.rate : 0;
-      const rateText = (o.rate_text !== undefined) ? o.rate_text : '';
-      const brands = (o.brands !== undefined) ? (o.brands || []) : [];
-      const desc = o.description ?? (it ? it.description : '');
-      const loc = o.location || '';
-      const ratePill = (rateText && rateText.trim())
-        ? `<span class="rate-pill">${escapeHtml(rateText)}</span>`
-        : (rate > 0 ? `<span class="rate-pill">${fmtINR(rate)}</span>` : `<span class="rate-pill set">Set rate</span>`);
+      const parts = [];
+      if (brands.length) parts.push(brands.join(' · '));
+      if (rt && rt.trim()) parts.push(rt);
+      else if (rate > 0)   parts.push(fmtINR(rate));
+      brandRate = parts.join(' · ');
+    }
+    const desc = o.description ?? (it ? it.description : '');
+    const loc  = o.location || '';
+    return { lab, brandRate, desc, loc };
+  }
+
+  const isTable = state.specsLayout === 'table';
+  // Per-category section builder. Returns the inner HTML for one category.
+  const buildCatSection = (cat) => {
+    if (isTable) {
+      const rowsHtml = byCat[cat].map(({row, item: it}) => {
+        const f = rowFields(row, it);
+        return `
+          <tr>
+            <td class="lab">${escapeHtml(f.lab)}${f.loc ? ' <span class="loc">— '+escapeHtml(f.loc)+'</span>' : ''}</td>
+            <td class="br"><b>${escapeHtml(f.brandRate || '—')}</b></td>
+            <td class="desc">${escapeHtml(f.desc)}</td>
+          </tr>`;
+      }).join('');
       return `
-        <div class="spec-card${(rateText || rate > 0) ? '' : ' unedited'}">
-          <h3 class="lab">${escapeHtml(lab)}${loc ? ' <span class="loc">— '+escapeHtml(loc)+'</span>' : ''}</h3>
-          ${brands.length ? `<div class="badges">${brands.map(b => `<span class="badge">${escapeHtml(b)}</span>`).join('')}</div>` : ''}
-          ${ratePill}
-          <p class="desc">${escapeHtml(desc)}</p>
+        <table class="spec-table-block">
+          <thead>
+            <tr class="cat-row"><th colspan="3">
+              <h2>${escapeHtml(cat)}<span class="count">${byCat[cat].length} items</span></h2>
+            </th></tr>
+            <tr class="hdr"><th class="lab">Item</th><th class="br">Brand &amp; Rate</th><th class="desc">Description</th></tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>`;
+    }
+    // Grid mode (default)
+    const cardArr = byCat[cat].map(({row, item: it}) => {
+      const f = rowFields(row, it);
+      return `
+        <div class="spec-card${f.brandRate ? '' : ' unedited'}">
+          <h3 class="lab">${escapeHtml(f.lab)}${f.loc ? ' <span class="loc">— '+escapeHtml(f.loc)+'</span>' : ''}</h3>
+          ${f.brandRate ? `<div class="brand-rate"><b>${escapeHtml(f.brandRate)}</b></div>` : `<span class="rate-pill set">Set details</span>`}
+          <p class="desc">${escapeHtml(f.desc)}</p>
         </div>`;
     });
     return `
@@ -1845,16 +2539,28 @@ function renderSpecPages(state, sortedCats, byCat) {
           </td></tr>
         </tbody>
       </table>`;
-  }).join('');
+  };
+  // Bug fix: emit one .pg per category in grid mode (clean breaks, no blank
+  // pages). Table mode packs everything onto fewer pages — but each .pg now
+  // has explicit overflow protection.
+  const introBlock = `
+    <div class="eyebrow">Step 3</div>
+    <h1 class="section">Detailed Specifications</h1>
+    <p class="lede">Every line item, every brand, every rate. Brand options shown are indicative; final selection confirmed at the brand-picker stage.</p>`;
+
+  // P3 v2.2: unified single-section flow for BOTH grid and table modes.
+  // Categories pack onto pages naturally — small ones share, large ones split
+  // at category-block boundaries (browser paginates). No blank-space and no
+  // orphan-header pages.
+  const sectionsHtml = sortedCats.map(buildCatSection).join('');
+  const modeClass = isTable ? 'pg-specs-table' : 'pg-specs-grid';
   return `
-<section class="pg">
+<section class="pg pg-specs-flow ${modeClass}">
   <div class="pg-head">
     ${logoSvg({ size:'large' })}
     <div class="breadcrumb"><span class="current">Detailed Specifications</span></div>
   </div>
-  <div class="eyebrow">Step 3</div>
-  <h1 class="section">Detailed Specifications</h1>
-  <p class="lede">Every line item, every brand, every rate. Brand options shown are indicative; final selection confirmed at the brand-picker stage.</p>
+  ${introBlock}
   ${sectionsHtml}
   <div class="pg-foot"><span>Specifications</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>`;
@@ -1887,8 +2593,17 @@ for p in parts[1:]:
     # Each PART variable starts with a literal newline; collapse to one
     out += p.lstrip("\n").rstrip() + "\n"
 
+# P3 v2.2: embed fonts as base64 woff2 inline in quoteCss().
+# Read at build time so the generator stays declarative.
+import os as _os
+_FONTS_CSS_PATH = _os.path.join(_os.path.dirname(__file__), "..", "app", "assets", "embedded_fonts.css")
+with open(_FONTS_CSS_PATH, "r") as _ff:
+    _embedded_fonts_css = _ff.read()
+out = out.replace("__EMBEDDED_FONTS_CSS_MARKER__", _embedded_fonts_css)
+
 with open(OUT_PATH, "w") as f:
     f.write(out)
 
 print(f"WROTE {OUT_PATH}")
+print(f"  embedded fonts: {len(_embedded_fonts_css)} bytes")
 print(f"  size: {len(out)} bytes  ({sum(1 for _ in out.splitlines())} lines)")
