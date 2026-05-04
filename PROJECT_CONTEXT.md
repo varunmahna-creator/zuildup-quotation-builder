@@ -47,7 +47,7 @@ A web-based quotation/cost-estimate builder for **ZuildUp's** sales team to gene
 - **Service name:** `zuildup-quotes`
 
 ### Current revision
-- **Active:** `zuildup-quotes-00015-55t` (deployed 2026-05-02, Phase 5 — sales-team feedback fixes)
+- **Active:** `zuildup-quotes-00024-79h` (deployed 2026-05-04, Phase 7B — calculator + UI fixes batch B, 12 items)
 - Previous: `00014-v2v` (Phase 4.1 per-rep logins, 2026-05-01 11:10)
 - Previous: `00013-zqv` (Phase 4 cross-device quote library, 2026-05-01 10:50)
 - Previous: `00012-ztc` (v2.3 ₹ fix, 2026-05-01 09:15)
@@ -141,6 +141,124 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 ---
 
 ## 5. Phase History (Most Recent First)
+
+### Phase 7B (May 4) — Calculator + UI fixes (Batch B, 12 items)
+Sales-team / Varun feedback on calc engine + form UX. Twelve items;
+some calc-touching, some pure UI. Live revision **`zuildup-quotes-00024-79h`**,
+commit `4227c18` (initial 7B at `4514eb9`; Item 5 page-break tuning at `a863095`
+and `4227c18`). 130/130 tests green (112 prior + 18 new in
+`tests/test_phase7b.py`).
+
+**Items shipped (in spec order):**
+
+2. **Area Override panel collapsible.** `app/index.html` wraps the panel
+   contents in `<details id="area-ovr-collapse" open>` so the rep can
+   collapse the line-item list once reviewed. Default OPEN matches the
+   per-item rate panel (Phase 6.1 #1).
+
+3. **Zone D opt-in toggle.** New `state.build.hasWaterTank` (default `true`).
+   Form: `<input id="f-water-tank" type="checkbox" checked>` next to
+   Basement / Lift. Calc returns `c.zones.D = null` when off; render
+   helpers (`zoneRows`, `costRow`) already short-circuit on null. Legacy
+   migration: `loadState` sets `hasWaterTank` to true if missing.
+
+4. **Basement description shows entered ₹/sqft.** When
+   `state.pricing.basementRate` is non-null, Zone E `rateLabel` becomes
+   `₹3,000/sqft` (or whatever was entered) instead of `varies`. The varies
+   path is reserved for true per-line variations within Zone E.
+
+5. **PDF page-break hygiene on area calc.** Two fixes:
+   (a) CSS — `break-after: avoid-page` on `.zone-hdr`, `break-before:
+   avoid-page` on `.zone-total`, `break-inside: avoid` on every `tr` in
+   `.calc-table`. Stops Chrome from orphaning a Zone header at the bottom
+   of a printed page.
+   (b) Dynamic split pivot — instead of always splitting at A|B vs C|D|E,
+   pick `'A'`, `'AB'`, or `'ABC'` based on row counts so neither rendered
+   `.pg` section overflows the A4 budget (~9 zone-table rows). For the
+   typical 4-floor stilt + basement + lift fixture, this yields page 1 =
+   Zone A and page 2 = Zone B+C+D+E (clean, professional).
+
+11. **Floor Area Summary uses post-override areas.** `buildFloorSummary`
+    now consumes the same `c.zones.A.items[*].area` values as the cost
+    sheet — i.e. POST `applyAreaOverrides`. Override Floor 1 → both the
+    summary table AND the Zone A row reflect it.
+
+12. **Stilt row column reassignment.** Stilt floor in the floor-area
+    summary now shows: Lift+Staircase = unchanged, Covered = 0,
+    Semi-Covered = stilt area (= floorArea − lift − staircase), Open =
+    setback area (= plotSqFt − floorArea). Previously stilt was incorrectly
+    bucketed into Covered.
+
+13. **Basement area logical fix.** `c.zones.E.items[0].area` is now
+    `floorAdj` (= floorArea − liftPerLevel − staircasePerLevel), matching
+    the Ground Floor row exactly. Description text reflects the same
+    formula.
+
+14. **Editable lift / staircase per-level sqft.** New
+    `state.pricing.liftSqftPerLevel` (default 25) and
+    `staircaseSqftPerLevel` (default 125). Form: two number inputs in a
+    row beneath the Basement / Lift / Water Tank checkboxes. Calc paths
+    that previously hard-coded `LIFT_PER_FLOOR` / `STAIRCASE_PER_FLOOR`
+    now read from state with fallback to constants. Legacy quotes (no
+    overrides) → constants.
+
+15. **+ Add line item button per zone.** New `state.pricing.zoneLineItems
+    = { 'A': [{id,name,desc,area,rate}], ... }`. Each rep-added row
+    appends to the zone's items array (via `appendZoneLineItems` called
+    from `computeQuote` BEFORE area overrides + additional zones), takes
+    its own area × rate, and pushes `varies = true` if rate ≠ zone rate.
+    UI lives in the Area Overrides panel: each zone gets a `+ Add line
+    item` button; rep-added rows are inline-editable name + desc + area
+    + rate with a Remove button.
+
+16. **Multiple custom charges.** `state.pricing.additionalZones.custom`
+    is now an **array** of `{enabled,name,desc,cost}` objects. Each
+    enabled entry becomes its own sequential additional zone (F, G, H…).
+    UI: dynamic list (`#addl-custom-list`) + `+ Add Custom Charge` button.
+    Migration: legacy single-object `custom: {…}` → wrapped in `[{…}]`
+    when there's data, else `[]`.
+
+17. **Editable item name + description overrides.** New
+    `state.pricing.itemNameOverrides[`<zone>:<origName>`]` and
+    `itemDescOverrides`. UI: ✎ rename icon next to each item name in the
+    area-overrides panel (inline edit, Enter to commit); 📝 desc icon
+    opens a `prompt()` dialog. Cost sheet auto-expands a non-`varies`
+    zone into per-item rows when any item has a name/desc override, so
+    the rename surfaces on the customer-facing cost page.
+
+**Tests (`tests/test_phase7b.py`):**
+- `test_collapsible_panels_open_by_default`
+- `test_zone_d_opt_in_off` / `test_zone_d_opt_in_default_true_legacy` /
+  `test_zone_d_explicit_false_legacy`
+- `test_basement_rate_description`
+- `test_page_break_css_present`
+- `test_floor_summary_post_override`
+- `test_stilt_row_columns`
+- `test_basement_area_formula`
+- `test_editable_lift_staircase` / `test_lift_staircase_legacy_default`
+- `test_zone_line_item`
+- `test_multiple_custom_charges` / `test_custom_charge_legacy_object` /
+  `test_legacy_object_no_data_becomes_empty_array`
+- `test_item_name_override` / `test_item_name_override_in_cost_sheet` /
+  `test_item_desc_override`
+
+**Live verification (revision `zuildup-quotes-00024-79h`):**
+- md5 of `app/quote.js` HEAD == md5 of live `/app/quote.js` (`159b5e2d…`).
+- Phase 7B markers in live: 44 (target ≥30).
+- 130/130 tests green.
+- PDF render of a worst-case fixture (4-floor stilt, basement, lift, 2
+  custom charges, Pergola line item, renamed Ground Floor → "Penthouse",
+  override Floor 1 → 1,400, custom basement rate ₹3,000): 14 pages, 0
+  NULL bytes, 35 ₹ glyphs. Visual QC on the area calc page: Zone A
+  complete on its own page (Floor Summary + Zone A clean), Zone
+  B+C+D+E together on the continuation page, no orphan headers.
+
+**Doctrine reinforcement (Item 5 specifically):**
+The pre-7B "Phase 6.2 fits 14 row" assumption was empirically off — the
+actual Chrome A4 budget for the area-page first section is ~9 zone-table
+rows once the floor summary is placed above. For Phase 7C / future
+splits, measure with `node _p7b_render.js` first; don't trust row counts
+alone.
 
 ### Phase 7A (May 4) — Cosmetic + UI fixes (Batch A, 6 items)
 Sales-team / Varun feedback on the live tool. Six small surgical fixes;
