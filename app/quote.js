@@ -2339,7 +2339,14 @@ async function bootForm() {
       // toggles collapse on click (data-act="toggle"); the rename ✎ button
       // enters edit mode (data-act="rename"); the ⎘ Copy button clones every
       // row in this group with catalog defaults (data-act="copy").
-      hdr.innerHTML = `<span class="cat-name" data-act="toggle"><span class="chev">${isOpen ? '▾' : '▸'}</span> <span class="cat-label">${escapeHtml(cat)}</span></span><span class="cat-controls"><button type="button" class="cat-btn cat-rename" title="Rename category" data-act="rename">✎</button><button type="button" class="cat-btn cat-copy" title="Copy category — clones all items with catalog defaults" data-act="copy">⎘ Copy</button><span class="cat-count">${groups[cat].length}</span></span>`;
+      // Phase 7D: ↑/↓ buttons reorder the category in state.rows. First
+      // category gets ↑ disabled, last category gets ↓ disabled.
+      const catIdx = sortedCats.indexOf(cat);
+      const isFirst = catIdx === 0;
+      const isLast = catIdx === sortedCats.length - 1;
+      const upBtn = `<button type="button" class="cat-btn cat-move cat-move-up" title="Move category up" data-act="move-up"${isFirst ? ' disabled' : ''}>▲</button>`;
+      const downBtn = `<button type="button" class="cat-btn cat-move cat-move-down" title="Move category down" data-act="move-down"${isLast ? ' disabled' : ''}>▼</button>`;
+      hdr.innerHTML = `<span class="cat-name" data-act="toggle"><span class="chev">${isOpen ? '▾' : '▸'}</span> <span class="cat-label">${escapeHtml(cat)}</span></span><span class="cat-controls">${upBtn}${downBtn}<button type="button" class="cat-btn cat-rename" title="Rename category" data-act="rename">✎</button><button type="button" class="cat-btn cat-copy" title="Copy category — clones all items with catalog defaults" data-act="copy">⎘ Copy</button><span class="cat-count">${groups[cat].length}</span></span>`;
       hdr.style.cursor = 'pointer';
       list.appendChild(hdr);
       const body = document.createElement('div');
@@ -2357,6 +2364,16 @@ async function bootForm() {
         if (act === 'copy') {
           ev.stopPropagation();
           copyCategory(cat, groups[cat]);
+          return;
+        }
+        if (act === 'move-up') {
+          ev.stopPropagation();
+          moveCategory(cat, -1);
+          return;
+        }
+        if (act === 'move-down') {
+          ev.stopPropagation();
+          moveCategory(cat, +1);
           return;
         }
         // Default (cat-name area or empty): toggle collapse.
@@ -2496,6 +2513,72 @@ async function bootForm() {
         return false;
       });
     }
+  }
+
+  // Phase 7D: move a category up or down in the rendered order. Order is
+  // derived from first-occurrence in state.rows (see renderSpecList / PDF
+  // _byCatOrder). To swap category C with neighbor N, we re-collect both
+  // groups' rows preserving their internal insertion order, then write them
+  // back into the slice spanned by all (C ∪ N) indices in the new outer
+  // order. This works correctly even when categories are interleaved in
+  // state.rows (which can happen with custom rows or legacy quotes).
+  // dir: -1 = up, +1 = down. No-op if already at boundary.
+  function moveCategory(currentCat, dir) {
+    if (!currentCat || (dir !== -1 && dir !== 1)) return;
+    // Build the current first-occurrence order from state.rows.
+    const order = [];
+    const seen = new Set();
+    state.rows.forEach((row) => {
+      const item = row._custom ? null : catalogItem(row.id);
+      if (!row._custom && !item) return;
+      const cat = rowCategoryGroup(row);
+      if (!seen.has(cat)) { seen.add(cat); order.push(cat); }
+    });
+    const idx = order.indexOf(currentCat);
+    if (idx < 0) return;
+    const targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= order.length) return;
+    const otherCat = order[targetIdx];
+    // Collect indices for both categories, preserving insertion order.
+    const idxA = [];
+    const idxB = [];
+    state.rows.forEach((row, i) => {
+      const item = row._custom ? null : catalogItem(row.id);
+      if (!row._custom && !item) return;
+      const cat = rowCategoryGroup(row);
+      if (cat === currentCat) idxA.push(i);
+      else if (cat === otherCat) idxB.push(i);
+    });
+    if (!idxA.length || !idxB.length) return;
+    const allIdx = idxA.concat(idxB).sort((a, b) => a - b);
+    const start = allIdx[0];
+    const end = allIdx[allIdx.length - 1];
+    // The slice from start..end may include rows of OTHER categories
+    // sandwiched between (interleaved). Preserve those intruders in their
+    // original relative position so we don't accidentally reorder unrelated
+    // categories. Build the new slice as: [intruders before block-1 in
+    // original order] is impossible to define cleanly when sandwiched, so
+    // simpler approach: collect the intruders in original order, then write
+    // [block-first-in-new-order] + [block-second-in-new-order] + [intruders
+    // appended at the end of the slice]. This may move intruder rows
+    // slightly but preserves their relative order. The much more common
+    // case is non-interleaved (after a copyCategory or normal flow), in
+    // which case there are no intruders and behavior is exact.
+    const blockA = idxA.map(i => state.rows[i]);
+    const blockB = idxB.map(i => state.rows[i]);
+    const aSet = new Set(idxA);
+    const bSet = new Set(idxB);
+    const intruders = [];
+    for (let i = start; i <= end; i++) {
+      if (!aSet.has(i) && !bSet.has(i)) intruders.push(state.rows[i]);
+    }
+    // dir=-1: currentCat moves up, so new order = [currentCat, otherCat]
+    // dir=+1: currentCat moves down, so new order = [otherCat, currentCat]
+    const newSlice = (dir === -1)
+      ? blockA.concat(blockB, intruders)
+      : blockB.concat(blockA, intruders);
+    state.rows.splice(start, end - start + 1, ...newSlice);
+    flush();
   }
 
   // P3 #9: build one row card and append to the list (used by renderSpecList).
