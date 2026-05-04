@@ -302,6 +302,21 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
       <p style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:4px 0 6px;">Override the rate for a specific item (e.g. Terrace at ₹650 even though Zone C default is ₹600). Leave blank to use the zone default above.</p>
       <div id="item-rate-list"></div>
     </details>
+
+    <!-- Phase 6.2 — Per-floor balcony pricing. Opt-in. When ON, expands the
+         single Zone B "Balcony" row into one row per floor, each with an
+         independent rate (NOT an override on top of Zone B). PDF collapses
+         back to one row when all per-floor rates are equal. -->
+    <div id="bpf-block" style="margin-top:12px;border:1px solid var(--rule);border-radius:6px;padding:8px 10px;background:rgba(10,31,68,0.015);">
+      <label class="addl-toggle" style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);font-weight:500;margin:0;cursor:pointer;">
+        <input id="f-bpf-on" type="checkbox"> Per-floor balcony pricing
+      </label>
+      <p style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:6px 0 0;">When on, balcony bills as N rows (one per floor) at independent rates. Blank cells fall back to the Zone B default. PDF collapses to one row if all rates match.</p>
+      <div id="bpf-body" style="display:none;margin-top:8px;">
+        <div id="bpf-rate-list"></div>
+      </div>
+    </div>
+
     <p style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:8px 0 0;">GST and any liaisoning can be added below as a separate zone, or quoted outside this document.</p>
   </fieldset>
 

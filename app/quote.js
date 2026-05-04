@@ -81,6 +81,20 @@ const defaultState = () => ({
       gst:       { enabled: false, desc: '', cost: 0 },
       custom:    { enabled: false, name: '', desc: '', cost: 0 },
     },
+    // Phase 6.2 — Per-floor balcony pricing. Opt-in. When OFF, balcony renders
+    // as a single combined Zone B row using the Zone B default rate (unchanged
+    // from pre-6.2). When ON, balcony expands to N rows (one per floor) each
+    // with its own independent rate (NOT an override on top of Zone B default).
+    // `rates` is parallel to floors: rates[i] is the rate for floor i+1; null
+    // means "fall back to Zone B default" so calc never breaks if rep leaves a
+    // cell blank. PDF collapse rule (renderCostPage): when enabled AND all
+    // entered per-floor rates are numerically equal, collapse back to a single
+    // "Balcony" row in the customer PDF — keeps the artifact clean if the rep
+    // just used the toggle to enter one rate. Editor always shows N rows.
+    balconyPerFloor: {
+      enabled: false,
+      rates: [],   // length === build.floors when enabled; null entry → Zone B default
+    },
   },
   scope: 'full',                 // 'full' | 'structure_only'
   rows: [],                      // [{id, override:{label?, rate?, rate_text?, brands?, description?, location?}, _custom?:bool}]
@@ -124,6 +138,13 @@ function loadState() {
               gst:       { ...d.pricing.additionalZones.gst,       ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.gst)||{}) },
               custom:    { ...d.pricing.additionalZones.custom,    ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.custom)||{}) },
             },
+            // Phase 6.2: per-floor balcony pricing — preserve rep entries.
+            balconyPerFloor: {
+              ...d.pricing.balconyPerFloor,
+              ...((s.pricing&&s.pricing.balconyPerFloor)||{}),
+              rates: Array.isArray(s.pricing&&s.pricing.balconyPerFloor&&s.pricing.balconyPerFloor.rates)
+                ? s.pricing.balconyPerFloor.rates.slice() : [],
+            },
           },
         };
       }
@@ -150,6 +171,13 @@ function loadState() {
           elevation: { ...d.pricing.additionalZones.elevation, ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.elevation)||{}) },
           gst:       { ...d.pricing.additionalZones.gst,       ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.gst)||{}) },
           custom:    { ...d.pricing.additionalZones.custom,    ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.custom)||{}) },
+        },
+        // Phase 6.2: per-floor balcony pricing — preserve rep entries.
+        balconyPerFloor: {
+          ...d.pricing.balconyPerFloor,
+          ...((s.pricing&&s.pricing.balconyPerFloor)||{}),
+          rates: Array.isArray(s.pricing&&s.pricing.balconyPerFloor&&s.pricing.balconyPerFloor.rates)
+            ? s.pricing.balconyPerFloor.rates.slice() : [],
         },
       },
     };
@@ -781,7 +809,26 @@ function calcPackage(state) {
   const staircaseTotal  = STAIRCASE_PER_FLOOR * staircaseLevels;
   const zoneBItems = [];
   if (hasStilt) zoneBItems.push({ name: 'Stilt', desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+LIFT_PER_FLOOR+')':''} − Staircase (${STAIRCASE_PER_FLOOR})`, area: stiltArea });
-  zoneBItems.push({ name: 'Balcony', desc: `${b.breadth}ft × ${BALCONY_DEPTH}ft × ${numFloors} floors`, area: balconyTotal });
+  // Phase 6.2 — per-floor balcony pricing. When toggle OFF (default), one
+  // combined Balcony row at the Zone B default rate (unchanged from pre-6.2).
+  // When ON, expand to N rows (one per floor) each at the rep-supplied rate;
+  // null/blank cells fall back to Zone B default so the calc never breaks.
+  // PDF collapse-when-equal rule lives in renderCostPage, NOT here.
+  const balconyFloorNames = ['Floor 1','Floor 2','Floor 3','Floor 4','Floor 5','Floor 6'];
+  const bpf = (state.pricing && state.pricing.balconyPerFloor) || { enabled: false, rates: [] };
+  if (bpf.enabled) {
+    for (let i = 0; i < numFloors; i++) {
+      const fname = balconyFloorNames[i] || ('Floor ' + (i+1));
+      zoneBItems.push({
+        name: `Balcony — ${fname}`,
+        desc: `${b.breadth}ft × ${BALCONY_DEPTH}ft (${fname})`,
+        area: balconyPerFloor,
+        balconyFloor: i,           // 0-indexed; tag for renderer collapse logic
+      });
+    }
+  } else {
+    zoneBItems.push({ name: 'Balcony', desc: `${b.breadth}ft × ${BALCONY_DEPTH}ft × ${numFloors} floors`, area: balconyTotal });
+  }
   zoneBItems.push({ name: 'Staircase', desc: `${staircaseLevels} levels × ${STAIRCASE_PER_FLOOR} sq.ft`, area: staircaseTotal });
   const totalB = zoneBItems.reduce((s,f) => s + f.area, 0);
 
@@ -807,12 +854,26 @@ function calcPackage(state) {
   // P3 v2 (A): per-line-item rates. Each item gets item.rate (override or zone default)
   // and item.cost (area * rate). Zone cost = sum(items.cost). Zone label shows "varies"
   // if any item rate differs from the zone default.
+  // Phase 6.2: when an item has `balconyFloor` set (Zone B per-floor balcony
+  // expansion), its rate comes from `state.pricing.balconyPerFloor.rates[i]`
+  // — a fresh rep-entered rate, NOT an itemRates override. Null/blank cells
+  // fall back to the Zone B default (`bRate` for calcPackage). This keeps the
+  // grand total well-defined when the rep leaves a floor blank, and keeps the
+  // Phase 5 zone-sum invariant (`zone.cost == Σ items.cost`).
   const itemRates = (state.pricing.itemRates) || {};
+  const bpfRates = (bpf && Array.isArray(bpf.rates)) ? bpf.rates : [];
   const enrichZone = (key, items, defaultRate) => {
     let varies = false;
     for (const it of items) {
-      const ovr = itemRates[key + ':' + it.name];
-      const r = (ovr != null && ovr !== '' && !isNaN(parseInt(ovr))) ? parseInt(ovr) : defaultRate;
+      let r = defaultRate;
+      if (it.balconyFloor != null) {
+        const cellRaw = bpfRates[it.balconyFloor];
+        const cell = (cellRaw != null && cellRaw !== '' && !isNaN(parseInt(cellRaw))) ? parseInt(cellRaw) : null;
+        r = (cell != null) ? cell : defaultRate;
+      } else {
+        const ovr = itemRates[key + ':' + it.name];
+        r = (ovr != null && ovr !== '' && !isNaN(parseInt(ovr))) ? parseInt(ovr) : defaultRate;
+      }
       if (r !== defaultRate) varies = true;
       it.rate = r;
       it.cost = it.area * r;
@@ -1130,7 +1191,7 @@ async function bootForm() {
     }
   }
 
-  function flush() { saveState(state); renderSpecList(); applyValidation(); renderAreaOverridesPanel(); renderItemRatesPanel(); }
+  function flush() { saveState(state); renderSpecList(); applyValidation(); renderAreaOverridesPanel(); renderItemRatesPanel(); renderBpfPanel(); }
 
   // ---- Customer field listeners ----
   $('f-salutation').oninput = e => { state.customer.salutation = e.target.value; flush(); };
@@ -1163,7 +1224,7 @@ async function bootForm() {
   $('f-plot').oninput     = e => { state.build.plotSqYards = +e.target.value || 0; flush(); };
   $('f-breadth').oninput  = e => { state.build.breadth = +e.target.value || 0; flush(); };
   $('f-coverage').oninput = e => { state.build.coverage = +e.target.value || 0; flush(); };
-  $('f-floors').oninput   = e => { state.build.floors = +e.target.value || 1; flush(); };
+  $('f-floors').oninput   = e => { state.build.floors = +e.target.value || 1; syncBpfRatesLength(); flush(); };
   $('f-basement').onchange= e => { state.build.hasBasement = !!e.target.checked; syncBasementRows(); flush(); };
   $('f-lift').onchange    = e => {
     state.build.hasLift = !!e.target.checked;
@@ -1226,6 +1287,26 @@ async function bootForm() {
   _bindAddlZone('elevation', false);
   _bindAddlZone('gst', false);
   _bindAddlZone('custom', true);
+
+  // Phase 6.2 — per-floor balcony pricing toggle. The per-floor rate inputs
+  // are rendered by renderBpfPanel() and re-bound on every flush() so they
+  // always reflect the current numFloors and saved values.
+  state.pricing.balconyPerFloor ||= { enabled: false, rates: [] };
+  {
+    const onCb = document.getElementById('f-bpf-on');
+    if (onCb) {
+      onCb.onchange = e => {
+        state.pricing.balconyPerFloor.enabled = !!e.target.checked;
+        // On first turn-on, rates default to all-null (rep enters them).
+        if (state.pricing.balconyPerFloor.enabled
+            && (!Array.isArray(state.pricing.balconyPerFloor.rates)
+                || state.pricing.balconyPerFloor.rates.length === 0)) {
+          state.pricing.balconyPerFloor.rates = new Array(state.build.floors || 0).fill(null);
+        }
+        flush();
+      };
+    }
+  }
   $('f-notes').oninput      = e => {
     let v = e.target.value;
     if (v.length > 2000) { v = v.slice(0, 2000); e.target.value = v; }
@@ -1734,6 +1815,68 @@ async function bootForm() {
         saveState(state);
       };
       inp.onblur = e => { renderItemRatesPanel(); };
+    });
+  }
+
+  // ---- Phase 6.2: per-floor balcony pricing panel ----
+  // Editor always shows N rows when toggle is ON (one per floor) so the rep
+  // can see/edit each rate. The PDF collapses to a single Balcony row when
+  // every per-floor rate is equal — that logic lives in renderCostPage.
+  // Resizing: when state.build.floors changes (via the floors input handler),
+  // we trim or pad state.pricing.balconyPerFloor.rates to match length.
+  function syncBpfRatesLength() {
+    const bpf = state.pricing.balconyPerFloor;
+    if (!bpf) return;
+    const n = state.build.floors || 0;
+    const cur = Array.isArray(bpf.rates) ? bpf.rates : [];
+    if (cur.length === n) return;
+    if (cur.length > n) bpf.rates = cur.slice(0, n);
+    else {
+      bpf.rates = cur.slice();
+      while (bpf.rates.length < n) bpf.rates.push(null);
+    }
+  }
+
+  function renderBpfPanel() {
+    const block = document.getElementById('bpf-block');
+    const onCb  = document.getElementById('f-bpf-on');
+    const body  = document.getElementById('bpf-body');
+    const list  = document.getElementById('bpf-rate-list');
+    if (!block || !onCb || !body || !list) return;
+    state.pricing.balconyPerFloor ||= { enabled: false, rates: [] };
+    syncBpfRatesLength();
+    const bpf = state.pricing.balconyPerFloor;
+
+    // Hide entire block when in structure mode (no balcony in structure calc).
+    const isStruct = state.build.buildType === 'structure';
+    block.style.display = isStruct ? 'none' : '';
+    onCb.checked = !!bpf.enabled;
+    body.style.display = bpf.enabled ? '' : 'none';
+    if (!bpf.enabled) { list.innerHTML = ''; return; }
+
+    // Compute zone B default rate label for the placeholder.
+    const baseFormula = parseInt(state.pricing.costPerSqft) || 0;
+    const ovr = (v, fb) => (v != null && v !== '' && !isNaN(parseInt(v))) ? parseInt(v) : fb;
+    const bRate = ovr(state.pricing.zoneBRate, Math.round(baseFormula * 0.50));
+    const placeholder = bRate ? `default ₹${ni(bRate)}/sqft` : 'rate ₹/sqft';
+    const balconyFloorNames = ['Floor 1','Floor 2','Floor 3','Floor 4','Floor 5','Floor 6'];
+    const html = [];
+    html.push(`<div class="aov-zone"><div class="aov-zone-hdr">Balcony rates per floor <span class="aov-rate">${placeholder}</span></div>`);
+    for (let i = 0; i < (state.build.floors || 0); i++) {
+      const fname = balconyFloorNames[i] || ('Floor ' + (i+1));
+      const v = (bpf.rates[i] != null && bpf.rates[i] !== '') ? bpf.rates[i] : '';
+      html.push(`<div class="aov-row"><span class="aov-name">${escapeHtml(fname)}</span><input type="number" min="0" data-bpf-floor="${i}" placeholder="${escapeHtml(placeholder)}" value="${escapeAttr(String(v))}"><span class="aov-unit">₹/sqft</span></div>`);
+    }
+    html.push(`</div>`);
+    list.innerHTML = html.join('');
+
+    list.querySelectorAll('input[data-bpf-floor]').forEach(inp => {
+      inp.oninput = e => {
+        const idx = parseInt(inp.dataset.bpfFloor);
+        const val = e.target.value.trim();
+        bpf.rates[idx] = (val === '') ? null : (parseInt(val) || 0);
+        saveState(state);
+      };
     });
   }
 
@@ -2410,6 +2553,8 @@ async function bootForm() {
 
   renderSpecList();
   renderAreaOverridesPanel();
+  renderItemRatesPanel();
+  renderBpfPanel();
 }
 // ============================================================================
 // PREVIEW PAGE
@@ -2604,6 +2749,18 @@ function quoteCss() {
   /* P1.1: heading repeat across page breaks now handled by <thead>; keep-together remains as legacy guard */
   .cat-section .keep-together { break-inside: avoid; page-break-inside: avoid; }
 
+  /* Phase 6.2 — Floor Area Summary table (top of Area Calculation page). */
+  .floor-summary-block { margin: 0 0 6mm; break-inside: avoid; page-break-inside: avoid; }
+  .floor-summary-title { font-family: 'Fraunces', serif; font-size: 16px; color: var(--navy); margin: 4mm 0 1mm; font-weight: 600; letter-spacing: 0.01em; }
+  .floor-summary-subtitle { font-size: 11px; color: var(--muted); margin: 0 0 3mm; font-style: italic; }
+  .floor-summary-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .floor-summary-table thead th { background: #0A1F44; color: white; text-align: left; font-weight: 500; font-size: 10.5px; letter-spacing: 0.04em; padding: 8px 10px; text-transform: uppercase; }
+  .floor-summary-table thead th.r { text-align: right; }
+  .floor-summary-table tbody td { padding: 7px 10px; border-bottom: 1px solid rgba(10,31,68,0.06); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .floor-summary-table tbody td.r { text-align: right; }
+  .floor-summary-table tbody tr.floor-sum-alt td { background: rgba(10,31,68,0.025); }
+  .floor-summary-table tbody tr.floor-sum-total td { background: rgba(201,162,77,0.08); border-top: 2px solid #C9A24D; border-bottom: none; color: var(--navy); font-weight: 600; }
+
   /* Area / Cost tables */
   .calc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6mm; }
   .calc-table thead th, .calc-table tbody td { padding: 7px 10px; }
@@ -2785,6 +2942,150 @@ function renderAboutPage(state, about) {
 
 
 
+// Phase 6.2 — Floor Area Summary helper.
+// Synthesises a per-floor matrix from the existing calc result `c`. Returns
+// rows in this shape (with a totals row at the end):
+//   [{ label, liftStair, covered, semiCovered, open, isTotal? }, ...]
+// Used by renderAreaPage to render the 5-column "Floor Area Summary" table
+// at the top of the Area Breakdown page.
+//
+// Conventions:
+//   - Lift & Staircase column = LIFT_PER_FLOOR (if hasLift) + STAIRCASE_PER_FLOOR per level.
+//   - Stilt row: parking area shows under "Open" (it's open/uncovered ground).
+//   - Floor rows: covered = floorAdj (the habitable enclosed area); semi-covered = balconyPerFloor.
+//   - Terrace row: terrace area shows under "Open" (open-to-sky).
+//   - Basement row: enclosed area under "Covered".
+//   - Mumty: not a separate row — counted into the staircase/lift totals via the
+//     calc engine's `staircaseLevels` formula. We label Terrace as "Terrace
+//     (Mumty)" so the customer sees the rooftop access mention.
+//   - Package label: derived from build mode. `structure` → "Structure Only";
+//     `full` (stilt/nostilt) → "Premium Package".
+function buildFloorSummary(state, c) {
+  const b = state.build;
+  const hasStilt = b.buildType === 'stilt';
+  const hasLift  = !!b.hasLift;
+  const isStruct = b.buildType === 'structure';
+  const numFloors = b.floors;
+  const breadth   = b.breadth;
+  const plotSqFt  = b.plotSqYards * 9;
+  const floorArea = Math.round(plotSqFt * b.coverage / 100);
+  const floorAdj  = floorArea - (hasLift ? LIFT_PER_FLOOR : 0) - STAIRCASE_PER_FLOOR;
+  const balconyPerFloor = breadth * BALCONY_DEPTH;
+
+  const liftStairPerFloor = (hasLift ? LIFT_PER_FLOOR : 0) + STAIRCASE_PER_FLOOR;
+
+  const pkgLabel = isStruct ? 'Structure Only' : 'Premium Package';
+  const floorNames = ['1st Floor','2nd Floor','3rd Floor','4th Floor','5th Floor','6th Floor'];
+
+  const rows = [];
+
+  // Basement first (if present) — convention from the reference image groups
+  // basement at the bottom, but Varun's scope says "(Basement) — only if
+  // hasBasement". We'll render it before Stilt to keep below-grade-first
+  // ordering; the totals row math is order-independent.
+  if (b.hasBasement) {
+    rows.push({
+      label: 'Basement',
+      sublabel: pkgLabel,
+      liftStair: liftStairPerFloor,
+      covered:   floorArea,
+      semiCovered: 0,
+      open: 0,
+    });
+  }
+
+  // Stilt row — only when hasStilt OR structure mode (structure always has stilt).
+  if (hasStilt || isStruct) {
+    rows.push({
+      label: 'Stilt',
+      sublabel: '',
+      liftStair: liftStairPerFloor,
+      // Structure mode: stilt is enclosed at structure rate → covered.
+      // Package mode: stilt is open/uncovered parking.
+      covered:    isStruct ? floorArea : 0,
+      semiCovered: 0,
+      open:        isStruct ? 0 : floorAdj,
+    });
+  }
+
+  // Floor 1..N (habitable floors).
+  for (let i = 0; i < numFloors; i++) {
+    rows.push({
+      label: floorNames[i] || ((i+1) + 'th Floor'),
+      sublabel: pkgLabel,
+      liftStair: liftStairPerFloor,
+      covered:   floorAdj,
+      // Package modes have balcony as semi-covered; structure mode has no balcony in the per-floor row (terrace at the top still applies).
+      semiCovered: isStruct ? 0 : balconyPerFloor,
+      open: 0,
+    });
+  }
+
+  // Terrace row — Mumty stop.
+  // Compute terrace area same way calcPackage does.
+  const terracePackage = floorArea + balconyPerFloor - STAIRCASE_PER_FLOOR - (hasLift ? LIFT_PER_FLOOR : 0);
+  const terraceStruct  = floorArea;
+  rows.push({
+    label: 'Terrace',
+    sublabel: 'Mumty',
+    liftStair: liftStairPerFloor,
+    covered: 0,
+    semiCovered: 0,
+    open: isStruct ? terraceStruct : terracePackage,
+  });
+
+  // Totals row.
+  const totals = { label: 'Total', sublabel: '', liftStair: 0, covered: 0, semiCovered: 0, open: 0, isTotal: true };
+  for (const r of rows) {
+    totals.liftStair   += r.liftStair;
+    totals.covered     += r.covered;
+    totals.semiCovered += r.semiCovered;
+    totals.open        += r.open;
+  }
+  rows.push(totals);
+  return rows;
+}
+
+// Phase 6.2 — Floor Area Summary table renderer. 5 columns:
+//   Floor | Lift & Staircase | Covered | Semi Covered | Open
+// Banner header with navy background; alternating row backgrounds; totals row
+// with gold-tint top border. Print-friendly. The plot subtitle line shows
+// sq.yd + sq.ft for context.
+function renderFloorSummaryTable(state, c) {
+  const rows = buildFloorSummary(state, c);
+  if (!rows.length) return '';
+  const subtitle = `Plot Area — ${c.plotSqYards} Sq. Yard / ${ni(c.plotSqFt)} Sq. Ft.`;
+  const cell = (n) => (n === 0 || n == null) ? '<span style="color:var(--muted);">—</span>' : (ni(n) + ' sq.ft');
+  const trs = rows.map((r, i) => {
+    const labelCell = r.sublabel
+      ? `${escapeHtml(r.label)} <span style="color:var(--muted);font-weight:400;font-size:10.5px;">(${escapeHtml(r.sublabel)})</span>`
+      : escapeHtml(r.label);
+    if (r.isTotal) {
+      return `<tr class="floor-sum-total"><td><b>${labelCell}</b></td><td class="r"><b>${cell(r.liftStair)}</b></td><td class="r"><b>${cell(r.covered)}</b></td><td class="r"><b>${cell(r.semiCovered)}</b></td><td class="r"><b>${cell(r.open)}</b></td></tr>`;
+    }
+    const altCls = (i % 2 === 1) ? ' class="floor-sum-alt"' : '';
+    return `<tr${altCls}><td>${labelCell}</td><td class="r">${cell(r.liftStair)}</td><td class="r">${cell(r.covered)}</td><td class="r">${cell(r.semiCovered)}</td><td class="r">${cell(r.open)}</td></tr>`;
+  }).join('');
+
+  return `
+    <div class="floor-summary-block">
+      <h2 class="floor-summary-title">Floor Area Summary</h2>
+      <p class="floor-summary-subtitle">${escapeHtml(subtitle)}</p>
+      <table class="floor-summary-table">
+        <thead>
+          <tr>
+            <th>Floor</th>
+            <th class="r">Lift &amp; Staircase</th>
+            <th class="r">Covered Area</th>
+            <th class="r">Semi Covered</th>
+            <th class="r">Open Area</th>
+          </tr>
+        </thead>
+        <tbody>${trs}</tbody>
+      </table>
+    </div>`;
+}
+
 function renderAreaPage(state, c) {
   const zoneRows = (key, zone) => {
     if (!zone) return '';
@@ -2825,7 +3126,12 @@ function renderAreaPage(state, c) {
       <span><b>Build:</b> ${escapeHtml(c.buildLabel)}</span>
       ${state.build.hasBasement ? '<span><b>Basement:</b> Yes</span>' : ''}
       ${state.build.hasLift ? '<span><b>Lift:</b> Yes</span>' : ''}
-    </div>`;
+    </div>
+
+    <!-- Phase 6.2 — Floor Area Summary table. 5-col matrix synthesised from
+         the same calc inputs (plot/coverage/floors/basement/stilt). Rendered
+         BEFORE the existing zone-by-zone tables. -->
+    ${renderFloorSummaryTable(state, c)}`;
 
   const continuationHeader = `
     <div class="pg-head">
@@ -2887,8 +3193,54 @@ function renderAreaPage(state, c) {
 }
 
 function renderCostPage(state, c) {
+  // Phase 6.2 — PDF collapse rule: when per-floor balcony pricing is ON and
+  // every per-floor balcony rate is numerically equal (after fallback), the
+  // customer PDF collapses the N expanded rows back to a single combined
+  // "Balcony" row. Editor (form list) always shows N rows; this collapse only
+  // affects the printed artifact. Returns a *new* zone object with the
+  // collapsed items array — never mutates the live calc result.
+  const collapseBalconyForPdf = (zone) => {
+    if (!zone || !zone.items) return zone;
+    const balconyRows = zone.items.filter(it => it.balconyFloor != null);
+    if (balconyRows.length < 2) return zone;
+    const firstRate = balconyRows[0].rate;
+    const allEqual = balconyRows.every(it => it.rate === firstRate);
+    if (!allEqual) return zone;
+    // Collapse: replace the per-floor rows with one combined row.
+    const totalArea = balconyRows.reduce((s, it) => s + (it.area || 0), 0);
+    const totalCost = balconyRows.reduce((s, it) => s + (it.cost || 0), 0);
+    const numFloors = balconyRows.length;
+    const breadth = state.build.breadth;
+    const combined = {
+      name: 'Balcony',
+      desc: `${breadth}ft × ${BALCONY_DEPTH}ft × ${numFloors} floors`,
+      area: totalArea,
+      rate: firstRate,
+      cost: totalCost,
+    };
+    const newItems = [];
+    let inserted = false;
+    for (const it of zone.items) {
+      if (it.balconyFloor != null) {
+        if (!inserted) { newItems.push(combined); inserted = true; }
+        // skip the rest of the per-floor rows
+      } else {
+        newItems.push(it);
+      }
+    }
+    // Recompute zone.varies based on the COLLAPSED items (so if all items now
+    // match the zone default, the renderer falls into the simple flat-row path).
+    let varies = false;
+    for (const it of newItems) {
+      if (it.rate !== zone.rate) { varies = true; break; }
+    }
+    return { ...zone, items: newItems, varies };
+  };
+
   const costRow = (key, zone) => {
     if (!zone) return '';
+    // PDF collapse for Zone B per-floor balcony when all rates are equal.
+    if (key === 'B') zone = collapseBalconyForPdf(zone);
     const tag = `<span class="zone-tag z${key.toLowerCase()}">${key}</span>`;
     // P3 v2 (A): if zone has per-item rate overrides, expand into one row per item.
     if (zone.varies) {
