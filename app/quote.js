@@ -3604,17 +3604,20 @@ function renderAreaPage(state, c) {
   if (splitPage) {
     const ab = aRows + bRows;
     const abc = ab + cRows;
-    // Prefer the split that keeps page 1 under ~14 zone-rows AND leaves
-    // page 2 with at least 6 rows. (Adjust thresholds based on empirical
-    // QC of the Phase 6.2 + 7B layout.)
-    if (ab <= 13 && (rowCount - ab) >= 7 && abc - ab >= 1) {
-      splitPivot = 'AB'; // legacy default
-    } else if (aRows <= 13 && (rowCount - aRows) >= 6) {
-      splitPivot = 'A';  // page 1 = A; page 2 = B+C+D+E (denser)
-    } else if (abc <= 14 && (rowCount - abc) >= 4) {
-      splitPivot = 'ABC';
+    // Empirical budget after the headerBlock + floor-summary table + lede:
+    // Page 1's zone-table region fits ~9 rows max before overflow into a second
+    // printed A4 page (Chrome auto-pagination). Page 2 (continuation header
+    // only) fits ~22 rows. Goal: keep page 1 ≤9 rows so the .pg section stays
+    // within one printed A4. We fall back to 'AB' only when even Zone A alone
+    // exceeds the budget (which would always force a print-break anyway).
+    if (ab <= 9) {
+      splitPivot = 'AB';        // small total — both fit on page 1
+    } else if (aRows <= 9 && (rowCount - aRows) >= 4) {
+      splitPivot = 'A';          // page 1 = A only; the rest dense on page 2
+    } else if (abc <= 9 && (rowCount - abc) >= 4) {
+      splitPivot = 'ABC';        // rare: tiny A+B+C still fits
     } else {
-      splitPivot = 'AB'; // fallback
+      splitPivot = 'A';          // safest — A alone, even if oversized
     }
   }
 
