@@ -171,21 +171,60 @@ process.stdout.write(JSON.stringify(state.rows.map(r => r.id + ':' + (r.category
 
 
 # ---------------------------------------------------------------------------
-# 11a — catOrder includes Basement (form list + PDF)
+# 11a — Basement category renders in expected position (Phase 7C update:
+# spec list and PDF now use position-based ordering from state.rows, NOT a
+# hardcoded catOrder list. So these tests verify that the basement-category
+# catalog items exist and that the renderers respect first-occurrence order.)
 # ---------------------------------------------------------------------------
-def test_basement_in_cat_order_form_list():
-    """Form-list catOrder includes 'Basement' between Structure and Bathroom."""
+def test_basement_category_exists_in_catalog():
+    """Catalog ships 6 basement-category items so they can be rendered."""
+    import json, os
+    cat_path = os.path.join(os.path.dirname(__file__), '..', 'catalog', 'catalog.json')
+    with open(cat_path) as f:
+        catalog = json.load(f)
+    items = catalog.get('items', [])
+    basement_items = [it for it in items if it.get('category') == 'basement']
+    assert len(basement_items) >= 6, (
+        f"Expected >= 6 basement-category items in catalog, found {len(basement_items)}"
+    )
+    expected_ids = {"basement.raft_foundation", "basement.retaining_walls",
+                    "basement.waterproofing_system", "basement.sump_pit_dewatering",
+                    "basement.height", "basement.flooring"}
+    actual_ids = {it['id'] for it in basement_items}
+    assert expected_ids.issubset(actual_ids), (
+        f"Missing basement ids: {expected_ids - actual_ids}"
+    )
+
+
+def test_spec_list_uses_position_based_ordering():
+    """Form-list renderSpecList groups by first-occurrence in state.rows,
+    not a hardcoded catOrder. This lets clones (e.g. 'Bathroom & Toilet
+    (Copy)') sit immediately after their source category."""
     rsl = QUOTE_JS.index("function renderSpecList()")
-    end = QUOTE_JS.index("function ", rsl + 50)  # next function (beginCategoryRename or buildSpecCard)
+    end = QUOTE_JS.index("function ", rsl + 50)
     block = QUOTE_JS[rsl:end]
-    assert "'Basement'" in block, "Form-list catOrder missing Basement"
+    # Phase 7C marker present
+    assert "Phase 7C" in block, "renderSpecList should have Phase 7C ordering comment"
+    # No hardcoded catOrder list inside renderSpecList
+    assert "'Bathroom & Toilet'" not in block or "catOrder" not in block, (
+        "renderSpecList should not use catOrder anymore"
+    )
+    # sortedCats is built by pushing during forEach traversal of state.rows
+    assert "sortedCats.push(cat)" in block, (
+        "renderSpecList should push sortedCats by first-occurrence"
+    )
 
 
-def test_basement_in_cat_order_pdf():
-    """PDF render catOrder includes 'Basement'."""
+def test_pdf_render_uses_position_based_ordering():
+    """PDF renderQuote uses _byCatOrder for first-occurrence ordering."""
     rq = QUOTE_JS.index("function renderQuote(state, about)")
     block = QUOTE_JS[rq:rq + 8000]
-    assert "'Basement'" in block, "PDF catOrder missing Basement"
+    assert "_byCatOrder" in block, (
+        "PDF renderQuote should track first-occurrence cat order via _byCatOrder"
+    )
+    assert "_byCatOrder.push(cat)" in block, (
+        "PDF should push to _byCatOrder on first occurrence of each cat"
+    )
 
 
 # ---------------------------------------------------------------------------

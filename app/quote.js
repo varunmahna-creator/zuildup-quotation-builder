@@ -2314,18 +2314,22 @@ async function bootForm() {
     const list = $('spec-list');
     list.innerHTML = '';
     const groups = {};
+    // Phase 7C: order follows first-occurrence in state.rows, NOT a hardcoded
+    // catOrder. Otherwise cloned categories ("Bathroom & Toilet (Copy)") fall
+    // to the bottom — they aren't in catOrder so .concat() dumps them at the
+    // end, defeating copyCategory's splice-after-source insertion. Position-
+    // based ordering keeps clones contiguous with their source category.
+    const sortedCats = [];
     state.rows.forEach((row, idx) => {
       const item = row._custom ? null : catalogItem(row.id);
       if (!row._custom && !item) return;
       const cat = rowCategoryGroup(row);
-      (groups[cat] ||= []).push(idx);
+      if (!groups[cat]) {
+        groups[cat] = [];
+        sortedCats.push(cat);
+      }
+      groups[cat].push(idx);
     });
-    const catOrder = [
-      'Design & Drawings','Structure','Basement','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
-      'Flooring','Electrical Work','Water Management','Ceiling & Elevation','Safety & Security',
-      'Paint & Polish','General Aspects','Custom',
-    ];
-    const sortedCats = catOrder.filter(c => groups[c]).concat(Object.keys(groups).filter(c => !catOrder.includes(c)));
     state._uiCatOpen ||= {};
     for (const cat of sortedCats) {
       const isOpen = !!state._uiCatOpen[cat];
@@ -3016,17 +3020,20 @@ function renderQuote(state, about) {
   // PDF respects rep-set categoryGroup (Copy Category + inline rename).
   // Falls back to override.category_label / item.category_label / 'Custom'.
   const byCat = {};
+  const _byCatOrder = [];  // Phase 7C: first-occurrence cat order so clones stay next to source.
   for (const row of state.rows) {
     const it = row._custom ? null : catalogItem(row.id);
     const cat = rowCategoryGroup(row);
-    (byCat[cat] ||= []).push({ row, item: it });
+    if (!byCat[cat]) { byCat[cat] = []; _byCatOrder.push(cat); }
+    byCat[cat].push({ row, item: it });
   }
-  const catOrder = [
-    'Design & Drawings','Structure','Basement','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
-    'Flooring','Electrical Work','Water Management','Ceiling & Elevation','Safety & Security',
-    'Paint & Polish','General Aspects','Custom',
-  ];
-  const sortedCats = catOrder.filter(c => byCat[c]).concat(Object.keys(byCat).filter(c => !catOrder.includes(c)));
+  // Phase 7C: order follows first-occurrence in state.rows so clones stay
+  // contiguous with their source category in the PDF too. _byCatOrder is
+  // built when byCat is assembled; if absent (defensive), fall back to key
+  // order which still respects insertion order in modern JS.
+  const sortedCats = (typeof _byCatOrder !== 'undefined' && _byCatOrder.length)
+    ? _byCatOrder.slice()
+    : Object.keys(byCat);
 
   // P3 #8: notes/caveats now render at the bottom of the cost page (10-12 lines max);
   // the standalone notes page is removed.
