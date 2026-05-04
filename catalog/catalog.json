@@ -5,7 +5,8 @@
     "source": "src_docx/Customer_Facing_Quote_Sheet.docx (Customer: Ms. Rajkumari Kamboj reference quote)",
     "schema": "no-tier; catalog as template/dictionary; rate, description (P1.5.1 prose-scrubbed), brands all set per quote via row overrides",
     "tier_system": "removed in Phase 2 P0.1",
-    "items_total": 88
+    "items_total": 88,
+    "phase64_basement_added": "2026-05-04"
   },
   "items": [
     {
@@ -1367,6 +1368,97 @@
         "structure_only"
       ],
       "description": "Includes all civil, electrical, paint, polish, exhaust, and earthing work. Entry on all floors."
+    },
+    {
+      "id": "basement.raft_foundation",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Raft Foundation",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "RCC raft foundation shall be constructed as per structural design using M25 grade concrete with proper reinforcement, vibration, and compaction. Concrete shall be mixed with integral crystalline waterproofing compound."
+    },
+    {
+      "id": "basement.retaining_walls",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Retaining Walls",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "RCC retaining walls of 6 inch thickness shall be constructed to resist lateral earth pressure. After 6 inch of RCC wall 4.5 inch of brick work to be provided. Proper shuttering, vibration, and curing shall be ensured."
+    },
+    {
+      "id": "basement.waterproofing_system",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Waterproofing System",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Sika",
+        "Dr. Fixit",
+        "Fosroc"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Three-layer waterproofing system shall be provided: Integral crystalline waterproofing compound in concrete; PVC water bars at all construction and expansion joints; Plaster with waterproofing compound mixed."
+    },
+    {
+      "id": "basement.sump_pit_dewatering",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Sump Pit & Dewatering System",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Crompton",
+        "Bajaj"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "RCC sump pit shall be constructed at lowest level. Dual pump system (1 working + 1 standby) with automatic float switch shall be installed for water discharge."
+    },
+    {
+      "id": "basement.height",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Height",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Clear height (Floor to ceiling) of 11 ft to be provided."
+    },
+    {
+      "id": "basement.flooring",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Basement Flooring",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "sqft",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "18mm Granite on treads and risers, with proper nosing and chamfering."
     }
   ]
 }

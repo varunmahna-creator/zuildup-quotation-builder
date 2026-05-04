@@ -552,6 +552,34 @@ function rowCategoryGroup(row) {
   const item = catalogItem(row && row.id);
   return item ? item.category_label : ((o.category_label && o.category_label.trim()) || 'Custom');
 }
+
+// Phase 6.4 #11c: sanitise a rich-text description so only b/strong/i/em/u/br
+// survive. Anything else (script, iframe, on*, style, etc.) is stripped, but
+// the text content of disallowed elements is preserved. Used at render time
+// (PDF / preview) and on save so localStorage never holds active script.
+// Implementation note: regex-based — works in both Node (test shim, no DOM)
+// and browsers.
+const RT_ALLOWED = /^(b|strong|i|em|u|br)$/i;
+function sanitizeRichText(html) {
+  if (html == null) return '';
+  let s = String(html);
+  // Drop control chars except tab/newline/cr.
+  s = s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+  // Strip <script> and <style> blocks WITH their content (defense in depth).
+  s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '');
+  s = s.replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, '');
+  // Strip HTML comments.
+  s = s.replace(/<!--[\s\S]*?-->/g, '');
+  // Walk all tags. Allowed tags: keep, attribute-less. Disallowed: drop the
+  // tag itself but keep any text content between.
+  s = s.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, function (m, tag) {
+    if (!RT_ALLOWED.test(tag)) return '';
+    const isClose = m.startsWith('</');
+    if (/^br$/i.test(tag)) return '<br>';
+    return isClose ? ('</' + tag.toLowerCase() + '>') : ('<' + tag.toLowerCase() + '>');
+  });
+  return s;
+}
 function defaultRowsFor(scope, opts) {
   // Catalog has scope: ["full"] or ["full","structure_only"].
   // Phase 6.4 #11a: Basement category is conditional on opts.hasBasement.
@@ -993,6 +1021,19 @@ async function bootForm() {
     state.rows = defaultRowsFor(state.scope, { hasBasement: !!state.build.hasBasement });
     saveState(state);
   }
+  // Phase 6.4 #11a: if a saved quote has basement on but pre-dates the basement
+  // category, top up missing basement rows so the rep doesn't have to re-add.
+  if (state.build.hasBasement) {
+    const haveBasement = state.rows.some(r => {
+      const it = catalogItem(r.id); return it && it.category === 'basement';
+    });
+    if (!haveBasement) {
+      const basementItems = (CATALOG?.items || []).filter(it => it.category === 'basement'
+        && it.scope.includes(state.scope === 'structure_only' ? 'structure_only' : 'full'));
+      basementItems.forEach(it => state.rows.push({ id: it.id, override: {} }));
+      saveState(state);
+    }
+  }
 
   const $ = id => document.getElementById(id);
 
@@ -1123,7 +1164,7 @@ async function bootForm() {
   $('f-breadth').oninput  = e => { state.build.breadth = +e.target.value || 0; flush(); };
   $('f-coverage').oninput = e => { state.build.coverage = +e.target.value || 0; flush(); };
   $('f-floors').oninput   = e => { state.build.floors = +e.target.value || 1; flush(); };
-  $('f-basement').onchange= e => { state.build.hasBasement = !!e.target.checked; flush(); };
+  $('f-basement').onchange= e => { state.build.hasBasement = !!e.target.checked; syncBasementRows(); flush(); };
   $('f-lift').onchange    = e => {
     state.build.hasLift = !!e.target.checked;
     const row = document.getElementById('lift-cost-row');
@@ -1855,6 +1896,34 @@ async function bootForm() {
     flush();
   }
 
+  // Phase 6.4 #11a: sync basement-category catalog rows with the basement
+  // toggle. Rep flips Basement ON => append every basement-category catalog
+  // row not already present (in the default 'Basement' group, i.e. rows with
+  // no categoryGroup). Rep flips OFF => remove default-group basement rows
+  // only; cloned/renamed basement groups are preserved (rep created those
+  // intentionally, and an automatic delete would surprise).
+  function syncBasementRows() {
+    const items = (CATALOG?.items || []).filter(it => it.category === 'basement'
+      && it.scope.includes(state.scope === 'structure_only' ? 'structure_only' : 'full'));
+    if (state.build.hasBasement) {
+      const have = new Set(state.rows
+        .filter(r => !r.categoryGroup || r.categoryGroup === 'Basement')
+        .map(r => r.id));
+      for (const it of items) {
+        if (!have.has(it.id)) {
+          state.rows.push({ id: it.id, override: {} });
+        }
+      }
+    } else {
+      state.rows = state.rows.filter(r => {
+        const it = catalogItem(r.id);
+        if (!it || it.category !== 'basement') return true;
+        if (r.categoryGroup && r.categoryGroup !== 'Basement') return true; // preserve clones
+        return false;
+      });
+    }
+  }
+
   // P3 #9: build one row card and append to the list (used by renderSpecList).
   function buildSpecCard(list, idx) {
     const row = state.rows[idx];
@@ -1929,6 +1998,13 @@ async function bootForm() {
     const o = row.override || {};
     const label = o.label ?? (item ? item.label : '');
     const desc  = o.description ?? (item ? item.description : '');
+    // Phase 6.4 #11c: prepare the initial HTML for the contenteditable editor.
+    // Rich descriptions are stored as sanitised HTML; legacy/plain descriptions
+    // are escaped and have newlines converted to <br>.
+    const descIsRich = !!(o.descriptionRich);
+    const descRichInitial = descIsRich
+      ? sanitizeRichText(desc)
+      : escapeHtml(desc).replace(/\n/g, '<br>');
     const cat   = (o.category_label) ?? (item ? item.category_label : 'Custom');
     const loc   = o.location || '';
 
@@ -1951,7 +2027,15 @@ async function bootForm() {
     ed.innerHTML = `
       <div class="full"><label>Label</label><input data-f="label" value="${escapeAttr(label)}"></div>
       <div class="full"><label>Brand Name &amp; Rate <span style="font-weight:400;color:var(--muted);">(rendered bold in PDF)</span></label><input data-f="brand_rate" placeholder="e.g. Rathi Steel 500FE @ ₹35,000 per bathroom" value="${escapeAttr(brandRate)}"></div>
-      <div class="full"><label>Description</label><textarea data-f="description" rows="3">${escapeHtml(desc)}</textarea></div>
+      <div class="full">
+        <label>Description</label>
+        <div class="rt-toolbar" role="toolbar" aria-label="Description formatting">
+          <button type="button" class="rt-btn" data-rt="bold" title="Bold (Ctrl+B)" tabindex="-1"><b>B</b></button>
+          <button type="button" class="rt-btn" data-rt="italic" title="Italic (Ctrl+I)" tabindex="-1"><i>I</i></button>
+          <button type="button" class="rt-btn" data-rt="underline" title="Underline (Ctrl+U)" tabindex="-1"><u>U</u></button>
+        </div>
+        <div data-f="description" class="rt-editor" contenteditable="true" role="textbox" aria-multiline="true" spellcheck="true">${descRichInitial}</div>
+      </div>
       <div><label>Location / Room (optional)</label><input data-f="location" placeholder="e.g. Drawing Room" value="${escapeAttr(loc)}"></div>
       ${row._custom ? `<div><label>Category</label><select data-f="category_label">
         <option>Custom</option><option>Bathroom & Toilet</option><option>Kitchen</option><option>Doors, Windows & Wardrobe</option>
@@ -1973,9 +2057,62 @@ async function bootForm() {
       const f = e.target.dataset.f;
       if (!f) return;
       state.rows[idx].override ??= {};
-      state.rows[idx].override[f] = e.target.value;
+      if (f === 'description' && e.target.classList.contains('rt-editor')) {
+        // Phase 6.4 #11c: rich-text path — store sanitised HTML and flag.
+        state.rows[idx].override.description = sanitizeRichText(e.target.innerHTML);
+        state.rows[idx].override.descriptionRich = true;
+      } else {
+        state.rows[idx].override[f] = e.target.value;
+      }
       saveState(state);
     });
+
+    // Phase 6.4 #11c: B/I/U toolbar — wires document.execCommand to the active
+    // rich-text editor. Mousedown (not click) so the editor doesn't lose
+    // selection. Also handles Ctrl+B/I/U keyboard shortcuts inside the editor.
+    const rtEditor = ed.querySelector('.rt-editor');
+    const rtToolbar = ed.querySelector('.rt-toolbar');
+    if (rtToolbar && rtEditor) {
+      rtToolbar.addEventListener('mousedown', (ev) => {
+        const btn = ev.target.closest('[data-rt]');
+        if (!btn) return;
+        ev.preventDefault();  // keep selection in the editor
+        rtEditor.focus();
+        try { document.execCommand(btn.dataset.rt, false, null); } catch (_) {}
+        // Persist after the formatting tick.
+        setTimeout(() => {
+          state.rows[idx].override ??= {};
+          state.rows[idx].override.description = sanitizeRichText(rtEditor.innerHTML);
+          state.rows[idx].override.descriptionRich = true;
+          saveState(state);
+        }, 0);
+      });
+      rtEditor.addEventListener('keydown', (ev) => {
+        if (!(ev.ctrlKey || ev.metaKey)) return;
+        const k = ev.key.toLowerCase();
+        if (k === 'b' || k === 'i' || k === 'u') {
+          ev.preventDefault();
+          const cmd = { b: 'bold', i: 'italic', u: 'underline' }[k];
+          try { document.execCommand(cmd, false, null); } catch (_) {}
+          setTimeout(() => {
+            state.rows[idx].override ??= {};
+            state.rows[idx].override.description = sanitizeRichText(rtEditor.innerHTML);
+            state.rows[idx].override.descriptionRich = true;
+            saveState(state);
+          }, 0);
+        }
+      });
+      // Block Enter from inserting <div>/<p> — keep it as <br> so output stays
+      // clean and matches the legacy textarea UX.
+      rtEditor.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' && !ev.shiftKey) {
+          ev.preventDefault();
+          try { document.execCommand('insertLineBreak', false, null); } catch (_) {
+            try { document.execCommand('insertHTML', false, '<br>'); } catch (_) {}
+          }
+        }
+      });
+    }
     ed.addEventListener('change', e => {
       const f = e.target.dataset.f;
       if (!f) return;
@@ -2856,7 +2993,10 @@ function renderSpecPages(state, sortedCats, byCat) {
       }
     }
     const loc  = o.location || '';
-    return { lab, brandRate, desc, loc };
+    // Phase 6.4 #11c: pass through richness so renderers can emit HTML
+    // (sanitised) instead of escaping. Legacy/plain stays escaped.
+    const descIsRich = !!o.descriptionRich;
+    return { lab, brandRate, desc, loc, descIsRich };
   }
 
   const isTable = state.specsLayout === 'table';
@@ -2869,7 +3009,7 @@ function renderSpecPages(state, sortedCats, byCat) {
           <tr>
             <td class="lab">${escapeHtml(f.lab)}${f.loc ? ' <span class="loc">— '+escapeHtml(f.loc)+'</span>' : ''}</td>
             <td class="br"><b>${escapeHtml(f.brandRate || '—')}</b></td>
-            <td class="desc">${escapeHtml(f.desc)}</td>
+            <td class="desc">${f.descIsRich ? sanitizeRichText(f.desc) : escapeHtml(f.desc)}</td>
           </tr>`;
       }).join('');
       return `
@@ -2890,7 +3030,7 @@ function renderSpecPages(state, sortedCats, byCat) {
         <div class="spec-card${f.brandRate ? '' : ' unedited'}">
           <h3 class="lab">${escapeHtml(f.lab)}${f.loc ? ' <span class="loc">— '+escapeHtml(f.loc)+'</span>' : ''}</h3>
           ${f.brandRate ? `<div class="brand-rate"><b>${escapeHtml(f.brandRate)}</b></div>` : `<span class="rate-pill set">Set details</span>`}
-          <p class="desc">${escapeHtml(f.desc)}</p>
+          <p class="desc">${f.descIsRich ? sanitizeRichText(f.desc) : escapeHtml(f.desc)}</p>
         </div>`;
     });
     return `

@@ -72,6 +72,17 @@ textarea { resize: vertical; min-height: 60px; }
 .spec.editing .editor { grid-column: 1/-1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--rule); }
 .spec.editing .editor .full { grid-column: 1/-1; }
 .spec.editing .editor input, .spec.editing .editor textarea, .spec.editing .editor select { font-size: 12px; padding: 6px 8px; }
+/* Phase 6.4 #11c: rich-text description editor (B/I/U). */
+.spec.editing .editor .rt-toolbar { display: flex; gap: 4px; margin: 0 0 4px; }
+.spec.editing .editor .rt-toolbar .rt-btn { font-size: 11px; padding: 3px 9px; border-radius: 3px; border: 1px solid var(--rule); background: white; cursor: pointer; color: var(--ink); font-family: inherit; line-height: 1.2; min-width: 28px; }
+.spec.editing .editor .rt-toolbar .rt-btn:hover { background: rgba(10,31,68,0.05); border-color: var(--navy); }
+.spec.editing .editor .rt-toolbar .rt-btn:active { background: rgba(10,31,68,0.10); }
+.spec.editing .editor .rt-editor { font-size: 12px; padding: 7px 9px; border: 1px solid var(--rule); border-radius: 4px; min-height: 60px; background: white; line-height: 1.5; color: var(--ink); white-space: pre-wrap; }
+.spec.editing .editor .rt-editor:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(10,31,68,0.08); }
+.spec.editing .editor .rt-editor:empty::before { content: attr(data-placeholder); color: var(--muted); font-style: italic; }
+.spec.editing .editor .rt-editor b, .spec.editing .editor .rt-editor strong { font-weight: 700; }
+.spec.editing .editor .rt-editor i, .spec.editing .editor .rt-editor em { font-style: italic; }
+.spec.editing .editor .rt-editor u { text-decoration: underline; }
 .spec.editing .editor label { font-size: 10.5px; }
 .ed-actions { grid-column: 1/-1; display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 .ed-actions button { font: inherit; font-size: 11.5px; padding: 6px 14px; border: 1px solid var(--rule); border-radius: 6px; background: white; cursor: pointer; color: var(--ink); }
