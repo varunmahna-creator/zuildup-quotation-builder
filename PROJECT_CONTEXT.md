@@ -142,6 +142,71 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 
 ## 5. Phase History (Most Recent First)
 
+### Phase 7A (May 4) — Cosmetic + UI fixes (Batch A, 6 items)
+Sales-team / Varun feedback on the live tool. Six small surgical fixes;
+landed in parallel with Phase 7B (which touches calc logic). Live revision
+**`zuildup-quotes-00021-tpl`**, commit `d0799fe`.
+
+**Items shipped:**
+1. **`Ar.` (Architect) added to salutation dropdown.** `app/index.html` line
+   239 — appended `<option>Ar.</option>` after Dr. Cover renders "Ar.
+   Rajesh Sharma" correctly (vision QC confirmed).
+6. **Copy Category insertion order — locked in.** `copyCategory` in
+   `app/quote.js` already used `splice(Math.max(...sourceIndices)+1, ...)`
+   from Phase 6.4 #9. Brief noted "currently appends to end" but the code
+   was already correct — wrote a Node-shim test in `tests/test_phase7a.py`
+   to lock the contract: clones land contiguously after the LAST source
+   row, not at the end of `state.rows`.
+7. **Inline rename input now visible while typing.** Root cause: the
+   input replaces the `.cat-label` span inside `.cat-name`, which has
+   `text-transform: uppercase`, `color: var(--gold)`, AND `overflow: hidden`.
+   The CSS already set `color: var(--navy)` and `text-transform: none` on
+   `.cat-rename-input`, but the parent's `overflow: hidden` was clipping the
+   typed text. Fix: added explicit `color: #0A1F44 !important`, `background:
+   #fff !important`, bumped font-size 11 → 13px, and added a
+   `.spec-cat-hdr.renaming .cat-name { overflow: visible }` rule so the
+   input expands without clipping. Also added `-webkit-text-fill-color`
+   for Safari belt-and-braces.
+8. **Cover ZuildUp wordmark enlarged.** `logoSvg` in `app/quote.js`
+   bumped the cover-only width from 220 → 340 (~1.55×). Inner-page logo
+   sizes (large=160, default=110) untouched. Vision QC: "logo prominent
+   and well-sized."
+9. **Cover tagline** `Don't just build, Zuild.` → `Don't just build,
+   Zuild!` Single character change.
+10. **Removed `Delhi NCR · Estd 2024` meta-tag.** Both the `<span
+    class="cover-meta-tag">…</span>` markup AND the orphan
+    `.cover-meta-tag` CSS rule deleted. Vision QC confirmed tag absent.
+
+**Tests:** 7 new in `tests/test_phase7a.py`. 112/112 green
+(105 prior + 7 new). The Node-shim for #6 extracts `rowCategoryGroup` and
+`copyCategory` via brace-balanced regex slicing and exercises the splice
+behaviour with a 5-row interleaved fixture.
+
+**End-to-end live verification (revision `zuildup-quotes-00021-tpl`):**
+- Local `app/quote.js` md5 (HEAD `d0799fe`) == live `/app/quote.js` md5
+  (`3dabd940c10899020dea4db30464d10a`).
+- `curl /app/index.html` returns the dropdown with `<option>Ar.</option>`.
+- `curl /app/quote.js | grep "size==='cover') ? 340"` returns 1.
+- `grep "cover-meta-tag"` returns 0 (removed).
+- `grep "Don't just build, Zuild!"` returns 1.
+- Vision QC on the rendered cover (Chrome headless against the live
+  `quote.js` unwrapped + `renderCover('Ar.', 'Rajesh Sharma', …)`):
+  logo prominent, tagline reads "Don't just build, Zuild!",
+  no Delhi NCR tag, "Ar. Rajesh Sharma" rendered correctly.
+
+**Concurrency note:** Batch B (Phase 7B) was running in parallel and
+touches the same `app/quote.js` + `app/index.html`. Pull-rebase before
+push showed no conflicts (Batch B hadn't pushed yet); after my push at
+`d0799fe`, Batch B's working-tree edits appeared locally (uncommitted),
+which manifested as a transient md5 mismatch between the working tree
+and live until I compared `git show HEAD:app/quote.js` (clean Phase 7A)
+against the live URL — those matched.
+
+**Doctrine reinforcement (§10):** When working tree md5 ≠ live md5 in a
+multi-agent shared checkout, compare `git show HEAD:<file>` md5 against
+live, NOT `md5sum <file>`. Working tree may have parallel uncommitted
+edits from a sibling agent.
+
 ### Phase 6.4 (May 4) — Sales-team feedback iteration (Specs system overhaul)
 Three-way parallel build: items #9 (Copy Category), #11a (Basement specs),
 #11c (Rich-text descriptions). All three landed in the same workday on top
