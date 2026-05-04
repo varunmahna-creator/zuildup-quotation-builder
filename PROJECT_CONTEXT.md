@@ -142,6 +142,29 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 
 ## 5. Phase History (Most Recent First)
 
+### Phase 6.1 (May 4) — Sales-team feedback iteration (7 polish items)
+Triggered by sales team using the live tool and flagging UX rough edges. Lower-stakes than Phase 5 (no math bugs); pure polish + customer-facing PDF cleanup.
+
+**Items shipped:**
+1. **Per-line-item rate override panel opens by default** (was: only auto-opened when an override was already set; reps couldn't see line items on a fresh quote). One-line change in `renderItemRatesPanel`.
+2. **Override panels now share styling.** `.aov-zone / .aov-row / .aov-name / .aov-unit` selectors in `index.html` now target both `#area-ovr-list` AND `#item-rate-list`. Previously only area panel was styled, leaving the rate panel visually misaligned.
+3. *(skipped — not in scope this round)*
+4. **₹ glyph in PDF — verified, no regression.** Repro on live URL produced a 13-page PDF with NULLs=0 and ₹=18 rendering as proper Indian Rupee glyphs (visual QC confirmed). The v2.3 embedded-font fix from Phase 3 is still holding. No code change needed — just QC + this note.
+5. **"Set details" placeholder hidden in PDF.** Added `@media print { .rate-pill.set, .set-rate { display: none; } }` inside `quoteCss()`. Editor preview keeps the placeholder as a visual nudge; PDF emits empty so the customer never sees it.
+6. **Unedited spec cards render identically to edited cards in PDF.** Added `@media print { .spec-card.unedited { background: white; border-style: solid; } .spec-card.unedited .desc { color: var(--ink); font-style: normal; } }`. Editor preview keeps the dashed/faded "this row uses catalog defaults" hint.
+10. **Quote validity = 60 days, displayed on cover.** New helper `quoteValidUntil(createdIso, days = 60)` in `quote.js`. Cover page emits `<p class="cover-validity"><em>Quote valid until DD MMM YYYY</em></p>` at the end of `cover-bot`. Styled in Fraunces serif italic, gold tint matching cover aesthetic.
+11b. **"Brand & Rate" column → "Rate"; brand info migrates into description.** Table view header renamed. `rowFields()` no longer composes `Brand · ₹X` into the rate cell — rate-only. For catalog defaults (no `o.description` override) where `it.brands` is non-empty, the description now leads with `Brands: BrandA · BrandB\n<original desc>` so reps can edit inline. **Back-compat:** if `o.brand_rate` was set by the old UI (free text typed by rep), we display it AS-IS in the rate column — minor mislabel on legacy quotes is acceptable; rep can clean up.
+
+**Tests:** 13 new tests in `tests/test_phase6_1.py` lock CSS / HTML / JS invariants for items 1, 2, 5, 6, 10, 11b. Includes a Node-shim path that exercises `rowFields()` directly (it's defined inside `renderQuote`, so the shim runs renderQuote once on a synthetic state to materialise the closure-bound function onto `global`). Phase 5 suite still green (26/26 total).
+
+**Local QC:** Rendered fixture HTML through live `/pdf` endpoint → 12 pages, NULLs=0, ₹=18, validity line "Quote valid until 03 Jul 2026" present, "Set details" count in extracted text = 0, "Brand & Rate" header gone, brand prefixes visible in descriptions. Visual QC on cover, cost, and specs pages all clean.
+
+**Item 4 doctrine note:** Repro-first saved a font rebuild we didn't need. The 5-second NULL-byte triage from §10 is now baked into `/tmp/qb_qc/render_via_shim.js` + a fitz-based extractor; recreate after VM reboots from PROJECT_CONTEXT §11 if missing.
+
+**Open follow-ups:**
+- 11b "Phase 6.4" rich-text bold/italic in description editor (Varun's note: "rep manually adjusts; rich-text comes in 6.4").
+- Item 3, 7, 8, 9 — not in this round's scope.
+
 ### Phase 5 (May 2) — Sales-team feedback fixes (4 issues)
 Triggered by sales team reporting wrong zone sums, missing Concrete spec, off-by-one lift/staircase counts, and confusing line-item descriptions when areas were manually overridden.
 

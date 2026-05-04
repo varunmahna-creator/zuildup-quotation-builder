@@ -813,6 +813,19 @@ function formatDate(iso) {
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${parseInt(d,10)} ${months[parseInt(m,10)-1]} ${y}`;
 }
+// Phase 6.1 #10: quote validity (60 days from createdAt). en-IN-flavoured
+// "DD MMM YYYY" matching formatDate(). Returns '' on bad input.
+function quoteValidUntil(createdIso, days = 60) {
+  if (!createdIso) return '';
+  const [y,m,d] = createdIso.split('-').map(n => parseInt(n,10));
+  if (!y || !m || !d) return '';
+  const dt = new Date(Date.UTC(y, m-1, d));
+  if (isNaN(dt.getTime())) return '';
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  return `${dd} ${months[dt.getUTCMonth()]} ${dt.getUTCFullYear()}`;
+}
 
 // ============================================================================
 // Page-mode bootstrap
@@ -1499,9 +1512,12 @@ async function bootForm() {
       html.push('</div>');
     }
     list.innerHTML = html.join('');
-    // Auto-open <details> if any override is set
+    // Phase 6.1 #1: open by default so the rep sees all line items immediately;
+    // they can still collapse via the chevron. (Previously this only auto-opened
+    // when an override was already set — which was unhelpful on a fresh quote.)
     const details = document.getElementById('item-rate-overrides');
-    if (details && hasOverride) details.open = true;
+    if (details) details.open = true;
+    void hasOverride; // (kept for any future "user-set" indicator)
     list.querySelectorAll('input[data-itemrate-key]').forEach(inp => {
       inp.oninput = e => {
         const key = inp.dataset.itemrateKey;
@@ -2138,6 +2154,8 @@ function quoteCss() {
   .cover-pill { display: inline-block; background: var(--gold); color: var(--navy); padding: 7px 16px; border-radius: 999px; font-size: 10.5px; letter-spacing:.22em; font-weight: 700; }
   .cover-qid { color: rgba(255,255,255,0.65); font-size: 9px; letter-spacing:.22em; text-transform: uppercase; line-height:1.5; text-align:right; }
   .cover-qid-num { display:block; color: white; font-size: 14px; letter-spacing:.04em; font-weight: 500; margin-top: 3px; }
+  /* Phase 6.1 #10: quote validity line at end of cover. Italic Fraunces serif, gold tint. */
+  .cover-validity { font-family: 'Fraunces', serif; font-style: italic; font-size: 11.5px; color: rgba(244,213,138,0.85); margin: 8mm 0 0; letter-spacing: 0.02em; font-weight: 400; }
   .cover-trust { display:flex; gap: 14px; flex-wrap: wrap; justify-content: center; color: rgba(255,255,255,0.55); font-size: 10px; letter-spacing:.18em; text-transform:uppercase; margin-top: 18mm; }
   .cover-trust span { padding: 0 4px; }
   .cover-trust span + span:before { content: '·'; padding-right: 14px; }
@@ -2225,6 +2243,16 @@ function quoteCss() {
   .spec-card .rate-pill.set { background: rgba(10,31,68,0.04); color: rgba(10,31,68,0.55); font-style: italic; font-weight: 500; border: 1px dashed rgba(10,31,68,0.20); }
   .spec-card.unedited { background: rgba(10,31,68,0.015); border-style: dashed; }
   .spec-card.unedited .desc { color: rgba(10,31,68,0.55); font-style: italic; }
+  /* Phase 6.1 #5: hide 'Set details' placeholder in printed PDF; editor preview
+     keeps it as a visual nudge to the rep. The PDF route is window.print() /
+     headless chrome --print-to-pdf, both honour @media print. */
+  @media print {
+    .rate-pill.set, .set-rate { display: none !important; }
+    /* Phase 6.1 #6: render unedited rows identically to edited rows in the PDF
+       so the customer never sees the dev-style "needs attention" hint. */
+    .spec-card.unedited { background: white !important; border-style: solid !important; }
+    .spec-card.unedited .desc { color: var(--ink) !important; font-style: normal !important; }
+  }
   .spec-card .desc { color: var(--ink); font-size: 10.5px; line-height: 1.5; margin: 2px 0 0; white-space: pre-line; }
   /* P3 #10: brand-rate combined field (bold). */
   .spec-card .brand-rate { font-size: 11px; color: var(--navy); font-weight: 600; margin: 4px 0 0; }
@@ -2287,6 +2315,7 @@ function renderCover(state, customer, showCustomer) {
     </div>
     <div class="cover-bot">
       <div class="cover-qid">Quote ID<span class="cover-qid-num">${escapeHtml(state.quoteId)}</span></div>
+      <p class="cover-validity"><em>Quote valid until ${escapeHtml(quoteValidUntil(state.createdAt, 60))}</em></p>
     </div>
   </div>
 </section>`;
@@ -2506,21 +2535,41 @@ function renderSpecPages(state, sortedCats, byCat) {
   // P3 #6: branch on state.specsLayout — 'grid' (default cards) or 'table' (compact rows).
   // P3 #10: per-row rendering composes Label / Brand+Rate / Description from overrides.
   function rowFields(row, it) {
+    // Phase 6.1 #11b — rate column is now rate-only; brand information migrates
+    // into the description so reps can edit it inline. Backward-compat: if a saved
+    // quote has `o.brand_rate` set (rep-typed free text from old UI), we display
+    // that string AS-IS in the rate column. The header label has changed to
+    // "Rate" — minor mislabel on legacy quotes is acceptable; rep can clean up.
     const o = row.override || {};
     const lab = o.label ?? (it ? it.label : '');
-    // P3 #10: brand_rate combined field (bold). Falls back to legacy brand+rate_text+rate composition.
+    // Rate column ("brandRate" key kept for back-compat with saved quotes).
     let brandRate = (o.brand_rate !== undefined) ? o.brand_rate : '';
     if (!brandRate) {
-      const brands = (o.brands !== undefined) ? (o.brands || []) : ((it && it.brands) || []);
       const rt = (o.rate_text !== undefined) ? o.rate_text : ((it && it.rate_text) || '');
       const rate = (o.rate !== undefined) ? o.rate : 0;
-      const parts = [];
-      if (brands.length) parts.push(brands.join(' · '));
-      if (rt && rt.trim()) parts.push(rt);
-      else if (rate > 0)   parts.push(fmtINR(rate));
-      brandRate = parts.join(' · ');
+      if (rt && rt.trim())     brandRate = rt;
+      else if (rate > 0)        brandRate = fmtINR(rate);
+      else                      brandRate = '';
     }
-    const desc = o.description ?? (it ? it.description : '');
+    // Description: if rep hasn't customised it AND the catalog item has brand
+    // suggestions, prepend "Brands: …" to the catalog default. Editor reps can
+    // tweak this manually per row (rich-text formatting comes in Phase 6.4).
+    let desc;
+    const userOverroteDesc = (o.description !== undefined && o.description !== null);
+    if (userOverroteDesc) {
+      desc = o.description;
+    } else {
+      const baseDesc = (it ? it.description : '') || '';
+      const brands = (o.brands !== undefined && Array.isArray(o.brands))
+        ? o.brands
+        : ((it && Array.isArray(it.brands)) ? it.brands : []);
+      if (brands.length) {
+        const brandLine = 'Brands: ' + brands.join(' · ');
+        desc = baseDesc ? (brandLine + '\n' + baseDesc) : brandLine;
+      } else {
+        desc = baseDesc;
+      }
+    }
     const loc  = o.location || '';
     return { lab, brandRate, desc, loc };
   }
@@ -2544,7 +2593,7 @@ function renderSpecPages(state, sortedCats, byCat) {
             <tr class="cat-row"><th colspan="3">
               <h2>${escapeHtml(cat)}<span class="count">${byCat[cat].length} items</span></h2>
             </th></tr>
-            <tr class="hdr"><th class="lab">Item</th><th class="br">Brand &amp; Rate</th><th class="desc">Description</th></tr>
+            <tr class="hdr"><th class="lab">Item</th><th class="br">Rate</th><th class="desc">Description</th></tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
         </table>`;
