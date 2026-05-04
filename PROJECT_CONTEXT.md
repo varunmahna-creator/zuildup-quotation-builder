@@ -142,6 +142,112 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 
 ## 5. Phase History (Most Recent First)
 
+### Phase 6.4 (May 4) — Sales-team feedback iteration (Specs system overhaul)
+Three-way parallel build: items #9 (Copy Category), #11a (Basement specs),
+#11c (Rich-text descriptions). All three landed in the same workday on top
+of Phase 6.1 and Phase 6.3, behind a per-row `categoryGroup` state shape.
+
+**Item 9 — Copy Category + Inline Rename (commit `8bab87a`).**
+- New top-level helper `rowCategoryGroup(row)`: precedence
+  `row.categoryGroup > row.override.category_label > item.category_label > 'Custom'`.
+  Used by both `renderSpecList` (form list) and `renderQuote` (PDF) for
+  grouping. Old quotes with no `categoryGroup` keep the catalog category —
+  fully backwards-compatible.
+- Spec category headers now render `✎ Rename` and `⎘ Copy` buttons. Click
+  rename swaps the label for an inline `<input>`; Enter or blur stamps
+  `row.categoryGroup` on every row currently resolving to the old name; Esc
+  reverts. Click Copy clones every row in the category as a new category
+  with **catalog defaults** (override reset to `{}`) — Varun: "Clone with
+  default". Custom rows preserve their `label` only. Unique naming:
+  `<cat> (Copy)`, `<cat> (Copy 2)`, etc. Clones insert directly after the
+  last source row so the new group sits contiguously. New category
+  auto-opens.
+
+**Item 11a — Basement category, conditional render (this commit).**
+- Catalog: 6 new items under `category="basement"`, scope `["full"]`:
+  - `basement.raft_foundation` — RCC raft foundation, M25, integral crystalline.
+  - `basement.retaining_walls` — 6" RCC + 4.5" brick.
+  - `basement.waterproofing_system` — three-layer (Sika / Dr. Fixit / Fosroc).
+  - `basement.sump_pit_dewatering` — RCC pit + dual pumps (Crompton / Bajaj).
+  - `basement.height` — 11 ft floor-to-ceiling.
+  - `basement.flooring` — 18mm Granite (treads/risers). Suggested rate
+    ₹70/sq ft (rep enters per quote — catalog stays template-only per
+    P1.5.1 fidelity rule).
+- `defaultRowsFor(scope, opts)` extended: basement items only included
+  when `opts.hasBasement === true`. All 5 call sites updated.
+- Picker filter excludes basement-category items when `state.build.hasBasement`
+  is false.
+- New `syncBasementRows()` helper: on toggle ON, append missing basement
+  rows in default `Basement` group; on OFF, remove default-group basement
+  rows but **preserve cloned/renamed basement groups** (rep created those
+  intentionally, automatic delete would surprise). Hooked into the
+  `f-basement` onchange before `flush()`.
+- First-load top-up: saved quotes upgraded to a build that pre-dates the
+  basement category get auto-seeded with all 6 rows on next paint.
+- `catOrder` updated in form-list, picker, and PDF render — Basement sits
+  between Structure and Bathroom.
+
+**Item 11c — Rich-text descriptions B/I/U (this commit).**
+- Top-level `sanitizeRichText(html)`: regex-based, allows ONLY
+  `b/strong/i/em/u/br`. Strips `<script>`, `<style>`, `<iframe>`, `<img>`,
+  HTML comments, control chars, AND all attributes (`onclick`, `style`,
+  `src`, etc.) on allowed tags. Used at save time AND at render time
+  (defense in depth). Handles `null`/`undefined` gracefully → `''`.
+- Description editor replaced: `<textarea>` → `contenteditable="true"`
+  div with floating B/I/U toolbar. Toolbar uses `mousedown`
+  (`preventDefault`) so editor selection survives. Ctrl+B/I/U keyboard
+  shortcuts inside the editor. Enter inserts `<br>` (not `<div>`/`<p>`).
+- `override.descriptionRich = true` flag stamped on first edit. Renderer
+  (`rowFields`) returns `descIsRich`; both grid and table render paths
+  branch:
+    grid : `<p class="desc">${descIsRich ? sanitize : escape}</p>`
+    table: `<td class="desc">${descIsRich ? sanitize : escape}</td>`
+- Backwards-compat: rows without `descriptionRich` keep the
+  `escapeHtml` path, so old plain-text descriptions are unchanged. Newlines
+  in legacy text convert to `<br>` in the editor on first open.
+- Hostile inputs tested: `<script>alert(1)</script><b>ok</b>` → `<b>ok</b>`;
+  `<iframe>x</iframe><b>x</b>` → `<b>x</b>`;
+  `<b onclick="alert(1)" style="color:red">y</b>` → `<b>y</b>`;
+  `<img onerror=alert(1) src=z>` → empty.
+
+**Tests:** 13 in `tests/test_phase6_4.py` (Item 9 contract via Node shim);
+20 in `tests/test_phase6_4_11.py` (catalog presence, fidelity preserved,
+`defaultRowsFor` branching, picker filter, syncBasementRows add/remove,
+catOrder in form+PDF, sanitizer XSS resilience, rowFields descIsRich path,
+render branching). 80/80 total green (Phase 5 + 6.1 + 6.3 + 6.4 + 6.4_11).
+
+**End-to-end live verification (revision `zuildup-quotes-00019-svg`):**
+Local PDF render of fixture (basement on + cloned bathroom groups +
+rich-text bathroom description with bold/italic/underline) →
+- 7 pages, NULLs = 0, ₹ count = 18 (≥ baseline 14).
+- Basement category renders with all 6 items in the correct catOrder slot.
+- Cloned bathroom groups (`(1st & 2nd Floor)` vs `(3rd & 4th Floor)`)
+  render as distinct sections with their own headings and item counts.
+- Vision QC (image tool) confirms B/I/U formatting is visually correct in
+  the PDF: `Brand: Hettich` is **bold**, `5-year warranty` is *italic*,
+  `10-year` is <u>underlined</u>.
+- Live md5 of `/app/quote.js` matches local md5
+  (`e1fd52a4411c6a0b4ce440ddccab38f7`).
+
+**Concurrency:** All three items (#9, #11a, #11c) touched the same
+`app/quote.js`. Item 9 landed first (rebased onto Phase 6.1, picked up
+in-flight Phase 6.3 changes from working tree); 11a + 11c rebased onto
+the post-#9 + Phase 6.3 master and shipped together. Catalog catOrder
+list updated in 3 places (form list, picker, PDF) — kept in sync via
+sed pass.
+
+**Doctrine reinforcements (§10 candidates):**
+- **FS cache lag is real.** Mid-session, the Edit tool can read a stale
+  snapshot of a file while sed/python see the current disk state. Symptom:
+  Edit succeeds but a follow-up grep shows the old text. Recovery: write
+  via stdin'd Python heredoc that calls `pathlib.write_text` — bypasses
+  the cache.
+- **Build script vs hand-edited app/quote.js:** `scripts/build_quote_js.py`
+  is stale. `app/quote.js` has been hand-edited since Phase 3+. Future
+  edits should treat `app/quote.js` as the source of truth, not regenerate
+  from the script. Either delete `build_quote_js.py` or sync it back from
+  the live file.
+
 ### Phase 6.3 (May 4) — Sequential additional zones (Elevation / GST / Custom)
 Triggered by sales team needing flexibility to bolt extra charges onto a quote without bending the static A-D zone math. Three new opt-in toggles, each rendered as the next sequential zone letter when enabled. Letters are dynamic — depend on which static zones the build uses.
 
