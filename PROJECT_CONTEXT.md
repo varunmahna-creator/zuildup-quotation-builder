@@ -47,7 +47,9 @@ A web-based quotation/cost-estimate builder for **ZuildUp's** sales team to gene
 - **Service name:** `zuildup-quotes`
 
 ### Current revision
-- **Active:** `zuildup-quotes-00024-79h` (deployed 2026-05-04, Phase 7B — calculator + UI fixes batch B, 12 items)
+- **Active:** `zuildup-quotes-00026-4mf` (deployed 2026-05-04, Phase 7D — move category up/down)
+- Previous: `00025-zzz` (Phase 7C — position-based category ordering, 2026-05-04)
+- Previous: `00024-79h` (Phase 7B — calculator + UI fixes batch B, 12 items, 2026-05-04)
 - Previous: `00014-v2v` (Phase 4.1 per-rep logins, 2026-05-01 11:10)
 - Previous: `00013-zqv` (Phase 4 cross-device quote library, 2026-05-01 10:50)
 - Previous: `00012-ztc` (v2.3 ₹ fix, 2026-05-01 09:15)
@@ -141,6 +143,41 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 ---
 
 ## 5. Phase History (Most Recent First)
+
+### Phase 7D (May 4) — Move category up/down (sales QC follow-up)
+
+Single ask from Varun's QC of the post-7C build: each category in the spec
+list (and customer PDF) needs ↑/↓ controls so the rep can reorder
+categories ad-hoc without dragging individual rows.
+
+**Implementation:** New `moveCategory(cat, dir)` helper in `quote.js`
+swaps two adjacent category blocks in `state.rows`, preserving each
+block's internal insertion order. Because Phase 7C made the render order
+purely first-occurrence in `state.rows` (both spec list AND PDF
+`_byCatOrder`), reordering `state.rows` reorders BOTH views in one
+operation — no separate code path for "table view" vs "grid view".
+
+Header markup adds two new buttons (`data-act="move-up"` /
+`"move-down"`) styled as small grey ▲/▼ chips matching the existing
+`.cat-btn` pattern. First category gets ↑ disabled; last category gets
+↓ disabled (boundary guard via `isFirst`/`isLast` template literal).
+
+Interleaved-rows edge case: when state.rows has rows of two categories
+sandwiched (e.g. legacy quotes, custom rows scattered), `moveCategory`
+collects each block in insertion order, swaps them, and appends any
+"intruder" rows (third-category rows that fell inside the spanned
+slice) at the end of the slice with relative order preserved. Keeps
+the common case (post-copyCategory or normal flow) exact, and the
+unusual case sane.
+
+**Files:** `app/quote.js` (header markup + click handler + helper),
+`app/index.html` (3 CSS rules for `.cat-btn.cat-move`),
+`tests/test_phase7d.py` (9 tests, Node-shim style).
+
+**Deploy:** revision `zuildup-quotes-00026-4mf`, MD5 parity HEAD == LIVE
+(`c648b75047339b414894175971dd954d`). All 140 tests green (was 131).
+
+Commit: `e786082`.
 
 ### Phase 7B (May 4) — Calculator + UI fixes (Batch B, 12 items)
 Sales-team / Varun feedback on calc engine + form UX. Twelve items;
