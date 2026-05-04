@@ -142,6 +142,32 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 
 ## 5. Phase History (Most Recent First)
 
+### Phase 6.3 (May 4) — Sequential additional zones (Elevation / GST / Custom)
+Triggered by sales team needing flexibility to bolt extra charges onto a quote without bending the static A-D zone math. Three new opt-in toggles, each rendered as the next sequential zone letter when enabled. Letters are dynamic — depend on which static zones the build uses.
+
+**What shipped:**
+- New `state.pricing.additionalZones` shape: `{ elevation: {enabled, desc, cost}, gst: {enabled, desc, cost}, custom: {enabled, name, desc, cost} }`. All three default off.
+- New form fieldset `Additional Charges (optional)` after Area Overrides. Each block has its toggle; when on, reveals desc + cost (and Header name for Custom).
+- New helper `appendAdditionalZones(c, state)` runs after `applyAreaOverrides` inside `computeQuote`. Walks the live zone letters, finds the highest in use (D normally, E if basement), assigns sequential letters to enabled additional zones in order Elevation → GST → Custom. Each zone is single-line so the Phase 5 zone-sum invariant (`zone.cost == Σ items.cost`) holds for them too.
+- Cost-page renders an additional-row template per enabled zone, uses navy `.z-extra` tag, em-dash in the rate column (these are flat lump sums, not per-sqft), header label "Zone X — {Name}" where Custom uses the rep-supplied Header name (falls back to "Custom Charge" when blank).
+- Grand total + zone subtotal both pick up the extra cost. No double-counting, no math drift on un-enabled zones.
+
+**Letter assignment examples:**
+- Stilt + 4 floors, no basement → static A,B,C,D ; Elevation = E, GST = F, Custom = G.
+- Same + basement → static A,B,C,D,E (basement) ; Elevation = F, GST = G, Custom = H.
+- Structure mode (no Zone C) → max present is D ; Elevation still becomes E (we use max-letter-+1, not skip-letter logic).
+
+**Backwards compatibility:**
+- `loadState()` per-key merges `additionalZones.{elevation,gst,custom}` so old Firestore quotes get fresh defaults without losing any rep-supplied data.
+- bootForm defensively re-initialises any missing keys before binding listeners.
+- Internal ids (`elevation` / `gst` / `custom`) are stable; only the display letter shifts when the basement toggle changes — saved quotes never break.
+
+**Tests:** 15 new pytest invariants in `tests/test_phase6_3.py` covering: default-off shape, letter assignment with/without basement, all-three sequential, structure-mode skip-C handling, zone-sum invariant on additional zones, custom name fall-back, disabled-but-cost-set omission. All 41 tests green (26 phase5 + phase6_1 + 15 new).
+
+**End-to-end live QC:** Drove the live URL with Puppeteer through 4 scenarios (all-off / GST-only / all-three / all-three-with-basement). Each PDF: NULLs=0, ₹ glyphs intact, correct subtotal + total math, correct sequential letters. Vision QC on the cost-table screenshots confirmed clean styling matching A-D rows. Live `app/quote.js` md5 == local md5 → revision verified.
+
+**Copy update:** "GST and any liaisoning are quoted separately outside this document." → "GST and any liaisoning can be added below as a separate zone, or quoted outside this document." Points reps at the new workflow.
+
 ### Phase 6.1 (May 4) — Sales-team feedback iteration (7 polish items)
 Triggered by sales team using the live tool and flagging UX rough edges. Lower-stakes than Phase 5 (no math bugs); pure polish + customer-facing PDF cleanup.
 
