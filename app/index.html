@@ -160,12 +160,21 @@ iframe.preview { width: 794px; border: none; display: block; height: 1123px; mar
 /* P1.7: validation hints + invalid input styling */
 input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 0 0 3px rgba(192,57,43,0.10) !important; }
 /* P3 #9: category headers in left rail */
-.spec-list .spec-cat-hdr { display: flex; justify-content: space-between; align-items: baseline; margin: 12px 0 6px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: white; }
+.spec-list .spec-cat-hdr { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 12px 0 6px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: white; cursor: pointer; }
 .spec-list .spec-cat-hdr:first-child { margin-top: 4px; }
 .spec-list .spec-cat-hdr.collapsible:hover { background: rgba(10,31,68,0.03); }
-.spec-list .spec-cat-hdr .cat-name { font-size: 10.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+.spec-list .spec-cat-hdr .cat-name { font-size: 10.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .spec-list .spec-cat-hdr .cat-name .chev { color: var(--muted); display: inline-block; width: 10px; font-weight: 400; }
 .spec-list .spec-cat-hdr .cat-count { font-size: 10px; color: var(--muted); font-weight: 500; }
+/* Phase 6.4 #9: per-category controls (Rename ✎ + Copy ⎘) */
+.spec-list .spec-cat-hdr .cat-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.spec-list .spec-cat-hdr .cat-btn { font-size: 10px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--rule); background: white; cursor: pointer; color: var(--navy); font-family: inherit; line-height: 1.2; }
+.spec-list .spec-cat-hdr .cat-btn.cat-rename { padding: 3px 6px; font-size: 11px; }
+.spec-list .spec-cat-hdr .cat-btn.cat-copy { color: var(--gold); border-color: var(--gold); font-weight: 600; letter-spacing: 0.05em; }
+.spec-list .spec-cat-hdr .cat-btn:hover { background: rgba(201,162,77,0.08); }
+.spec-list .spec-cat-hdr .cat-btn.cat-copy:hover { background: var(--gold); color: white; }
+.spec-list .spec-cat-hdr .cat-rename-input { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: none; color: var(--navy); padding: 3px 6px; border: 1px solid var(--gold); border-radius: 4px; width: 100%; min-width: 0; box-sizing: border-box; flex: 1; }
+.spec-list .spec-cat-hdr.renaming { background: rgba(201,162,77,0.05); }
 .spec-list .spec-cat-body { padding: 4px 0 0; }
 /* P3 #9: category headers in picker dialog */
 .picker .panel .body .picker-cat-hdr { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 12px; margin-top: 6px; border: 1px solid var(--rule); border-radius: 6px; background: white; }
@@ -188,6 +197,11 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
 #area-ovr-list input, #item-rate-list input { padding: 5px 8px; font-size: 11.5px; }
 .qb-hint { display: block; font-size: 10.5px; color: #c0392b; margin-top: 3px; font-weight: 500; letter-spacing: 0.01em; }
 .specs-head .count .empty-hint { color: #B8860B; font-weight: 500; }
+/* Phase 6.3 — Additional Charges block (Elevation / GST / Custom) */
+.addl-block { border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; background: rgba(10,31,68,0.015); }
+.addl-toggle { display: flex !important; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink); font-weight: 500; margin: 0 !important; cursor: pointer; }
+.addl-toggle input[type=checkbox] { margin: 0; cursor: pointer; }
+.addl-body label { margin-top: 4px; }
 .right .toolbar .download:disabled { background: rgba(10,31,68,0.30); cursor: not-allowed; }
 </style>
 </head>
@@ -277,13 +291,54 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
       <p style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:4px 0 6px;">Override the rate for a specific item (e.g. Terrace at ₹650 even though Zone C default is ₹600). Leave blank to use the zone default above.</p>
       <div id="item-rate-list"></div>
     </details>
-    <p style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:8px 0 0;">GST and any liaisoning are quoted separately outside this document.</p>
+    <p style="font-size:10.5px;color:var(--muted);line-height:1.5;margin:8px 0 0;">GST and any liaisoning can be added below as a separate zone, or quoted outside this document.</p>
   </fieldset>
 
   <fieldset id="area-ovr-fs" style="display:none;">
     <legend>Area Overrides (optional)</legend>
     <p style="font-size:10.5px;color:var(--muted);margin:0 0 8px;line-height:1.5;">Override the computed area of any line item (e.g. 2nd floor at 50% coverage). Leave blank to use the auto-calculated area.</p>
     <div id="area-ovr-list"></div>
+  </fieldset>
+
+  <!-- Phase 6.3 — Additional Charges (Elevation / GST / Custom). Each toggle is
+       opt-in; when off, the zone is omitted entirely from the cost sheet & PDF.
+       Each enabled zone is appended after the static A-E zones with a sequential
+       letter and rolls into the grand total. -->
+  <fieldset id="addl-zones-fs">
+    <legend>Additional Charges (optional)</legend>
+    <p style="font-size:10.5px;color:var(--muted);margin:0 0 8px;line-height:1.5;">Append flat lump-sum charges to the cost sheet. Each enabled charge becomes the next sequential zone letter (e.g. Zone F) and is included in the construction total.</p>
+
+    <div class="addl-block" id="addl-elevation-block">
+      <label class="addl-toggle"><input id="f-addl-elevation-on" type="checkbox"> Add Elevation</label>
+      <div class="addl-body" id="addl-elevation-body" style="display:none;margin-top:6px;">
+        <label>Description</label>
+        <input id="f-addl-elevation-desc" type="text" placeholder="e.g. Front facade in stone cladding">
+        <label style="margin-top:6px;">Cost — ₹ (flat)</label>
+        <input id="f-addl-elevation-cost" type="number" min="0" placeholder="e.g. 3,00,000">
+      </div>
+    </div>
+
+    <div class="addl-block" id="addl-gst-block" style="margin-top:10px;">
+      <label class="addl-toggle"><input id="f-addl-gst-on" type="checkbox"> Add GST</label>
+      <div class="addl-body" id="addl-gst-body" style="display:none;margin-top:6px;">
+        <label>Description</label>
+        <input id="f-addl-gst-desc" type="text" placeholder="e.g. GST as per applicable rate">
+        <label style="margin-top:6px;">Amount — ₹ (flat)</label>
+        <input id="f-addl-gst-cost" type="number" min="0" placeholder="e.g. 5,00,000">
+      </div>
+    </div>
+
+    <div class="addl-block" id="addl-custom-block" style="margin-top:10px;">
+      <label class="addl-toggle"><input id="f-addl-custom-on" type="checkbox"> Add Custom Charge</label>
+      <div class="addl-body" id="addl-custom-body" style="display:none;margin-top:6px;">
+        <label>Header name</label>
+        <input id="f-addl-custom-name" type="text" placeholder="e.g. Site Logistics">
+        <label style="margin-top:6px;">Description</label>
+        <input id="f-addl-custom-desc" type="text" placeholder="What this charge covers">
+        <label style="margin-top:6px;">Cost — ₹ (flat)</label>
+        <input id="f-addl-custom-cost" type="number" min="0" placeholder="e.g. 1,50,000">
+      </div>
+    </div>
   </fieldset>
 
   <fieldset>

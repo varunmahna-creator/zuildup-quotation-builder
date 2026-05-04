@@ -72,6 +72,15 @@ const defaultState = () => ({
     itemRates: {},
     // P3 v2.1: editable lift machine cost (default ₹12,00,000). null = default.
     liftCost: null,
+    // Phase 6.3: opt-in additional charge zones, appended to the cost sheet
+    // AFTER the static A/B/C/D/E zones. Each disabled by default → omitted
+    // entirely from the customer artifact when off. Letters assigned dynamically
+    // (next available after the live zones list).
+    additionalZones: {
+      elevation: { enabled: false, desc: '', cost: 0 },
+      gst:       { enabled: false, desc: '', cost: 0 },
+      custom:    { enabled: false, name: '', desc: '', cost: 0 },
+    },
   },
   scope: 'full',                 // 'full' | 'structure_only'
   rows: [],                      // [{id, override:{label?, rate?, rate_text?, brands?, description?, location?}, _custom?:bool}]
@@ -105,7 +114,17 @@ function loadState() {
           ...d, ...s,
           customer: { ...d.customer, ...(s.customer||{}) },
           build:    { ...d.build,    ...(s.build||{})    },
-          pricing:  { ...d.pricing,  ...(s.pricing||{}), itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) }  },
+          pricing:  {
+            ...d.pricing, ...(s.pricing||{}),
+            itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) },
+            // Phase 6.3: merge each additional zone individually so old saved quotes
+            // pick up newly-added keys (e.g. `custom.name`) without losing rep input.
+            additionalZones: {
+              elevation: { ...d.pricing.additionalZones.elevation, ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.elevation)||{}) },
+              gst:       { ...d.pricing.additionalZones.gst,       ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.gst)||{}) },
+              custom:    { ...d.pricing.additionalZones.custom,    ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.custom)||{}) },
+            },
+          },
         };
       }
       // Stale active id — clear it.
@@ -123,7 +142,16 @@ function loadState() {
       ...d, ...s,
       customer: { ...d.customer, ...(s.customer||{}) },
       build:    { ...d.build,    ...(s.build||{})    },
-      pricing:  { ...d.pricing,  ...(s.pricing||{}), itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) } },
+      pricing:  {
+        ...d.pricing, ...(s.pricing||{}),
+        itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) },
+        // Phase 6.3: per-key merge so old quotes get fresh defaults safely.
+        additionalZones: {
+          elevation: { ...d.pricing.additionalZones.elevation, ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.elevation)||{}) },
+          gst:       { ...d.pricing.additionalZones.gst,       ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.gst)||{}) },
+          custom:    { ...d.pricing.additionalZones.custom,    ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.custom)||{}) },
+        },
+      },
     };
   } catch(e) { return defaultState(); }
 }
@@ -506,9 +534,35 @@ async function loadCatalog() {
   return CATALOG;
 }
 function catalogItem(id) { return (CATALOG?.items || []).find(it => it.id === id); }
-function defaultRowsFor(scope) {
-  // Catalog has scope: ["full"] or ["full","structure_only"]
-  const cat = (CATALOG?.items || []).filter(it => it.scope.includes(scope === 'structure_only' ? 'structure_only' : 'full'));
+// Phase 6.4 #9: derive the effective category for a row (shared by form-page
+// renderSpecList and preview/PDF renderQuote). Precedence:
+//   row.categoryGroup (rep-set, supports rename + clones with custom heading)
+//   > row.override.category_label (legacy, only set on _custom rows)
+//   > item.category_label (catalog default)
+//   > 'Custom'.
+// Backwards-compatible: rows with no categoryGroup keep their catalog category.
+function rowCategoryGroup(row) {
+  if (row && row.categoryGroup && String(row.categoryGroup).trim()) {
+    return String(row.categoryGroup).trim();
+  }
+  const o = (row && row.override) || {};
+  if (row && row._custom) {
+    return (o.category_label && o.category_label.trim()) || 'Custom';
+  }
+  const item = catalogItem(row && row.id);
+  return item ? item.category_label : ((o.category_label && o.category_label.trim()) || 'Custom');
+}
+function defaultRowsFor(scope, opts) {
+  // Catalog has scope: ["full"] or ["full","structure_only"].
+  // Phase 6.4 #11a: Basement category is conditional on opts.hasBasement.
+  // Without an explicit opt, we exclude it (most quotes don't have a basement;
+  // the rep flips the toggle and the rows auto-populate via syncBasementRows).
+  const hasBasement = !!(opts && opts.hasBasement);
+  const cat = (CATALOG?.items || []).filter(it => {
+    if (!it.scope.includes(scope === 'structure_only' ? 'structure_only' : 'full')) return false;
+    if (it.category === 'basement' && !hasBasement) return false;
+    return true;
+  });
   return cat.map(it => ({ id: it.id, override: {} }));
 }
 
@@ -520,7 +574,81 @@ function computeQuote(state) {
   const c = bt === 'structure' ? calcStructure(state) : calcPackage(state);
   // P3 #7: apply per-line area overrides. Mutates `c` in place.
   applyAreaOverrides(c, state);
+  // Phase 6.3: append opt-in extra zones (Elevation, GST, Custom). Mutates `c`.
+  appendAdditionalZones(c, state);
   return c;
+}
+
+// Phase 6.3 — Append sequential opt-in zones (Elevation, GST, Custom) to the
+// computed quote. Each is rendered as a single-line zone, letter assigned
+// dynamically (next available after the static A/B/C/D/E zones in use).
+//
+// Output: mutates `c.additionalZones` (Array<{id, letter, name, desc, cost,
+// items: [{name, desc, area:1, rate:cost, cost}]}>), then updates
+// `c.zoneSubtotal` and `c.grandTotal`.
+//
+// Invariants:
+//  - All toggles off → c.additionalZones is empty array, totals unchanged.
+//  - Each zone.cost is read directly from state (flat ₹), no per-sqft math.
+//  - Internal id ('elevation' / 'gst' / 'custom') is stable across builds —
+//    only the display letter shifts when the basement toggle changes.
+//  - zone.cost == sum of items.cost (single line item) — Phase 5 zone-sum
+//    invariant holds for these too.
+function appendAdditionalZones(c, state) {
+  c.additionalZones = [];
+  const az = (state.pricing && state.pricing.additionalZones) || {};
+  // Determine highest letter currently used by static zones.
+  // c.zones is always present with at least A and B; C is null in structure
+  // mode; D is always present; E only when basement enabled.
+  let maxCode = 'A'.charCodeAt(0);
+  if (c.zones) {
+    for (const k of ['A','B','C','D','E']) {
+      if (c.zones[k]) {
+        const code = k.charCodeAt(0);
+        if (code > maxCode) maxCode = code;
+      }
+    }
+  }
+  // Iterate in fixed display order: Elevation → GST → Custom.
+  const order = [
+    { id: 'elevation', defaultName: 'Elevation' },
+    { id: 'gst',       defaultName: 'GST' },
+    { id: 'custom',    defaultName: 'Custom Charge' },
+  ];
+  let extraTotal = 0;
+  for (const o of order) {
+    const cfg = az[o.id];
+    if (!cfg || !cfg.enabled) continue;
+    const cost = (cfg.cost != null && cfg.cost !== '' && !isNaN(parseFloat(cfg.cost)))
+      ? Math.round(parseFloat(cfg.cost)) : 0;
+    const desc = (cfg.desc || '').toString();
+    let displayName = o.defaultName;
+    if (o.id === 'custom') {
+      const customName = (cfg.name || '').toString().trim();
+      if (customName) displayName = customName;
+    }
+    maxCode += 1;
+    const letter = String.fromCharCode(maxCode);
+    // Single line item — keeps the zone-sum invariant: zone.cost == Σ(items.cost).
+    const item = { name: displayName, desc, area: 1, rate: cost, cost };
+    c.additionalZones.push({
+      id: o.id,
+      letter,
+      name: displayName,
+      desc,
+      cost,
+      items: [item],
+      total: 1,
+      rate: cost,
+      rateLabel: '',  // additional zones don't display a rate; cost shown in total column.
+      isAdditional: true,
+    });
+    extraTotal += cost;
+  }
+  if (extraTotal > 0) {
+    c.zoneSubtotal = (c.zoneSubtotal || 0) + extraTotal;
+    c.grandTotal   = (c.grandTotal   || 0) + extraTotal;
+  }
 }
 
 // P3 #7 / Phase 5: replace any zone-item area with state.areaOverrides[<zone>:<name>] when present;
@@ -862,7 +990,7 @@ async function bootForm() {
 
   // First-load seed for rows when scope is set but rows empty
   if (!state.rows.length) {
-    state.rows = defaultRowsFor(state.scope);
+    state.rows = defaultRowsFor(state.scope, { hasBasement: !!state.build.hasBasement });
     saveState(state);
   }
 
@@ -1008,7 +1136,7 @@ async function bootForm() {
     // Auto-sync scope: structure mode forces structure_only scope
     if (state.build.buildType === 'structure' && state.scope !== 'structure_only') {
       state.scope = 'structure_only';
-      state.rows  = defaultRowsFor('structure_only');
+      state.rows  = defaultRowsFor('structure_only', { hasBasement: !!state.build.hasBasement });
       for (const btn of $('f-scope').querySelectorAll('button')) btn.classList.toggle('active', btn.dataset.v === state.scope);
     } else if (state.build.buildType !== 'structure' && state.scope === 'structure_only') {
       // moving back from structure → keep structure_only scope (user can flip if they want full)
@@ -1019,6 +1147,44 @@ async function bootForm() {
   // ---- Pricing ----
   $('f-cost-sqft').oninput  = e => { state.pricing.costPerSqft = e.target.value === '' ? null : (+e.target.value || 0); flush(); };
   $('f-struct-rate').oninput= e => { state.pricing.structureRate = e.target.value === '' ? null : (+e.target.value || 0); flush(); };
+
+  // ---- Phase 6.3 — Additional Charges (Elevation / GST / Custom) ----
+  // Defensive defaulting so old saved quotes don't blow up on .enabled access.
+  state.pricing.additionalZones ||= { elevation:{enabled:false,desc:'',cost:0}, gst:{enabled:false,desc:'',cost:0}, custom:{enabled:false,name:'',desc:'',cost:0} };
+  state.pricing.additionalZones.elevation ||= { enabled:false, desc:'', cost:0 };
+  state.pricing.additionalZones.gst       ||= { enabled:false, desc:'', cost:0 };
+  state.pricing.additionalZones.custom    ||= { enabled:false, name:'', desc:'', cost:0 };
+
+  function _bindAddlZone(id, hasName) {
+    const az = state.pricing.additionalZones[id];
+    const onCb   = document.getElementById(`f-addl-${id}-on`);
+    const body   = document.getElementById(`addl-${id}-body`);
+    const descIn = document.getElementById(`f-addl-${id}-desc`);
+    const costIn = document.getElementById(`f-addl-${id}-cost`);
+    const nameIn = hasName ? document.getElementById(`f-addl-${id}-name`) : null;
+    if (!onCb || !body || !descIn || !costIn) return;
+    // Hydrate from state.
+    onCb.checked   = !!az.enabled;
+    body.style.display = az.enabled ? '' : 'none';
+    descIn.value   = az.desc ?? '';
+    costIn.value   = (az.cost != null && az.cost !== 0) ? az.cost : '';
+    if (nameIn) nameIn.value = az.name ?? '';
+    onCb.onchange = e => {
+      az.enabled = !!e.target.checked;
+      body.style.display = az.enabled ? '' : 'none';
+      flush();
+    };
+    descIn.oninput = e => { az.desc = e.target.value; flush(); };
+    costIn.oninput = e => {
+      const v = e.target.value.trim();
+      az.cost = (v === '') ? 0 : (parseFloat(v) || 0);
+      flush();
+    };
+    if (nameIn) nameIn.oninput = e => { az.name = e.target.value; flush(); };
+  }
+  _bindAddlZone('elevation', false);
+  _bindAddlZone('gst', false);
+  _bindAddlZone('custom', true);
   $('f-notes').oninput      = e => {
     let v = e.target.value;
     if (v.length > 2000) { v = v.slice(0, 2000); e.target.value = v; }
@@ -1530,7 +1696,9 @@ async function bootForm() {
     });
   }
 
-  // ---- Spec list (P3 #9: grouped by category) ----
+  // ---- Spec list (P3 #9: grouped by category; Phase 6.4 #9: per-row categoryGroup) ----
+  // Grouping uses the top-level rowCategoryGroup() helper so form-list and
+  // PDF render share the same rules.
   function renderSpecList() {
     const list = $('spec-list');
     list.innerHTML = '';
@@ -1538,12 +1706,11 @@ async function bootForm() {
     state.rows.forEach((row, idx) => {
       const item = row._custom ? null : catalogItem(row.id);
       if (!row._custom && !item) return;
-      const o = row.override || {};
-      const cat = item ? item.category_label : (o.category_label || 'Custom');
+      const cat = rowCategoryGroup(row);
       (groups[cat] ||= []).push(idx);
     });
     const catOrder = [
-      'Design & Drawings','Structure','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
+      'Design & Drawings','Structure','Basement','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
       'Flooring','Electrical Work','Water Management','Ceiling & Elevation','Safety & Security',
       'Paint & Polish','General Aspects','Custom',
     ];
@@ -1553,18 +1720,35 @@ async function bootForm() {
       const isOpen = !!state._uiCatOpen[cat];
       const hdr = document.createElement('div');
       hdr.className = 'spec-cat-hdr collapsible' + (isOpen ? ' open' : '');
-      hdr.innerHTML = `<span class="cat-name"><span class="chev">${isOpen ? '▾' : '▸'}</span> ${escapeHtml(cat)}</span><span class="cat-count">${groups[cat].length}</span>`;
+      // Phase 6.4 #9: inline-editable cat name + Copy button. Cat-name span
+      // toggles collapse on click (data-act="toggle"); the rename ✎ button
+      // enters edit mode (data-act="rename"); the ⎘ Copy button clones every
+      // row in this group with catalog defaults (data-act="copy").
+      hdr.innerHTML = `<span class="cat-name" data-act="toggle"><span class="chev">${isOpen ? '▾' : '▸'}</span> <span class="cat-label">${escapeHtml(cat)}</span></span><span class="cat-controls"><button type="button" class="cat-btn cat-rename" title="Rename category" data-act="rename">✎</button><button type="button" class="cat-btn cat-copy" title="Copy category — clones all items with catalog defaults" data-act="copy">⎘ Copy</button><span class="cat-count">${groups[cat].length}</span></span>`;
       hdr.style.cursor = 'pointer';
       list.appendChild(hdr);
       const body = document.createElement('div');
       body.className = 'spec-cat-body';
       body.style.display = isOpen ? '' : 'none';
       list.appendChild(body);
-      hdr.onclick = () => {
+      hdr.addEventListener('click', (ev) => {
+        const actEl = ev.target.closest('[data-act]');
+        const act = actEl ? actEl.dataset.act : null;
+        if (act === 'rename') {
+          ev.stopPropagation();
+          beginCategoryRename(hdr, cat);
+          return;
+        }
+        if (act === 'copy') {
+          ev.stopPropagation();
+          copyCategory(cat, groups[cat]);
+          return;
+        }
+        // Default (cat-name area or empty): toggle collapse.
         state._uiCatOpen[cat] = !state._uiCatOpen[cat];
         saveState(state);
         renderSpecList();
-      };
+      });
       groups[cat].forEach(idx => buildSpecCard(body, idx));
     }
     const total = state.rows.length;
@@ -1585,6 +1769,90 @@ async function bootForm() {
       counterEl.innerHTML = `${total} items <span class="needs-rate">· ${needRate} ${needRate === 1 ? 'needs' : 'need'} details</span>`;
     }
     enableDragReorder(list);
+  }
+
+  // Phase 6.4 #9: inline-rename a category heading. Replaces the visible
+  // .cat-label span with an <input>; on Enter or blur stamps `row.categoryGroup`
+  // on every row in the group; on Esc reverts. The new name uniquely identifies
+  // a group so two clones of "Bathroom & Toilet" can coexist with different
+  // names ("Bathroom & Toilet (1st & 2nd Floor)" vs "(3rd & 4th Floor)").
+  function beginCategoryRename(hdr, currentCat) {
+    if (hdr.classList.contains('renaming')) return;
+    hdr.classList.add('renaming');
+    const labelSpan = hdr.querySelector('.cat-label');
+    if (!labelSpan) { hdr.classList.remove('renaming'); return; }
+    const original = labelSpan.textContent;
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'cat-rename-input';
+    inp.value = original;
+    inp.maxLength = 80;
+    labelSpan.replaceWith(inp);
+    inp.focus();
+    inp.select();
+    let done = false;
+    const commit = (save) => {
+      if (done) return;
+      done = true;
+      const next = save ? inp.value.trim() : '';
+      if (save && next && next !== original) {
+        // Stamp categoryGroup on every row that currently resolves to currentCat.
+        state.rows.forEach((row) => {
+          if (rowCategoryGroup(row) === currentCat) {
+            row.categoryGroup = next;
+          }
+        });
+        state._uiCatOpen ||= {};
+        if (state._uiCatOpen[currentCat]) state._uiCatOpen[next] = true;
+        delete state._uiCatOpen[currentCat];
+        flush();
+      } else {
+        // No-op: just re-render to restore the static label.
+        renderSpecList();
+      }
+    };
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); commit(false); }
+    });
+    inp.addEventListener('blur', () => commit(true));
+    inp.addEventListener('click', (e) => e.stopPropagation());
+  }
+
+  // Phase 6.4 #9: clone every row in this category as a NEW category with
+  // catalog defaults (override reset to {}). Per Varun: "Clone with default" —
+  // we deliberately do NOT carry over the rep's per-row tweaks. Each cloned
+  // row gets the same catalog `id` (so it pulls fresh defaults from the
+  // catalog) but its own array slot, so it's independently editable.
+  // The new group name auto-suffixes to avoid collisions: "X (Copy)",
+  // "X (Copy 2)", etc. Rep can rename via the ✎ button.
+  function copyCategory(currentCat, sourceIndices) {
+    if (!sourceIndices || !sourceIndices.length) return;
+    const existingGroups = new Set();
+    state.rows.forEach(r => existingGroups.add(rowCategoryGroup(r)));
+    let newCat = currentCat + ' (Copy)';
+    let n = 2;
+    while (existingGroups.has(newCat)) { newCat = currentCat + ' (Copy ' + n + ')'; n++; }
+    const clones = sourceIndices.map(i => {
+      const src = state.rows[i];
+      const clone = { id: src.id, override: {}, categoryGroup: newCat };
+      if (src._custom) {
+        clone._custom = true;
+        // For custom rows, label is part of the row's identity (not in
+        // catalog), so preserve it. Drop everything else.
+        const so = src.override || {};
+        if (so.label) clone.override.label = so.label;
+        clone.override.category_label = newCat;
+      }
+      return clone;
+    });
+    // Insert directly after the last source row so the new group lands next
+    // to the original in scroll position.
+    const insertAfter = Math.max.apply(null, sourceIndices);
+    state.rows.splice(insertAfter + 1, 0, ...clones);
+    state._uiCatOpen ||= {};
+    state._uiCatOpen[newCat] = true;
+    flush();
   }
 
   // P3 #9: build one row card and append to the list (used by renderSpecList).
@@ -1851,6 +2119,8 @@ async function bootForm() {
     const q = document.getElementById('picker-search').value.toLowerCase().trim();
     const filtered = (CATALOG?.items || []).filter(it => {
       if (state.scope === 'structure_only' && !it.scope.includes('structure_only')) return false;
+      // Phase 6.4 #11a: Basement category items only show in picker when basement is enabled.
+      if (it.category === 'basement' && !state.build.hasBasement) return false;
       if (q && !(it.label.toLowerCase().includes(q) || it.category_label.toLowerCase().includes(q))) return false;
       return true;
     });
@@ -1861,7 +2131,7 @@ async function bootForm() {
     const groups = {};
     filtered.forEach(it => { (groups[it.category_label] ||= []).push(it); });
     const catOrder = [
-      'Design & Drawings','Structure','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
+      'Design & Drawings','Structure','Basement','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
       'Flooring','Electrical Work','Water Management','Ceiling & Elevation','Safety & Security',
       'Paint & Polish','General Aspects','Custom',
     ];
@@ -2033,15 +2303,17 @@ function renderQuote(state, about) {
   const customer = state.customer;
   const showCustomer = (customer.name || customer.address);
 
-  // Group rows by category
+  // Phase 6.4 #9: group rows via the shared rowCategoryGroup() helper so the
+  // PDF respects rep-set categoryGroup (Copy Category + inline rename).
+  // Falls back to override.category_label / item.category_label / 'Custom'.
   const byCat = {};
   for (const row of state.rows) {
     const it = row._custom ? null : catalogItem(row.id);
-    const cat = (row.override?.category_label) ?? (it ? it.category_label : 'Custom');
+    const cat = rowCategoryGroup(row);
     (byCat[cat] ||= []).push({ row, item: it });
   }
   const catOrder = [
-    'Design & Drawings','Structure','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
+    'Design & Drawings','Structure','Basement','Bathroom & Toilet','Kitchen','Doors, Windows & Wardrobe',
     'Flooring','Electrical Work','Water Management','Ceiling & Elevation','Safety & Security',
     'Paint & Polish','General Aspects','Custom',
   ];
@@ -2207,6 +2479,9 @@ function quoteCss() {
   .calc-table .zc { background:#C9A24D; color:#0A1F44; }
   .calc-table .zd { background:#5C6373; }
   .calc-table .ze { background:#8B4513; }
+  /* Phase 6.3 — additional zones (Elevation / GST / Custom). Single navy tag
+     since their letters are dynamic; treat them as a continuation block. */
+  .calc-table .z-extra { background:#0A1F44; }
   .calc-table tbody tr { border-bottom: 1px solid var(--rule); }
   .calc-table tbody tr.zone-total td { font-weight: 600; color: var(--navy); }
   .calc-table tbody tr.zone-total { border-bottom: 2px solid var(--rule); }
@@ -2485,6 +2760,15 @@ function renderCostPage(state, c) {
     }
     return `<tr><td>${tag} Zone ${key}</td><td>${ni(zone.total)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(zone.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(zone.cost)}</td></tr>`;
   };
+  // Phase 6.3 — additional zones (Elevation / GST / Custom). Single-line each,
+  // dynamic letter, header label "Zone X — {Name}". Rate column shows em-dash
+  // since these are flat lump sums, not per-sqft.
+  const additionalRow = (z) => {
+    const tag = `<span class="zone-tag z-extra">${escapeHtml(z.letter)}</span>`;
+    const safeDesc = escapeHtml(z.desc || '');
+    const descLine = safeDesc ? `<span style="color:var(--muted);font-size:11px;">${safeDesc}</span>` : '<span style="color:var(--muted);font-size:11px;">—</span>';
+    return `<tr><td>${tag} Zone ${escapeHtml(z.letter)} — ${escapeHtml(z.name)}</td><td>${descLine}</td><td class="r">—</td><td class="r">${fmtINR(z.cost)}</td></tr>`;
+  };
   return `
 <section class="pg">
   <div class="pg-head">
@@ -2503,6 +2787,7 @@ function renderCostPage(state, c) {
       ${c.zones.C ? costRow('C', c.zones.C) : ''}
       ${costRow('D', c.zones.D)}
       ${c.zones.E ? costRow('E', c.zones.E) : ''}
+      ${(c.additionalZones || []).map(additionalRow).join('')}
     </tbody>
     <tfoot>
       <tr class="sub"><td colspan="3">Sub-total (zones)</td><td class="r">${fmtINR(c.zoneSubtotal)}</td></tr>
