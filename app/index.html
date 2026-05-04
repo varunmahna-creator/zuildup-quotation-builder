@@ -184,7 +184,10 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
 .spec-list .spec-cat-hdr .cat-btn.cat-copy { color: var(--gold); border-color: var(--gold); font-weight: 600; letter-spacing: 0.05em; }
 .spec-list .spec-cat-hdr .cat-btn:hover { background: rgba(201,162,77,0.08); }
 .spec-list .spec-cat-hdr .cat-btn.cat-copy:hover { background: var(--gold); color: white; }
-.spec-list .spec-cat-hdr .cat-rename-input { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: none; color: var(--navy); padding: 3px 6px; border: 1px solid var(--gold); border-radius: 4px; width: 100%; min-width: 0; box-sizing: border-box; flex: 1; }
+.spec-list .spec-cat-hdr .cat-rename-input { font-size: 13px !important; font-weight: 600; letter-spacing: 0.02em; text-transform: none !important; color: #0A1F44 !important; background: #fff !important; padding: 5px 8px; border: 1.5px solid var(--gold); border-radius: 4px; width: 100%; min-width: 0; box-sizing: border-box; flex: 1; outline: none; -webkit-text-fill-color: #0A1F44; }
+.spec-list .spec-cat-hdr .cat-rename-input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(201,162,77,0.18); }
+/* While renaming, expose the input fully (overflow:hidden on .cat-name would clip the typed text). */
+.spec-list .spec-cat-hdr.renaming .cat-name { overflow: visible; white-space: nowrap; text-transform: none; color: var(--navy); }
 .spec-list .spec-cat-hdr.renaming { background: rgba(201,162,77,0.05); }
 .spec-list .spec-cat-body { padding: 4px 0 0; }
 /* P3 #9: category headers in picker dialog */
@@ -236,7 +239,7 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
       <div><label>Salutation</label>
         <select id="f-salutation">
           <option value=""></option>
-          <option>Mr.</option><option>Ms.</option><option>Mr. & Mrs.</option><option>Dr.</option>
+          <option>Mr.</option><option>Ms.</option><option>Mr. & Mrs.</option><option>Dr.</option><option>Ar.</option>
         </select>
       </div>
       <div><label>Full name</label><input id="f-name" type="text" placeholder="e.g. Aanya Kapoor"></div>

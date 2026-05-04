@@ -2713,7 +2713,6 @@ function quoteCss() {
   .cover-trust { display:flex; gap: 14px; flex-wrap: wrap; justify-content: center; color: rgba(255,255,255,0.55); font-size: 10px; letter-spacing:.18em; text-transform:uppercase; margin-top: 18mm; }
   .cover-trust span { padding: 0 4px; }
   .cover-trust span + span:before { content: '·'; padding-right: 14px; }
-  .cover-meta-tag { color: rgba(255,255,255,0.65); font-size: 10px; letter-spacing:.2em; text-transform: uppercase; font-weight: 500; }
   .pg.cover svg { display: block; }
 
   /* Inner pages */
@@ -2849,7 +2848,7 @@ function quoteCss() {
 
 function logoSvg({ accent='#C9A24D', text='#0A1F44', size='large' }={}) {
   // Bigger logo on cover (size=large), small on inner pages
-  const w = (size==='cover') ? 220 : (size==='large' ? 160 : 110);
+  const w = (size==='cover') ? 340 : (size==='large' ? 160 : 110);
   return `
 <svg width="${w}" viewBox="0 0 114 24" fill="none" xmlns="http://www.w3.org/2000/svg">
   <path d="M15 21V13C15 12.7348 14.8946 12.4804 14.7071 12.2929C14.5196 12.1054 14.2652 12 14 12H10C9.73478 12 9.48043 12.1054 9.29289 12.2929C9.10536 12.4804 9 12.7348 9 13V21" stroke="${accent}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -2868,11 +2867,10 @@ function renderCover(state, customer, showCustomer) {
   <div class="cover-content">
     <div class="cover-top">
       ${logoSvg({ accent:'#F4D58A', text:'white', size:'cover' })}
-      <span class="cover-meta-tag">Delhi NCR · Estd 2024</span>
     </div>
     <div class="cover-mid">
       <div class="cover-eyebrow">Custom Home Quotation</div>
-      <p class="cover-tagline">Don't just build, Zuild.</p>
+      <p class="cover-tagline">Don't just build, Zuild!</p>
       <div class="cover-rule"></div>
       ${showCustomer ? `
       <div class="cover-name-block">
