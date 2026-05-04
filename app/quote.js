@@ -53,6 +53,10 @@ const defaultState = () => ({
     floors: 4,                   // count above stilt OR ground depending on mode
     hasBasement: false,
     hasLift: false,
+    // Phase 7B Item 3: opt-in Underground Water Tank (Zone D). Default TRUE
+    // so existing quotes (and new ones) keep the historical behavior.
+    // Saved-quote migration (loadState): if the field is absent, treat as TRUE.
+    hasWaterTank: true,
   },
   // pricing — team enters per quote
   // GST and liaisoning are intentionally NOT in the quote calculator.
@@ -79,7 +83,10 @@ const defaultState = () => ({
     additionalZones: {
       elevation: { enabled: false, desc: '', cost: 0 },
       gst:       { enabled: false, desc: '', cost: 0 },
-      custom:    { enabled: false, name: '', desc: '', cost: 0 },
+      // Phase 7B Item 16: `custom` is now an array — rep can stack multiple
+      // ad-hoc charges. Migration: legacy `custom: {…}` is wrapped in an
+      // array on load (see loadState). New shape: [{enabled, name, desc, cost, id}].
+      custom:    [],
     },
     // Phase 6.2 — Per-floor balcony pricing. Opt-in. When OFF, balcony renders
     // as a single combined Zone B row using the Zone B default rate (unchanged
@@ -95,6 +102,21 @@ const defaultState = () => ({
       enabled: false,
       rates: [],   // length === build.floors when enabled; null entry → Zone B default
     },
+    // Phase 7B Item 14: per-quote editable lift / staircase sqft (defaults
+    // 25 / 125). null/'' → use the canonical constant.
+    liftSqftPerLevel:      null,
+    staircaseSqftPerLevel: null,
+    // Phase 7B Item 15: ad-hoc line items added by the rep, bucketed per zone.
+    // Schema: { 'A': [{name, desc, area, rate, id}, ...], 'B': [...], ... }
+    // These flow into the relevant zone's items array at calc time and roll
+    // into zone.cost. Persist on save/load like everything else.
+    zoneLineItems: {},
+    // Phase 7B Item 17: per-line-item name + description overrides for the
+    // STATIC items emitted by the calc engine (Ground Floor, Stilt, Terrace,
+    // Basement, etc). Key '<zone>:<originalName>' -> string. Renderers fall
+    // back to the calc-engine-generated default if no override is set.
+    itemNameOverrides: {},
+    itemDescOverrides: {},
   },
   scope: 'full',                 // 'full' | 'structure_only'
   rows: [],                      // [{id, override:{label?, rate?, rate_text?, brands?, description?, location?}, _custom?:bool}]
@@ -127,17 +149,34 @@ function loadState() {
         return {
           ...d, ...s,
           customer: { ...d.customer, ...(s.customer||{}) },
-          build:    { ...d.build,    ...(s.build||{})    },
+          build:    (function(sb){
+            // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
+            // as TRUE so historical totals don't suddenly drop Zone D.
+            const merged = { ...d.build, ...(sb||{}) };
+            if (sb && !('hasWaterTank' in sb)) merged.hasWaterTank = true;
+            return merged;
+          })(s.build),
           pricing:  {
             ...d.pricing, ...(s.pricing||{}),
             itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) },
-            // Phase 6.3: merge each additional zone individually so old saved quotes
-            // pick up newly-added keys (e.g. `custom.name`) without losing rep input.
+            // Phase 6.3 + Phase 7B Item 16: `custom` was upgraded from object → array of
+            // charges. Migration: legacy object is wrapped in [obj]. Each custom row
+            // has its own toggle / fields.
             additionalZones: {
               elevation: { ...d.pricing.additionalZones.elevation, ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.elevation)||{}) },
               gst:       { ...d.pricing.additionalZones.gst,       ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.gst)||{}) },
-              custom:    { ...d.pricing.additionalZones.custom,    ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.custom)||{}) },
+              custom:    (function(rawCustom){
+                if (Array.isArray(rawCustom)) return rawCustom.slice();
+                if (rawCustom && typeof rawCustom === 'object' && (rawCustom.enabled || rawCustom.name || rawCustom.cost)) {
+                  return [{ ...rawCustom }];
+                }
+                return [];
+              })(s.pricing && s.pricing.additionalZones && s.pricing.additionalZones.custom),
             },
+            // Phase 7B Items 14/15/17: defaults when absent on legacy quotes.
+            zoneLineItems:     { ...(d.pricing.zoneLineItems||{}),     ...((s.pricing&&s.pricing.zoneLineItems)||{}) },
+            itemNameOverrides: { ...(d.pricing.itemNameOverrides||{}), ...((s.pricing&&s.pricing.itemNameOverrides)||{}) },
+            itemDescOverrides: { ...(d.pricing.itemDescOverrides||{}), ...((s.pricing&&s.pricing.itemDescOverrides)||{}) },
             // Phase 6.2: per-floor balcony pricing — preserve rep entries.
             balconyPerFloor: {
               ...d.pricing.balconyPerFloor,
@@ -162,16 +201,34 @@ function loadState() {
     return {
       ...d, ...s,
       customer: { ...d.customer, ...(s.customer||{}) },
-      build:    { ...d.build,    ...(s.build||{})    },
+      build:    (function(sb){
+            // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
+            // as TRUE so historical totals don't suddenly drop Zone D.
+            const merged = { ...d.build, ...(sb||{}) };
+            if (sb && !('hasWaterTank' in sb)) merged.hasWaterTank = true;
+            return merged;
+          })(s.build),
       pricing:  {
         ...d.pricing, ...(s.pricing||{}),
         itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) },
-        // Phase 6.3: per-key merge so old quotes get fresh defaults safely.
+        // Phase 6.3 + Phase 7B Item 16: `custom` was upgraded from object → array of
+        // charges. Migration: legacy object is wrapped in [obj]. Each custom row
+        // has its own toggle / fields.
         additionalZones: {
           elevation: { ...d.pricing.additionalZones.elevation, ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.elevation)||{}) },
           gst:       { ...d.pricing.additionalZones.gst,       ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.gst)||{}) },
-          custom:    { ...d.pricing.additionalZones.custom,    ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.custom)||{}) },
+          custom:    (function(rawCustom){
+            if (Array.isArray(rawCustom)) return rawCustom.slice();
+            if (rawCustom && typeof rawCustom === 'object' && (rawCustom.enabled || rawCustom.name || rawCustom.cost)) {
+              return [{ ...rawCustom }];
+            }
+            return [];
+          })(s.pricing && s.pricing.additionalZones && s.pricing.additionalZones.custom),
         },
+        // Phase 7B Items 14/15/17: defaults when absent on legacy quotes.
+        zoneLineItems:     { ...(d.pricing.zoneLineItems||{}),     ...((s.pricing&&s.pricing.zoneLineItems)||{}) },
+        itemNameOverrides: { ...(d.pricing.itemNameOverrides||{}), ...((s.pricing&&s.pricing.itemNameOverrides)||{}) },
+        itemDescOverrides: { ...(d.pricing.itemDescOverrides||{}), ...((s.pricing&&s.pricing.itemDescOverrides)||{}) },
         // Phase 6.2: per-floor balcony pricing — preserve rep entries.
         balconyPerFloor: {
           ...d.pricing.balconyPerFloor,
@@ -628,11 +685,81 @@ function defaultRowsFor(scope, opts) {
 function computeQuote(state) {
   const bt = state.build.buildType;
   const c = bt === 'structure' ? calcStructure(state) : calcPackage(state);
+  // Phase 7B Item 15: inject ad-hoc zone line items BEFORE area overrides
+  // (so the override panel sees them) and BEFORE additionalZones (so they
+  // bucket into A/B/C/D/E rather than the appended zones). Mutates `c`.
+  appendZoneLineItems(c, state);
   // P3 #7: apply per-line area overrides. Mutates `c` in place.
   applyAreaOverrides(c, state);
   // Phase 6.3: append opt-in extra zones (Elevation, GST, Custom). Mutates `c`.
   appendAdditionalZones(c, state);
   return c;
+}
+
+// Phase 7B Item 15: append rep-added line items to their respective zones.
+// State shape: state.pricing.zoneLineItems = { 'A': [{id,name,desc,area,rate}], ... }.
+// Each row contributes area + cost to the zone subtotal. Triggers `varies=true`
+// because the row's rate may differ from the zone default; cost sheet then
+// expands the zone into per-item rows so the rep-added line is itemised.
+function appendZoneLineItems(c, state) {
+  const map = state && state.pricing && state.pricing.zoneLineItems;
+  if (!map || !c || !c.zones) return;
+  for (const k of ['A','B','C','D','E']) {
+    const rows = Array.isArray(map[k]) ? map[k] : [];
+    if (!rows.length) continue;
+    const zone = c.zones[k];
+    if (!zone) continue; // zone disabled (e.g. C in structure mode, D when water-tank off)
+    let added = 0;
+    for (const r of rows) {
+      const area = (r.area != null && r.area !== '' && !isNaN(parseFloat(r.area))) ? parseFloat(r.area) : 0;
+      const rate = (r.rate != null && r.rate !== '' && !isNaN(parseFloat(r.rate))) ? parseFloat(r.rate) : 0;
+      if (area <= 0 || rate <= 0) continue; // skip incomplete rows
+      const name = (r.name && r.name.trim()) || 'Custom Item';
+      const desc = (r.desc || '').toString();
+      const cost = Math.round(area * rate);
+      const item = { name, desc, area, rate, cost, _zoneLineItem: true, _lineItemId: r.id || null };
+      item.origName = name;
+      zone.items.push(item);
+      added += cost;
+      if (rate !== zone.rate) zone.varies = true;
+    }
+    if (added > 0) {
+      // Recompute zone.total from items so the area-page total reflects the addition.
+      zone.total = zone.items.reduce((s, it) => s + (it.area || 0), 0);
+      zone.cost  = (zone.cost  || 0) + added;
+      // Update zoneSubtotal + grandTotal at top level.
+      c.zoneSubtotal = (c.zoneSubtotal || 0) + added;
+      c.grandTotal   = (c.grandTotal   || 0) + added;
+      if (zone.varies) zone.rateLabel = 'varies';
+    }
+  }
+}
+
+// Phase 7B Item 17: per-line-item name + description override resolvers.
+// State key: '<zone>:<originalName>' -> string. Renderers fall back to the
+// calc-engine-generated default when no override is set.
+function _itemNameOverride(state, zoneKey, origName) {
+  const ov = state && state.pricing && state.pricing.itemNameOverrides;
+  if (!ov) return null;
+  const v = ov[zoneKey + ':' + origName];
+  return (typeof v === 'string' && v.trim() !== '') ? v : null;
+}
+function _itemDescOverride(state, zoneKey, origName) {
+  const ov = state && state.pricing && state.pricing.itemDescOverrides;
+  if (!ov) return null;
+  const v = ov[zoneKey + ':' + origName];
+  return (typeof v === 'string' && v.trim() !== '') ? v : null;
+}
+function resolveItemName(state, zoneKey, it) {
+  if (!it) return '';
+  // it.origName is set by the calc engine for items that may be renamed.
+  const orig = it.origName || it.name;
+  return _itemNameOverride(state, zoneKey, orig) || it.name;
+}
+function resolveItemDesc(state, zoneKey, it) {
+  if (!it) return '';
+  const orig = it.origName || it.name;
+  return _itemDescOverride(state, zoneKey, orig) || it.desc || '';
 }
 
 // Phase 6.3 — Append sequential opt-in zones (Elevation, GST, Custom) to the
@@ -665,30 +792,31 @@ function appendAdditionalZones(c, state) {
       }
     }
   }
-  // Iterate in fixed display order: Elevation → GST → Custom.
-  const order = [
-    { id: 'elevation', defaultName: 'Elevation' },
-    { id: 'gst',       defaultName: 'GST' },
-    { id: 'custom',    defaultName: 'Custom Charge' },
-  ];
-  let extraTotal = 0;
-  for (const o of order) {
-    const cfg = az[o.id];
-    if (!cfg || !cfg.enabled) continue;
+  // Phase 7B Item 16: emit Elevation → GST → each Custom charge in order.
+  // Custom is now an array (rep can stack multiple). We tolerate the legacy
+  // single-object shape too — getCustomList wraps it in a 1-element array.
+  const getCustomList = (raw) => {
+    if (Array.isArray(raw)) return raw;
+    if (raw && typeof raw === 'object' && (raw.enabled || raw.name || raw.cost || raw.desc)) {
+      return [raw];
+    }
+    return [];
+  };
+  const emit = (id, defaultName, cfg) => {
+    if (!cfg || !cfg.enabled) return 0;
     const cost = (cfg.cost != null && cfg.cost !== '' && !isNaN(parseFloat(cfg.cost)))
       ? Math.round(parseFloat(cfg.cost)) : 0;
     const desc = (cfg.desc || '').toString();
-    let displayName = o.defaultName;
-    if (o.id === 'custom') {
+    let displayName = defaultName;
+    if (id === 'custom' || id.startsWith('custom-')) {
       const customName = (cfg.name || '').toString().trim();
       if (customName) displayName = customName;
     }
     maxCode += 1;
     const letter = String.fromCharCode(maxCode);
-    // Single line item — keeps the zone-sum invariant: zone.cost == Σ(items.cost).
     const item = { name: displayName, desc, area: 1, rate: cost, cost };
     c.additionalZones.push({
-      id: o.id,
+      id,
       letter,
       name: displayName,
       desc,
@@ -696,11 +824,19 @@ function appendAdditionalZones(c, state) {
       items: [item],
       total: 1,
       rate: cost,
-      rateLabel: '',  // additional zones don't display a rate; cost shown in total column.
+      rateLabel: '',
       isAdditional: true,
     });
-    extraTotal += cost;
-  }
+    return cost;
+  };
+  let extraTotal = 0;
+  extraTotal += emit('elevation', 'Elevation', az.elevation);
+  extraTotal += emit('gst',       'GST',       az.gst);
+  // Multiple custom charges, sequenced after Elevation+GST.
+  const customList = getCustomList(az.custom);
+  customList.forEach((cfg, i) => {
+    extraTotal += emit('custom-' + i, 'Custom Charge', cfg);
+  });
   if (extraTotal > 0) {
     c.zoneSubtotal = (c.zoneSubtotal || 0) + extraTotal;
     c.grandTotal   = (c.grandTotal   || 0) + extraTotal;
@@ -723,6 +859,16 @@ function appendAdditionalZones(c, state) {
 function applyAreaOverrides(c, state) {
   const ovrs = state.areaOverrides || {};
   if (!c.zones) return;
+  // Phase 7B Item 17: snapshot original names BEFORE any rename so the
+  // override-resolver can map renamed items back to their state keys.
+  for (const k of ['A','B','C','D','E']) {
+    const z = c.zones[k];
+    if (z && Array.isArray(z.items)) {
+      for (const it of z.items) {
+        if (typeof it.origName !== 'string') it.origName = it.name;
+      }
+    }
+  }
   let anyDirty = false;
   for (const k of ['A','B','C','D','E']) {
     const z = c.zones[k];
@@ -781,6 +927,13 @@ function calcPackage(state) {
   const floorArea  = Math.round(plotSqFt * b.coverage / 100);
   const numFloors  = b.floors;
 
+  // Phase 7B Item 14: lift / staircase per-floor sqft are now per-quote
+  // editable. Defaults liftPerFloor=25 / staircasePerFloor=125. Resolved
+  // here so all downstream calcs (floorAdj, terrace, basement, floor summary)
+  // pick up the rep-supplied values.
+  const liftPerFloor      = ovr(p.liftSqftPerLevel,      LIFT_PER_FLOOR);
+  const staircasePerFloor = ovr(p.staircaseSqftPerLevel, STAIRCASE_PER_FLOOR);
+
   // Phase 5 (Issue 3): unified staircase/lift count formula across all 3 calculator modes.
   // Stops = each floor + stilt (if present) + basement (if present) + mumty (always — rooftop access).
   // Examples: Stilt+4 → 4+1+0+1 = 6; Basement+Stilt+4 → 4+1+1+1 = 7; Ground+3 (no stilt) → 4+0+0+1 = 5.
@@ -789,26 +942,26 @@ function calcPackage(state) {
 
   // Zone A — main floors + lift
   const fn = ['Ground Floor','First Floor','Second Floor','Third Floor','Fourth Floor'];
-  const floorAdj = floorArea - (b.hasLift ? LIFT_PER_FLOOR : 0) - STAIRCASE_PER_FLOOR;
+  const floorAdj = floorArea - (b.hasLift ? liftPerFloor : 0) - staircasePerFloor;
   const zoneAItems = [];
   for (let i = 0; i < numFloors; i++) {
     zoneAItems.push({
       name: fn[i] || `Floor ${i+1}`,
-      desc: `Floor Area (${ni(floorArea)})${b.hasLift ? ' − Lift ('+LIFT_PER_FLOOR+')':''} − Staircase (${STAIRCASE_PER_FLOOR})`,
+      desc: `Floor Area (${ni(floorArea)})${b.hasLift ? ' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`,
       area: floorAdj,
     });
   }
-  const liftAreaTotal = b.hasLift ? LIFT_PER_FLOOR * staircaseLevels : 0;
-  if (b.hasLift) zoneAItems.push({ name: 'Lift', desc: `${staircaseLevels} levels × ${LIFT_PER_FLOOR} sq.ft`, area: liftAreaTotal });
+  const liftAreaTotal = b.hasLift ? liftPerFloor * staircaseLevels : 0;
+  if (b.hasLift) zoneAItems.push({ name: 'Lift', desc: `${staircaseLevels} levels × ${liftPerFloor} sq.ft`, area: liftAreaTotal });
   const totalA = zoneAItems.reduce((s,f) => s + f.area, 0);
 
   // Zone B — stilt + balcony + staircase
   const stiltArea       = hasStilt ? floorAdj : 0;
   const balconyPerFloor = b.breadth * BALCONY_DEPTH;
   const balconyTotal    = balconyPerFloor * numFloors;
-  const staircaseTotal  = STAIRCASE_PER_FLOOR * staircaseLevels;
+  const staircaseTotal  = staircasePerFloor * staircaseLevels;
   const zoneBItems = [];
-  if (hasStilt) zoneBItems.push({ name: 'Stilt', desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+LIFT_PER_FLOOR+')':''} − Staircase (${STAIRCASE_PER_FLOOR})`, area: stiltArea });
+  if (hasStilt) zoneBItems.push({ name: 'Stilt', desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: stiltArea });
   // Phase 6.2 — per-floor balcony pricing. When toggle OFF (default), one
   // combined Balcony row at the Zone B default rate (unchanged from pre-6.2).
   // When ON, expand to N rows (one per floor) each at the rep-supplied rate;
@@ -829,15 +982,15 @@ function calcPackage(state) {
   } else {
     zoneBItems.push({ name: 'Balcony', desc: `${b.breadth}ft × ${BALCONY_DEPTH}ft × ${numFloors} floors`, area: balconyTotal });
   }
-  zoneBItems.push({ name: 'Staircase', desc: `${staircaseLevels} levels × ${STAIRCASE_PER_FLOOR} sq.ft`, area: staircaseTotal });
+  zoneBItems.push({ name: 'Staircase', desc: `${staircaseLevels} levels × ${staircasePerFloor} sq.ft`, area: staircaseTotal });
   const totalB = zoneBItems.reduce((s,f) => s + f.area, 0);
 
   // Zone C — terrace + ramp + setback
-  const terrace = floorArea + balconyPerFloor - STAIRCASE_PER_FLOOR - (b.hasLift ? LIFT_PER_FLOOR : 0);
+  const terrace = floorArea + balconyPerFloor - staircasePerFloor - (b.hasLift ? liftPerFloor : 0);
   const ramp    = b.breadth * RAMP_DEPTH;
   const setback = plotSqFt - floorArea;
   const zoneCItems = [
-    { name: 'Terrace', desc: `Floor (${ni(floorArea)}) + 1 balcony (${ni(balconyPerFloor)}) − Staircase (${STAIRCASE_PER_FLOOR})${b.hasLift?' − Lift ('+LIFT_PER_FLOOR+')':''}`, area: terrace },
+    { name: 'Terrace', desc: `Floor (${ni(floorArea)}) + 1 balcony (${ni(balconyPerFloor)}) − Staircase (${staircasePerFloor})${b.hasLift?' − Lift ('+liftPerFloor+')':''}`, area: terrace },
     { name: 'Ramp',    desc: `${b.breadth}ft × ${RAMP_DEPTH}ft`, area: ramp },
     { name: 'Setback', desc: `Plot Area (${ni(plotSqFt)}) − Floor Area (${ni(floorArea)})`, area: setback },
   ];
@@ -848,8 +1001,12 @@ function calcPackage(state) {
   const zoneDItems = [{ name: 'Underground Water Tank', desc: `${waterTankFloors} floors × ${ni(WATER_TANK_PER_FLOOR)} L`, area: totalD, unit: 'L' }];
 
   // Zone E — basement
-  const totalE = b.hasBasement ? floorArea : 0;
-  const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: 'Enclosed Area', area: totalE }] : [];
+  // Phase 7B Item 13: basement area mirrors the ground floor footprint
+  // (plot × coverage% − lift − staircase). Previously this was just floorArea
+  // (the gross built-up before lift/staircase deductions), which made the
+  // basement area inconsistent with what's actually buildable below grade.
+  const totalE = b.hasBasement ? floorAdj : 0;
+  const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: totalE }] : [];
 
   // P3 v2 (A): per-line-item rates. Each item gets item.rate (override or zone default)
   // and item.cost (area * rate). Zone cost = sum(items.cost). Zone label shows "varies"
@@ -862,15 +1019,27 @@ function calcPackage(state) {
   // Phase 5 zone-sum invariant (`zone.cost == Σ items.cost`).
   const itemRates = (state.pricing.itemRates) || {};
   const bpfRates = (bpf && Array.isArray(bpf.rates)) ? bpf.rates : [];
+  // Phase 7B Item 4: when the rep explicitly sets a global zone rate via the
+  // pricing inputs (e.g. basementRate=3000), the per-item rate override map
+  // should NOT shadow that global. Without this, a stale itemRates['E:Basement']
+  // left over from a previous edit makes the cost sheet show "varies" /
+  // a different rate than the rep just entered. Per-item overrides remain
+  // active for multi-item zones; single-item zones get the explicit global
+  // rate when the rep set one.
+  const explicitGlobalRate = (key) => {
+    if (key === 'E') return p.basementRate != null && p.basementRate !== '';
+    return false;
+  };
   const enrichZone = (key, items, defaultRate) => {
     let varies = false;
+    const skipItemRate = explicitGlobalRate(key) && items.length === 1;
     for (const it of items) {
       let r = defaultRate;
       if (it.balconyFloor != null) {
         const cellRaw = bpfRates[it.balconyFloor];
         const cell = (cellRaw != null && cellRaw !== '' && !isNaN(parseInt(cellRaw))) ? parseInt(cellRaw) : null;
         r = (cell != null) ? cell : defaultRate;
-      } else {
+      } else if (!skipItemRate) {
         const ovr = itemRates[key + ':' + it.name];
         r = (ovr != null && ovr !== '' && !isNaN(parseInt(ovr))) ? parseInt(ovr) : defaultRate;
       }
@@ -889,7 +1058,9 @@ function calcPackage(state) {
   // P3 v2.1: lift cost is editable via state.pricing.liftCost (null/'' = default LIFT_COST).
   const liftOvr = state.pricing.liftCost;
   const liftCost = b.hasLift ? ((liftOvr != null && liftOvr !== '' && !isNaN(parseInt(liftOvr))) ? parseInt(liftOvr) : LIFT_COST) : 0;
-  const zoneSubtotal = costA + costB + costC + costD + costE;
+  // Phase 7B Item 3: drop costD when the water-tank toggle is off.
+  const _costD = (b.hasWaterTank !== false) ? costD : 0;
+  const zoneSubtotal = costA + costB + costC + _costD + costE;
   // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
   const grand = zoneSubtotal + liftCost;
 
@@ -902,7 +1073,8 @@ function calcPackage(state) {
       A: { items: zoneAItems, total: totalA, rate: baseRate, cost: costA, varies: _zA.varies, rateLabel: _zA.varies ? 'varies' : `₹${ni(baseRate)}/sqft` },
       B: { items: zoneBItems, total: totalB, rate: bRate,    cost: costB, varies: _zB.varies, rateLabel: _zB.varies ? 'varies' : `₹${ni(bRate)}/sqft` },
       C: { items: zoneCItems, total: totalC, rate: cRate,    cost: costC, varies: _zC.varies, rateLabel: _zC.varies ? 'varies' : `₹${ni(cRate)}/sqft` },
-      D: { items: zoneDItems, total: totalD, rate: dRate,    cost: costD, varies: _zD.varies, rateLabel: _zD.varies ? 'varies' : `₹${ni(dRate)}/L`, unit: 'L' },
+      // Phase 7B Item 3: Zone D omitted entirely when the rep turns off the water-tank toggle.
+      D: (b.hasWaterTank !== false) ? { items: zoneDItems, total: totalD, rate: dRate,    cost: costD, varies: _zD.varies, rateLabel: _zD.varies ? 'varies' : `₹${ni(dRate)}/L`, unit: 'L' } : null,
       E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: eRate, cost: costE, varies: _zE.varies, rateLabel: _zE.varies ? 'varies' : `₹${ni(eRate)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
@@ -920,6 +1092,12 @@ function calcStructure(state) {
   const eRate = ovr(p.basementRate, BASEMENT_RATE);
   const numFloors = b.floors;
 
+  // Phase 7B Item 14: lift / staircase per-floor sqft (state-resolved).
+  const _p7b = state.pricing;
+  const _ovr7b = (v, fb) => (v != null && v !== '' && !isNaN(parseInt(v))) ? parseInt(v) : fb;
+  const liftPerFloor      = _ovr7b(_p7b.liftSqftPerLevel,      LIFT_PER_FLOOR);
+  const staircasePerFloor = _ovr7b(_p7b.staircaseSqftPerLevel, STAIRCASE_PER_FLOOR);
+
   const plotSqFt = b.plotSqYards * 9;
   const depth = b.breadth ? Math.round(plotSqFt / b.breadth) : 0;
   const floorArea = Math.round(plotSqFt * b.coverage / 100);
@@ -932,26 +1110,26 @@ function calcStructure(state) {
 
   // Zone A — main floors + stilt + lift (everything at structure rate)
   const fn = ['Ground Floor','First Floor','Second Floor','Third Floor','Fourth Floor'];
-  const floorAdj = floorArea - (b.hasLift ? LIFT_PER_FLOOR : 0) - STAIRCASE_PER_FLOOR;
+  const floorAdj = floorArea - (b.hasLift ? liftPerFloor : 0) - staircasePerFloor;
   const zoneAItems = [];
   for (let i = 0; i < numFloors; i++) {
     zoneAItems.push({
       name: fn[i] || `Floor ${i+1}`,
-      desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+LIFT_PER_FLOOR+')':''} − Staircase (${STAIRCASE_PER_FLOOR})`,
+      desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`,
       area: floorAdj,
     });
   }
   zoneAItems.push({ name: 'Stilt', desc: 'Enclosed Area', area: floorArea });
-  const liftAreaTotal = b.hasLift ? LIFT_PER_FLOOR * staircaseLevels : 0;
-  if (b.hasLift) zoneAItems.push({ name: 'Lift', desc: `${staircaseLevels} levels × ${LIFT_PER_FLOOR} sq.ft`, area: liftAreaTotal });
+  const liftAreaTotal = b.hasLift ? liftPerFloor * staircaseLevels : 0;
+  if (b.hasLift) zoneAItems.push({ name: 'Lift', desc: `${staircaseLevels} levels × ${liftPerFloor} sq.ft`, area: liftAreaTotal });
   const totalA = zoneAItems.reduce((s,i) => s + i.area, 0);
 
   // Zone B — terrace + staircase (₹500 flat)
   const terrace = floorArea;
-  const staircaseTotal = STAIRCASE_PER_FLOOR * staircaseLevels;
+  const staircaseTotal = staircasePerFloor * staircaseLevels;
   const zoneBItems = [
     { name: 'Terrace',   desc: 'Pantry, Washroom, Parapet Walls', area: terrace },
-    { name: 'Staircase', desc: `${staircaseLevels} levels × ${STAIRCASE_PER_FLOOR} sq.ft`, area: staircaseTotal },
+    { name: 'Staircase', desc: `${staircaseLevels} levels × ${staircasePerFloor} sq.ft`, area: staircaseTotal },
   ];
   const totalB = zoneBItems.reduce((s,i) => s + i.area, 0);
 
@@ -960,16 +1138,31 @@ function calcStructure(state) {
   const zoneDItems = [{ name: 'Underground Water Tank', desc: `${waterTankFloors} floors × ${ni(WATER_TANK_PER_FLOOR)} L`, area: totalD, unit: 'L' }];
 
   // Zone E — basement
-  const totalE = b.hasBasement ? floorArea : 0;
-  const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: 'Enclosed Area', area: totalE }] : [];
+  // Phase 7B Item 13: basement area mirrors the ground floor footprint
+  // (plot × coverage% − lift − staircase). Previously this was just floorArea
+  // (the gross built-up before lift/staircase deductions), which made the
+  // basement area inconsistent with what's actually buildable below grade.
+  const totalE = b.hasBasement ? floorAdj : 0;
+  const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: totalE }] : [];
 
   // P3 v2 (A): per-line-item rates in structure mode.
   const itemRates = (state.pricing.itemRates) || {};
+  // Phase 7B Item 4: same explicit-global-rate guard as calcPackage. See there
+  // for rationale (basementRate=3000 should win over a stale itemRates['E:Basement']).
+  const p2 = state.pricing;
+  const explicitGlobalRate = (key) => {
+    if (key === 'E') return p2.basementRate != null && p2.basementRate !== '';
+    return false;
+  };
   const enrichZone = (key, items, defaultRate) => {
     let varies = false;
+    const skipItemRate = explicitGlobalRate(key) && items.length === 1;
     for (const it of items) {
-      const ovr = itemRates[key + ':' + it.name];
-      const r = (ovr != null && ovr !== '' && !isNaN(parseInt(ovr))) ? parseInt(ovr) : defaultRate;
+      let r = defaultRate;
+      if (!skipItemRate) {
+        const ovr = itemRates[key + ':' + it.name];
+        r = (ovr != null && ovr !== '' && !isNaN(parseInt(ovr))) ? parseInt(ovr) : defaultRate;
+      }
       if (r !== defaultRate) varies = true;
       it.rate = r;
       it.cost = it.area * r;
@@ -984,7 +1177,9 @@ function calcStructure(state) {
   // P3 v2.1: lift cost editable.
   const liftOvr = state.pricing.liftCost;
   const liftCost = b.hasLift ? ((liftOvr != null && liftOvr !== '' && !isNaN(parseInt(liftOvr))) ? parseInt(liftOvr) : LIFT_COST) : 0;
-  const zoneSubtotal = costA + costB + costD + costE;
+  // Phase 7B Item 3: drop costD when the water-tank toggle is off.
+  const _costD = (b.hasWaterTank !== false) ? costD : 0;
+  const zoneSubtotal = costA + costB + _costD + costE;
   // Canonical: zone subtotal + lift cost (GST/liaison handled outside the calculator).
   const grand = zoneSubtotal + liftCost;
 
@@ -997,7 +1192,8 @@ function calcStructure(state) {
       A: { items: zoneAItems, total: totalA, rate: strRate,       cost: costA, varies: _zA.varies, rateLabel: _zA.varies ? 'varies' : `₹${ni(strRate)}/sqft` },
       B: { items: zoneBItems, total: totalB, rate: STRUCT_B_RATE, cost: costB, varies: _zB.varies, rateLabel: _zB.varies ? 'varies' : `₹${ni(STRUCT_B_RATE)}/sqft` },
       C: null,
-      D: { items: zoneDItems, total: totalD, rate: dRate, cost: costD, varies: _zD.varies, rateLabel: _zD.varies ? 'varies' : `₹${ni(dRate)}/L`, unit: 'L' },
+      // Phase 7B Item 3: Zone D omitted entirely when the rep turns off the water-tank toggle.
+      D: (b.hasWaterTank !== false) ? { items: zoneDItems, total: totalD, rate: dRate, cost: costD, varies: _zD.varies, rateLabel: _zD.varies ? 'varies' : `₹${ni(dRate)}/L`, unit: 'L' } : null,
       E: b.hasBasement ? { items: zoneEItems, total: totalE, rate: eRate, cost: costE, varies: _zE.varies, rateLabel: _zE.varies ? 'varies' : `₹${ni(eRate)}/sqft` } : null,
     },
     lift:    b.hasLift ? { cost: liftCost } : null,
@@ -1109,6 +1305,11 @@ async function bootForm() {
   $('f-build-type').value = state.build.buildType;
   $('f-basement').checked = !!state.build.hasBasement;
   $('f-lift').checked     = !!state.build.hasLift;
+  // Phase 7B Item 3: water-tank toggle. Default true (legacy + new quotes).
+  if ($('f-water-tank')) $('f-water-tank').checked = (state.build.hasWaterTank !== false);
+  // Phase 7B Item 14: editable lift / staircase per-level sqft.
+  if ($('f-lift-sqft'))      $('f-lift-sqft').value      = state.pricing.liftSqftPerLevel      ?? '';
+  if ($('f-staircase-sqft')) $('f-staircase-sqft').value = state.pricing.staircaseSqftPerLevel ?? '';
   $('f-cost-sqft').value   = state.pricing.costPerSqft ?? '';
   $('f-struct-rate').value = state.pricing.structureRate ?? '';
   // P3 #4: zone rate overrides (empty input = formula default)
@@ -1232,6 +1433,23 @@ async function bootForm() {
     if (row) row.style.display = state.build.hasLift ? '' : 'none';
     flush();
   };
+  // Phase 7B Item 3: water-tank toggle. Sets state.build.hasWaterTank;
+  // calc engine omits Zone D entirely when false (zones.D = null).
+  if ($('f-water-tank')) $('f-water-tank').onchange = e => {
+    state.build.hasWaterTank = !!e.target.checked;
+    flush();
+  };
+  // Phase 7B Item 14: editable lift / staircase per-floor sqft.
+  if ($('f-lift-sqft')) $('f-lift-sqft').oninput = e => {
+    const v = e.target.value.trim();
+    state.pricing.liftSqftPerLevel = (v === '') ? null : (parseInt(v) || 0);
+    flush();
+  };
+  if ($('f-staircase-sqft')) $('f-staircase-sqft').oninput = e => {
+    const v = e.target.value.trim();
+    state.pricing.staircaseSqftPerLevel = (v === '') ? null : (parseInt(v) || 0);
+    flush();
+  };
   $('f-build-type').onchange = e => {
     state.build.buildType = e.target.value;
     reflectModeUi(state.build.buildType);
@@ -1252,10 +1470,18 @@ async function bootForm() {
 
   // ---- Phase 6.3 — Additional Charges (Elevation / GST / Custom) ----
   // Defensive defaulting so old saved quotes don't blow up on .enabled access.
-  state.pricing.additionalZones ||= { elevation:{enabled:false,desc:'',cost:0}, gst:{enabled:false,desc:'',cost:0}, custom:{enabled:false,name:'',desc:'',cost:0} };
+  state.pricing.additionalZones ||= { elevation:{enabled:false,desc:'',cost:0}, gst:{enabled:false,desc:'',cost:0}, custom:[] };
   state.pricing.additionalZones.elevation ||= { enabled:false, desc:'', cost:0 };
   state.pricing.additionalZones.gst       ||= { enabled:false, desc:'', cost:0 };
-  state.pricing.additionalZones.custom    ||= { enabled:false, name:'', desc:'', cost:0 };
+  // Phase 7B Item 16: custom is now an array. Migrate any object → [object].
+  if (!Array.isArray(state.pricing.additionalZones.custom)) {
+    const c = state.pricing.additionalZones.custom;
+    if (c && typeof c === 'object' && (c.enabled || c.name || c.cost || c.desc)) {
+      state.pricing.additionalZones.custom = [{ enabled: !!c.enabled, name: c.name || '', desc: c.desc || '', cost: c.cost || 0 }];
+    } else {
+      state.pricing.additionalZones.custom = [];
+    }
+  }
 
   function _bindAddlZone(id, hasName) {
     const az = state.pricing.additionalZones[id];
@@ -1286,7 +1512,78 @@ async function bootForm() {
   }
   _bindAddlZone('elevation', false);
   _bindAddlZone('gst', false);
-  _bindAddlZone('custom', true);
+
+  // Phase 7B Item 16: render the dynamic list of custom-charge blocks.
+  // Each entry has its own toggle / name / desc / cost fields. "Remove" deletes
+  // the block; "+ Add Custom Charge" appends a fresh disabled block.
+  function renderCustomList() {
+    const list = document.getElementById('addl-custom-list');
+    if (!list) return;
+    const customs = state.pricing.additionalZones.custom || [];
+    if (customs.length === 0) {
+      list.innerHTML = '<p style="font-size:11px;color:var(--muted);margin:0 0 4px;">No custom charges. Click below to add one.</p>';
+      return;
+    }
+    const html = customs.map((cfg, i) => `
+      <div class="addl-block" data-custom-idx="${i}" style="margin-top:10px;border:1px solid var(--rule);border-radius:6px;padding:8px 10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <label class="addl-toggle" style="margin:0;"><input type="checkbox" data-custom-on="${i}" ${cfg.enabled ? 'checked' : ''}> Custom Charge ${i+1}</label>
+          <button type="button" data-custom-remove="${i}" style="font-size:11px;padding:3px 8px;background:white;color:#c0392b;border:1px solid var(--rule);border-radius:4px;cursor:pointer;">Remove</button>
+        </div>
+        <div class="addl-body" style="display:${cfg.enabled ? '' : 'none'};margin-top:6px;">
+          <label>Header name</label>
+          <input type="text" data-custom-name="${i}" value="${escapeAttr(cfg.name || '')}" placeholder="e.g. Site Logistics">
+          <label style="margin-top:6px;">Description</label>
+          <input type="text" data-custom-desc="${i}" value="${escapeAttr(cfg.desc || '')}" placeholder="What this charge covers">
+          <label style="margin-top:6px;">Cost — ₹ (flat)</label>
+          <input type="number" min="0" data-custom-cost="${i}" value="${(cfg.cost != null && cfg.cost !== 0) ? cfg.cost : ''}" placeholder="e.g. 1,50,000">
+        </div>
+      </div>
+    `).join('');
+    list.innerHTML = html;
+    list.querySelectorAll('input[data-custom-on]').forEach(el => {
+      el.onchange = e => {
+        const i = parseInt(el.dataset.customOn);
+        state.pricing.additionalZones.custom[i].enabled = !!e.target.checked;
+        renderCustomList(); flush();
+      };
+    });
+    list.querySelectorAll('input[data-custom-name]').forEach(el => {
+      el.oninput = e => {
+        const i = parseInt(el.dataset.customName);
+        state.pricing.additionalZones.custom[i].name = e.target.value;
+        flush();
+      };
+    });
+    list.querySelectorAll('input[data-custom-desc]').forEach(el => {
+      el.oninput = e => {
+        const i = parseInt(el.dataset.customDesc);
+        state.pricing.additionalZones.custom[i].desc = e.target.value;
+        flush();
+      };
+    });
+    list.querySelectorAll('input[data-custom-cost]').forEach(el => {
+      el.oninput = e => {
+        const i = parseInt(el.dataset.customCost);
+        const v = e.target.value.trim();
+        state.pricing.additionalZones.custom[i].cost = (v === '') ? 0 : (parseFloat(v) || 0);
+        flush();
+      };
+    });
+    list.querySelectorAll('button[data-custom-remove]').forEach(el => {
+      el.onclick = () => {
+        const i = parseInt(el.dataset.customRemove);
+        state.pricing.additionalZones.custom.splice(i, 1);
+        renderCustomList(); flush();
+      };
+    });
+  }
+  renderCustomList();
+  const addCustomBtn = document.getElementById('addl-custom-add');
+  if (addCustomBtn) addCustomBtn.onclick = () => {
+    state.pricing.additionalZones.custom.push({ enabled: true, name: '', desc: '', cost: 0 });
+    renderCustomList(); flush();
+  };
 
   // Phase 6.2 — per-floor balcony pricing toggle. The per-floor rate inputs
   // are rendered by renderBpfPanel() and re-bound on every flush() so they
@@ -1700,6 +1997,9 @@ async function bootForm() {
   }
 
   // ---- P3 #7: Area Overrides panel (left rail) ----
+  // Phase 7B Item 17: inline ✎ rename for item name + 📝 for description.
+  // Phase 7B Item 15: per-zone "+ Add line item" button. Rep-added rows
+  // render as editable name/desc/area/rate fields with a Remove button.
   function renderAreaOverridesPanel() {
     const fs = document.getElementById('area-ovr-fs');
     const list = document.getElementById('area-ovr-list');
@@ -1708,31 +2008,63 @@ async function bootForm() {
     if (!state.build.plotSqYards || !state.build.coverage) { fs.style.display = 'none'; return; }
     fs.style.display = '';
     state.areaOverrides ||= {};
+    state.pricing.itemNameOverrides ||= {};
+    state.pricing.itemDescOverrides ||= {};
+    state.pricing.zoneLineItems     ||= {};
     let c;
     try { c = computeQuote(state); }
     catch (_) { list.innerHTML = '<p style="font-size:11px;color:var(--muted);">Enter pricing to see line items.</p>'; return; }
     const html = [];
     for (const k of ['A','B','C','D','E']) {
       const z = c.zones?.[k];
-      if (!z || !z.items?.length) continue;
+      if (!z) continue; // zone disabled (D off, C in struct, E without basement)
       html.push(`<div class="aov-zone"><div class="aov-zone-hdr">Zone ${k} <span class="aov-rate">${escapeHtml(z.rateLabel || '')}</span></div>`);
-      z.items.forEach(it => {
-        const key = k + ':' + it.name;
+      (z.items || []).forEach(it => {
+        const origName = it.origName || it.name;
+        const key = k + ':' + origName;
         const v = state.areaOverrides[key] ?? '';
         const unit = z.unit ? z.unit : 'sqft';
         const computed = (state.areaOverrides[key] != null && state.areaOverrides[key] !== '') ? null : it.area;
         const placeholder = `auto: ${ni(computed != null ? computed : it.area)}`;
-        html.push(`
-          <div class="aov-row">
-            <span class="aov-name">${escapeHtml(it.name)}</span>
-            <input type="number" min="0" data-aov-key="${escapeAttr(key)}" value="${v === '' ? '' : escapeAttr(String(v))}" placeholder="${escapeAttr(placeholder)}" style="width:90px;">
-            <span class="aov-unit">${escapeHtml(unit)}</span>
-          </div>
-        `);
+        const nameOv = state.pricing.itemNameOverrides[key];
+        const descOv = state.pricing.itemDescOverrides[key];
+        const displayName = (nameOv && nameOv.trim()) ? nameOv : it.name;
+        const isLineItem = !!it._zoneLineItem;
+        if (isLineItem) {
+          // Item 15 row: editable name + desc + area + rate inline, with Remove.
+          const rid = it._lineItemId || '';
+          html.push(`
+            <div class="aov-row aov-lineitem" data-zone="${k}" data-lineitem-id="${escapeAttr(rid)}" style="flex-wrap:wrap;gap:4px;align-items:flex-start;">
+              <input type="text" data-li-field="name" value="${escapeAttr(it.name)}" placeholder="Item name" style="flex:1 1 auto;min-width:120px;font-size:11.5px;font-weight:600;color:var(--navy);">
+              <input type="number" min="0" data-li-field="area" value="${it.area || ''}" placeholder="area" style="width:70px;">
+              <span class="aov-unit">${escapeHtml(unit)}</span>
+              <input type="number" min="0" data-li-field="rate" value="${it.rate || ''}" placeholder="rate" style="width:70px;">
+              <span class="aov-unit">₹/${escapeHtml(unit)}</span>
+              <button type="button" data-li-remove="1" title="Remove" style="font-size:11px;padding:2px 6px;background:white;color:#c0392b;border:1px solid var(--rule);border-radius:4px;cursor:pointer;">✕</button>
+              <input type="text" data-li-field="desc" value="${escapeAttr(it.desc || '')}" placeholder="description (optional)" style="flex:1 1 100%;font-size:10.5px;color:var(--muted);">
+            </div>
+          `);
+        } else {
+          html.push(`
+            <div class="aov-row" style="flex-wrap:wrap;gap:4px;align-items:flex-start;">
+              <span class="aov-name aov-name-with-edit" style="flex:1 1 auto;min-width:120px;display:inline-flex;align-items:center;gap:4px;">
+                <span class="aov-display-name">${escapeHtml(displayName)}</span>
+                <button type="button" data-rename-key="${escapeAttr(key)}" title="Rename item" style="font-size:11px;padding:1px 4px;background:transparent;color:var(--muted);border:none;cursor:pointer;">✎</button>
+                <button type="button" data-redesc-key="${escapeAttr(key)}" title="${descOv ? 'Edit description (custom)' : 'Edit description'}" style="font-size:11px;padding:1px 4px;background:transparent;color:${descOv ? 'var(--gold)' : 'var(--muted)'};border:none;cursor:pointer;">📝</button>
+              </span>
+              <input type="number" min="0" data-aov-key="${escapeAttr(key)}" value="${v === '' ? '' : escapeAttr(String(v))}" placeholder="${escapeAttr(placeholder)}" style="width:90px;">
+              <span class="aov-unit">${escapeHtml(unit)}</span>
+            </div>
+          `);
+        }
       });
+      // Item 15: + Add line item button per zone.
+      html.push(`<div class="aov-row" style="border-top:1px dashed var(--rule);padding-top:6px;margin-top:4px;"><button type="button" data-add-line-zone="${k}" style="font-size:11px;padding:4px 10px;background:white;color:var(--navy);border:1px dashed var(--rule);border-radius:4px;cursor:pointer;font-weight:600;">+ Add line item to Zone ${k}</button></div>`);
       html.push('</div>');
     }
     list.innerHTML = html.join('');
+
+    // Bind area-override numeric inputs (existing behaviour).
     list.querySelectorAll('input[data-aov-key]').forEach(inp => {
       inp.oninput = e => {
         const key = inp.dataset.aovKey;
@@ -1740,9 +2072,104 @@ async function bootForm() {
         if (val === '') delete state.areaOverrides[key];
         else state.areaOverrides[key] = parseInt(val) || 0;
         saveState(state);
-        // Don't re-render the whole panel on each keystroke — only re-show preview.
       };
       inp.onblur = e => { renderAreaOverridesPanel(); };
+    });
+
+    // Item 17: rename button → swap span for input, Enter / blur to commit.
+    list.querySelectorAll('button[data-rename-key]').forEach(btn => {
+      btn.onclick = () => {
+        const key = btn.dataset.renameKey;
+        const wrap = btn.closest('.aov-name-with-edit');
+        const span = wrap.querySelector('.aov-display-name');
+        const cur = span.textContent;
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = cur;
+        inp.style.cssText = 'flex:1 1 auto;font-size:11.5px;font-weight:600;color:var(--navy);min-width:100px;background:#fff;';
+        const commit = () => {
+          const val = inp.value.trim();
+          // Resolve original name from key for comparison.
+          const origName = key.split(':').slice(1).join(':');
+          if (val === '' || val === origName) {
+            delete state.pricing.itemNameOverrides[key];
+          } else {
+            state.pricing.itemNameOverrides[key] = val;
+          }
+          saveState(state);
+          renderAreaOverridesPanel();
+          renderItemRatesPanel();
+        };
+        inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } else if (e.key === 'Escape') { renderAreaOverridesPanel(); } };
+        inp.onblur = commit;
+        span.replaceWith(inp);
+        inp.focus(); inp.select();
+      };
+    });
+
+    // Item 17: description edit button → prompt for multi-line desc.
+    list.querySelectorAll('button[data-redesc-key]').forEach(btn => {
+      btn.onclick = () => {
+        const key = btn.dataset.redescKey;
+        const cur = state.pricing.itemDescOverrides[key] || '';
+        const next = window.prompt('Edit description for this item (leave blank to clear and use the default):', cur);
+        if (next === null) return; // cancel
+        const trimmed = next.trim();
+        if (trimmed === '') delete state.pricing.itemDescOverrides[key];
+        else state.pricing.itemDescOverrides[key] = trimmed;
+        saveState(state);
+        renderAreaOverridesPanel();
+      };
+    });
+
+    // Item 15: + Add line item to zone.
+    list.querySelectorAll('button[data-add-line-zone]').forEach(btn => {
+      btn.onclick = () => {
+        const k = btn.dataset.addLineZone;
+        state.pricing.zoneLineItems[k] = state.pricing.zoneLineItems[k] || [];
+        const id = 'li_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+        state.pricing.zoneLineItems[k].push({ id, name: '', desc: '', area: 0, rate: 0 });
+        saveState(state);
+        renderAreaOverridesPanel();
+        renderItemRatesPanel();
+        // Auto-focus the newly added name field.
+        setTimeout(() => {
+          const newRow = list.querySelector(`.aov-lineitem[data-lineitem-id="${id}"] input[data-li-field="name"]`);
+          if (newRow) newRow.focus();
+        }, 0);
+      };
+    });
+
+    // Item 15: line-item field bindings (name/desc/area/rate) + remove.
+    list.querySelectorAll('.aov-lineitem').forEach(row => {
+      const k = row.dataset.zone;
+      const rid = row.dataset.lineitemId;
+      const arr = state.pricing.zoneLineItems[k] || [];
+      const idx = arr.findIndex(x => x.id === rid);
+      if (idx < 0) return;
+      const liveRow = arr[idx];
+      const onField = (field) => (e) => {
+        const v = e.target.value;
+        if (field === 'area' || field === 'rate') {
+          const t = v.trim();
+          liveRow[field] = (t === '') ? 0 : (parseFloat(t) || 0);
+        } else {
+          liveRow[field] = v;
+        }
+        saveState(state);
+      };
+      row.querySelectorAll('input[data-li-field]').forEach(inp => {
+        const f = inp.dataset.liField;
+        inp.oninput = onField(f);
+        inp.onblur = () => { renderAreaOverridesPanel(); renderItemRatesPanel(); };
+      });
+      const rm = row.querySelector('button[data-li-remove]');
+      if (rm) rm.onclick = () => {
+        arr.splice(idx, 1);
+        saveState(state);
+        renderAreaOverridesPanel();
+        renderItemRatesPanel();
+      };
     });
   }
 
@@ -2786,6 +3213,31 @@ function quoteCss() {
   /* P3 v2: per-item rows in cost table when zone has rate variations */
   .calc-table tbody tr.cost-zone-hdr td { background: rgba(10,31,68,0.04); color: var(--navy); font-weight: 600; padding: 8px 10px; border-top: 1.5px solid var(--rule); }
   .calc-table tbody tr.cost-item-row td { padding: 5px 10px; font-size: 11.5px; border-bottom: 0.5px dashed var(--rule); }
+
+  /* Phase 7B Item 5 — area-calc page page-break hygiene. The Phase 6.2 floor
+     summary table sits at the top of the Area Calculation page, followed by a
+     long single-table list of zone rows. When the floor summary pushes the
+     remaining height under one A4 page, the renderer used to orphan the
+     "Zone X — …" header at the bottom of page 1, splitting items across pages
+     in an ugly way. Strategy:
+       1. Each zone-header row keeps its FIRST item row attached.
+       2. The total row of each zone stays attached to the previous item row.
+       3. The full table avoids breaking between thead and the first row.
+       4. .calc-table itself doesn't get a hard "avoid" — that would push the
+          whole table to a new page which leaves a big white gap. Instead we
+          allow the table to break BETWEEN zones, just not WITHIN a zone's
+          header/items group. */
+  .calc-table thead { break-inside: avoid; page-break-inside: avoid; }
+  .calc-table tbody tr.zone-hdr { break-after: avoid-page; page-break-after: avoid; }
+  .calc-table tbody tr.zone-total { break-before: avoid-page; page-break-before: avoid; }
+  .calc-table tbody tr.cost-zone-hdr { break-after: avoid-page; page-break-after: avoid; }
+  .calc-table tbody tr.cost-zone-sub { break-before: avoid-page; page-break-before: avoid; }
+  /* Keep zone-hdr together with at least one item: avoid orphan header at page bottom. */
+  .calc-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
+  /* tfoot grand-total stays with the last sub-total row when possible. */
+  .calc-table tfoot tr.grand { break-before: avoid-page; page-break-before: avoid; }
+  /* Floor summary table — its title + subtitle should stay with the table on the same page. */
+  .floor-summary-title, .floor-summary-subtitle { break-after: avoid-page; page-break-after: avoid; }
   .calc-table tbody tr.cost-zone-sub td { background: rgba(10,31,68,0.02); padding: 6px 10px; border-bottom: 1px solid var(--rule); }
 
   .params-row { display:flex; flex-wrap:wrap; gap: 4mm 8mm; padding: 6px 0 9mm; border-bottom: 1px solid var(--rule); margin-bottom: 6mm; font-size: 11.5px; color: var(--muted); }
@@ -2967,10 +3419,15 @@ function buildFloorSummary(state, c) {
   const breadth   = b.breadth;
   const plotSqFt  = b.plotSqYards * 9;
   const floorArea = Math.round(plotSqFt * b.coverage / 100);
-  const floorAdj  = floorArea - (hasLift ? LIFT_PER_FLOOR : 0) - STAIRCASE_PER_FLOOR;
+  // Phase 7B Item 14: respect per-quote editable lift/staircase sqft.
+  const _p7bfs = state.pricing || {};
+  const _ovr7bfs = (v, fb) => (v != null && v !== '' && !isNaN(parseInt(v))) ? parseInt(v) : fb;
+  const liftPerFloor      = _ovr7bfs(_p7bfs.liftSqftPerLevel,      LIFT_PER_FLOOR);
+  const staircasePerFloor = _ovr7bfs(_p7bfs.staircaseSqftPerLevel, STAIRCASE_PER_FLOOR);
+  const floorAdj  = floorArea - (hasLift ? liftPerFloor : 0) - staircasePerFloor;
   const balconyPerFloor = breadth * BALCONY_DEPTH;
 
-  const liftStairPerFloor = (hasLift ? LIFT_PER_FLOOR : 0) + STAIRCASE_PER_FLOOR;
+  const liftStairPerFloor = (hasLift ? liftPerFloor : 0) + staircasePerFloor;
 
   const pkgLabel = isStruct ? 'Structure Only' : 'Premium Package';
   const floorNames = ['1st Floor','2nd Floor','3rd Floor','4th Floor','5th Floor','6th Floor'];
@@ -2982,37 +3439,68 @@ function buildFloorSummary(state, c) {
   // hasBasement". We'll render it before Stilt to keep below-grade-first
   // ordering; the totals row math is order-independent.
   if (b.hasBasement) {
+    // Phase 7B Item 13: basement area mirrors the ground floor footprint
+    // (floorArea − lift − staircase = floorAdj). Pull the post-override area
+    // when set, fall back to floorAdj.
+    const basementArea = (c && c.zones && c.zones.E && c.zones.E.items && c.zones.E.items[0])
+      ? c.zones.E.items[0].area : floorAdj;
     rows.push({
       label: 'Basement',
       sublabel: pkgLabel,
       liftStair: liftStairPerFloor,
-      covered:   floorArea,
+      covered:   basementArea,
       semiCovered: 0,
       open: 0,
     });
   }
 
-  // Stilt row — only when hasStilt OR structure mode (structure always has stilt).
+  // Phase 7B Item 11: pull POST-override areas from the calc result instead of
+  // recomputing from raw build inputs. This makes manual area overrides
+  // (e.g. First Floor 2073 → 2200) flow through the floor summary.
+  // Helper: look up the post-override area for a Zone:item key, with fallback.
+  const getZoneItemArea = (zoneKey, itemName, fallback) => {
+    if (!c || !c.zones || !c.zones[zoneKey] || !Array.isArray(c.zones[zoneKey].items)) return fallback;
+    const it = c.zones[zoneKey].items.find(x => x.name === itemName);
+    return (it && typeof it.area === 'number') ? it.area : fallback;
+  };
+
+  // Phase 7B Item 12: Stilt row column reassignment.
+  //   Lift+Staircase Area: as today (liftStairPerFloor)
+  //   Floor Covered Area: 0 (stilt is not enclosed habitable space)
+  //   Semi Covered Area: stilt covered footprint = floorAdj
+  //   Open Area: setback = plotSqFt − floorArea (stilt covered footprint
+  //     before lift/staircase deductions; setback area = land NOT under the
+  //     stilt slab). This matches Varun's mental model (stilt = semi-covered;
+  //     surrounding open ground = open).
   if (hasStilt || isStruct) {
+    const stiltCovered = getZoneItemArea('B', 'Stilt', floorAdj);
+    const setbackArea  = Math.max(0, plotSqFt - floorArea);
     rows.push({
       label: 'Stilt',
       sublabel: '',
       liftStair: liftStairPerFloor,
       // Structure mode: stilt is enclosed at structure rate → covered.
-      // Package mode: stilt is open/uncovered parking.
+      // Package mode (Phase 7B Item 12): stilt area lives in Semi Covered;
+      // setback (open ground) lives in Open.
       covered:    isStruct ? floorArea : 0,
-      semiCovered: 0,
-      open:        isStruct ? 0 : floorAdj,
+      semiCovered: isStruct ? 0 : stiltCovered,
+      open:        isStruct ? 0 : setbackArea,
     });
   }
 
-  // Floor 1..N (habitable floors).
+  // Floor 1..N (habitable floors). Phase 7B Item 11: use the post-override
+  // area for Covered (Zone A items: Ground/First/Second/...).
   for (let i = 0; i < numFloors; i++) {
+    const zoneAName = floorNames[i] ? floorNames[i].replace(' Floor','') + ' Floor' : ((i+1) + 'th Floor');
+    // calc engine uses 'Ground Floor', 'First Floor', ... — match that exactly.
+    const calcNames = ['Ground Floor','First Floor','Second Floor','Third Floor','Fourth Floor'];
+    const lookup = (i < calcNames.length) ? calcNames[i] : `Floor ${i+1}`;
+    const coveredArea = getZoneItemArea('A', lookup, floorAdj);
     rows.push({
       label: floorNames[i] || ((i+1) + 'th Floor'),
       sublabel: pkgLabel,
       liftStair: liftStairPerFloor,
-      covered:   floorAdj,
+      covered:   coveredArea,
       // Package modes have balcony as semi-covered; structure mode has no balcony in the per-floor row (terrace at the top still applies).
       semiCovered: isStruct ? 0 : balconyPerFloor,
       open: 0,
@@ -3021,7 +3509,7 @@ function buildFloorSummary(state, c) {
 
   // Terrace row — Mumty stop.
   // Compute terrace area same way calcPackage does.
-  const terracePackage = floorArea + balconyPerFloor - STAIRCASE_PER_FLOOR - (hasLift ? LIFT_PER_FLOOR : 0);
+  const terracePackage = floorArea + balconyPerFloor - staircasePerFloor - (hasLift ? liftPerFloor : 0);
   const terraceStruct  = floorArea;
   rows.push({
     label: 'Terrace',
@@ -3090,7 +3578,7 @@ function renderAreaPage(state, c) {
     const tag = `<span class="zone-tag z${key.toLowerCase()}">${key}</span>`;
     return `
       <tr class="zone-hdr"><td colspan="3">${tag} Zone ${key} — ${zone.rateLabel}</td></tr>
-      ${zone.items.map(it => `<tr><td>${escapeHtml(it.name)}</td><td class="desc">${escapeHtml(it.desc)}</td><td class="r"><b>${ni(it.area)}${zone.unit ? ' '+zone.unit : ''}</b></td></tr>`).join('')}
+      ${zone.items.map(it => `<tr><td>${escapeHtml(resolveItemName(state, key, it))}</td><td class="desc">${escapeHtml(resolveItemDesc(state, key, it))}</td><td class="r"><b>${ni(it.area)}${zone.unit ? ' '+zone.unit : ''}</b></td></tr>`).join('')}
       <tr class="zone-total"><td colspan="2">Total Zone ${key}</td><td class="r">${ni(zone.total)}${zone.unit ? ' '+zone.unit : ''}</td></tr>
     `;
   };
@@ -3240,10 +3728,17 @@ function renderCostPage(state, c) {
     // PDF collapse for Zone B per-floor balcony when all rates are equal.
     if (key === 'B') zone = collapseBalconyForPdf(zone);
     const tag = `<span class="zone-tag z${key.toLowerCase()}">${key}</span>`;
+    // Phase 7B Item 17: if any item has a name override, force-expand the zone
+    // even when rates don't vary, so the renamed item shows up in the cost sheet.
+    const hasNameOverride = (zone.items || []).some(it => {
+      const orig = it.origName || it.name;
+      return _itemNameOverride(state, key, orig) || _itemDescOverride(state, key, orig);
+    });
     // P3 v2 (A): if zone has per-item rate overrides, expand into one row per item.
-    if (zone.varies) {
-      const itemRows = zone.items.map(it => `<tr class="cost-item-row"><td style="padding-left:18px;color:var(--muted);font-size:11.5px;">— ${escapeHtml(it.name)}</td><td>${ni(it.area)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(it.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(it.cost)}</td></tr>`).join('');
-      return `<tr class="cost-zone-hdr"><td colspan="4">${tag} Zone ${key} <span style="color:var(--muted);font-size:11px;">— per-item rates</span></td></tr>${itemRows}<tr class="cost-zone-sub"><td colspan="3" style="text-align:right;color:var(--navy);font-weight:600;">Zone ${key} subtotal</td><td class="r"><b>${fmtINR(zone.cost)}</b></td></tr>`;
+    if (zone.varies || hasNameOverride) {
+      const itemRows = zone.items.map(it => `<tr class="cost-item-row"><td style="padding-left:18px;color:var(--muted);font-size:11.5px;">— ${escapeHtml(resolveItemName(state, key, it))}</td><td>${ni(it.area)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(it.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(it.cost)}</td></tr>`).join('');
+      const subtitle = zone.varies ? '— per-item rates' : '';
+      return `<tr class="cost-zone-hdr"><td colspan="4">${tag} Zone ${key} ${subtitle ? `<span style="color:var(--muted);font-size:11px;">${subtitle}</span>` : ''}</td></tr>${itemRows}<tr class="cost-zone-sub"><td colspan="3" style="text-align:right;color:var(--navy);font-weight:600;">Zone ${key} subtotal</td><td class="r"><b>${fmtINR(zone.cost)}</b></td></tr>`;
     }
     return `<tr><td>${tag} Zone ${key}</td><td>${ni(zone.total)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(zone.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(zone.cost)}</td></tr>`;
   };

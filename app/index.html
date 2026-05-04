@@ -267,6 +267,16 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
     <div class="checkrow">
       <label><input id="f-basement" type="checkbox"> Basement</label>
       <label><input id="f-lift" type="checkbox"> Lift</label>
+      <!-- Phase 7B Item 3: opt-in Underground Water Tank toggle (Zone D).
+           Default ON. When OFF, Zone D is omitted from cost sheet & PDF. -->
+      <label><input id="f-water-tank" type="checkbox" checked> Underground Water Tank</label>
+    </div>
+    <!-- Phase 7B Item 14: editable lift / staircase per-floor sqft (defaults
+         25 / 125). Two number inputs in a row. Visible always; lift sqft only
+         relevant when Lift is enabled but rep can pre-set it either way. -->
+    <div class="row cols-2" style="margin-top:8px;">
+      <div><label>Lift area per level — sqft</label><input id="f-lift-sqft" type="number" min="0" placeholder="25"></div>
+      <div><label>Staircase area per level — sqft</label><input id="f-staircase-sqft" type="number" min="0" placeholder="125"></div>
     </div>
     <div>
       <label>Scope</label>
@@ -325,8 +335,14 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
 
   <fieldset id="area-ovr-fs" style="display:none;">
     <legend>Area Overrides (optional)</legend>
-    <p style="font-size:10.5px;color:var(--muted);margin:0 0 8px;line-height:1.5;">Override the computed area of any line item (e.g. 2nd floor at 50% coverage). Leave blank to use the auto-calculated area.</p>
-    <div id="area-ovr-list"></div>
+    <!-- Phase 7B Item 2: wrap in <details open> so rep can collapse the
+         line-item list once they've reviewed it. Default open matches the
+         per-item rate panel's default-expanded behaviour from Phase 6.1. -->
+    <details id="area-ovr-collapse" open>
+      <summary style="cursor:pointer;font-size:11px;color:var(--muted);font-weight:600;padding:4px 0;letter-spacing:0.04em;text-transform:uppercase;">Per-Item Area Overrides <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">(optional)</span></summary>
+      <p style="font-size:10.5px;color:var(--muted);margin:4px 0 6px;line-height:1.5;">Override the computed area of any line item (e.g. 2nd floor at 50% coverage). Leave blank to use the auto-calculated area.</p>
+      <div id="area-ovr-list"></div>
+    </details>
   </fieldset>
 
   <!-- Phase 6.3 — Additional Charges (Elevation / GST / Custom). Each toggle is
@@ -357,17 +373,11 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
       </div>
     </div>
 
-    <div class="addl-block" id="addl-custom-block" style="margin-top:10px;">
-      <label class="addl-toggle"><input id="f-addl-custom-on" type="checkbox"> Add Custom Charge</label>
-      <div class="addl-body" id="addl-custom-body" style="display:none;margin-top:6px;">
-        <label>Header name</label>
-        <input id="f-addl-custom-name" type="text" placeholder="e.g. Site Logistics">
-        <label style="margin-top:6px;">Description</label>
-        <input id="f-addl-custom-desc" type="text" placeholder="What this charge covers">
-        <label style="margin-top:6px;">Cost — ₹ (flat)</label>
-        <input id="f-addl-custom-cost" type="number" min="0" placeholder="e.g. 1,50,000">
-      </div>
-    </div>
+    <!-- Phase 7B Item 16: multiple custom charges. Each enabled charge
+         becomes its own sequential zone letter. Rendered dynamically from
+         state.pricing.additionalZones.custom (array). -->
+    <div id="addl-custom-list" style="margin-top:10px;"></div>
+    <button id="addl-custom-add" type="button" style="margin-top:8px;font-size:11.5px;padding:6px 12px;background:white;color:var(--navy);border:1px dashed var(--rule);border-radius:6px;cursor:pointer;font-weight:600;letter-spacing:0.02em;">+ Add Custom Charge</button>
   </fieldset>
 
   <fieldset>

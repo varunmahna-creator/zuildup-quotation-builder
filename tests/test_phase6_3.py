@@ -38,25 +38,26 @@ def test_state_shape_default_off():
     m = re.search(
         r"additionalZones:\s*\{\s*"
         r"elevation:\s*\{\s*enabled:\s*false[^}]*\}[^}]*"
-        r"gst:\s*\{\s*enabled:\s*false[^}]*\}[^}]*"
-        r"custom:\s*\{\s*enabled:\s*false[^}]*\}",
+        r"gst:\s*\{\s*enabled:\s*false[^}]*\}[\s\S]*?"
+        r"custom:\s*\[",  # Phase 7B Item 16: `custom` is now an array of charges
         QUOTE_JS, re.DOTALL,
     )
     assert m, "Expected default-off additionalZones block in defaultState()"
 
 
 def test_index_html_has_three_toggles():
+    # Phase 7B Item 16: custom block became dynamic — replaced by addl-custom-list
+    # + addl-custom-add. Elevation + GST stay as static blocks (singletons).
     for el in [
         'id="f-addl-elevation-on"',
         'id="f-addl-gst-on"',
-        'id="f-addl-custom-on"',
         'id="f-addl-elevation-desc"',
         'id="f-addl-elevation-cost"',
         'id="f-addl-gst-desc"',
         'id="f-addl-gst-cost"',
-        'id="f-addl-custom-name"',
-        'id="f-addl-custom-desc"',
-        'id="f-addl-custom-cost"',
+        # Phase 7B Item 16 — dynamic custom list + add button:
+        'id="addl-custom-list"',
+        'id="addl-custom-add"',
     ]:
         assert el in INDEX_HTML, f"index.html missing form element: {el}"
     assert 'id="addl-zones-fs"' in INDEX_HTML, "Missing additional-zones fieldset"
@@ -217,7 +218,7 @@ def test_all_three_on_sequential_letters():
     az = c["additionalZones"]
     assert len(az) == 3
     assert [z["letter"] for z in az] == ["E", "F", "G"]
-    assert [z["id"] for z in az] == ["elevation", "gst", "custom"]
+    assert [z["id"] for z in az] == ["elevation", "gst", "custom-0"]  # Phase 7B Item 16: custom is array; first entry is custom-0
     assert az[2]["name"] == "Site Logistics"
 
 
