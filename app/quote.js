@@ -3587,13 +3587,36 @@ function renderAreaPage(state, c) {
   // Bug fix: count rendered rows. If high (basement+lift+all 5 zones), split
   // into 2 pages with clean breaks. Threshold ~16 rows; 4-floor stilt+basement
   // produces ~18-22 rows reliably.
-  const rowCount =
-      (c.zones.A?.items.length || 0) + 1
-    + (c.zones.B?.items.length || 0) + 1
-    + (c.zones.C ? (c.zones.C.items.length + 1) : 0)
-    + (c.zones.D?.items.length || 0) + 1
-    + (c.zones.E ? (c.zones.E.items.length + 1) : 0);
+  // Phase 7B Item 5: choose the split pivot dynamically so neither page is
+  // sparse. We aim for roughly even row counts across the two pages.
+  const aRows = (c.zones.A?.items.length || 0) + 1;
+  const bRows = (c.zones.B?.items.length || 0) + 1;
+  const cRows = c.zones.C ? (c.zones.C.items.length + 1) : 0;
+  const dRows = (c.zones.D?.items.length || 0) + 1;
+  const eRows = c.zones.E ? (c.zones.E.items.length + 1) : 0;
+  const rowCount = aRows + bRows + cRows + dRows + eRows;
   const splitPage = rowCount > 14;
+  // Determine pivot: 'A' = page1 has A only, 'AB' = page1 has A+B, 'ABC' = page1 has A+B+C.
+  // The headerBlock + floor-summary table takes ~22 rows of vertical space, so
+  // page 1 has roughly 12-14 rows of "zone table" budget; page 2 (continuation
+  // header only) has roughly 30 rows budget. So we want page 1's zone rows ≤14.
+  let splitPivot = 'AB';
+  if (splitPage) {
+    const ab = aRows + bRows;
+    const abc = ab + cRows;
+    // Prefer the split that keeps page 1 under ~14 zone-rows AND leaves
+    // page 2 with at least 6 rows. (Adjust thresholds based on empirical
+    // QC of the Phase 6.2 + 7B layout.)
+    if (ab <= 13 && (rowCount - ab) >= 7 && abc - ab >= 1) {
+      splitPivot = 'AB'; // legacy default
+    } else if (aRows <= 13 && (rowCount - aRows) >= 6) {
+      splitPivot = 'A';  // page 1 = A; page 2 = B+C+D+E (denser)
+    } else if (abc <= 14 && (rowCount - abc) >= 4) {
+      splitPivot = 'ABC';
+    } else {
+      splitPivot = 'AB'; // fallback
+    }
+  }
 
   const headerBlock = `
     <div class="pg-head">
@@ -3647,15 +3670,27 @@ function renderAreaPage(state, c) {
 </section>`;
   }
 
-  // Split: page 1 = Zones A + B, page 2 = C + D + E + grand total.
+  // Phase 7B Item 5: split tuning — pivot is dynamic via `splitPivot`.
+  // 'A'   → page1 = A; page2 = B+C+D+E
+  // 'AB'  → page1 = A+B; page2 = C+D+E (legacy default)
+  // 'ABC' → page1 = A+B+C; page2 = D+E
+  const page1Zones = (
+      splitPivot === 'A'   ? `${zoneRows('A', c.zones.A)}` :
+      splitPivot === 'ABC' ? `${zoneRows('A', c.zones.A)}${zoneRows('B', c.zones.B)}${c.zones.C ? zoneRows('C', c.zones.C) : ''}` :
+                             `${zoneRows('A', c.zones.A)}${zoneRows('B', c.zones.B)}`
+  );
+  const page2Zones = (
+      splitPivot === 'A'   ? `${zoneRows('B', c.zones.B)}${c.zones.C ? zoneRows('C', c.zones.C) : ''}${zoneRows('D', c.zones.D)}${c.zones.E ? zoneRows('E', c.zones.E) : ''}` :
+      splitPivot === 'ABC' ? `${zoneRows('D', c.zones.D)}${c.zones.E ? zoneRows('E', c.zones.E) : ''}` :
+                             `${c.zones.C ? zoneRows('C', c.zones.C) : ''}${zoneRows('D', c.zones.D)}${c.zones.E ? zoneRows('E', c.zones.E) : ''}`
+  );
   return `
 <section class="pg">
   ${headerBlock}
   <table class="calc-table">
     <thead><tr><th>Area</th><th>Description</th><th class="r">Est. Size</th></tr></thead>
     <tbody>
-      ${zoneRows('A', c.zones.A)}
-      ${zoneRows('B', c.zones.B)}
+      ${page1Zones}
     </tbody>
   </table>
   <p class="lede" style="color:var(--muted);font-size:11px;margin-top:auto;">Continued on next page →</p>
@@ -3666,9 +3701,7 @@ function renderAreaPage(state, c) {
   <table class="calc-table">
     <thead><tr><th>Area</th><th>Description</th><th class="r">Est. Size</th></tr></thead>
     <tbody>
-      ${c.zones.C ? zoneRows('C', c.zones.C) : ''}
-      ${zoneRows('D', c.zones.D)}
-      ${c.zones.E ? zoneRows('E', c.zones.E) : ''}
+      ${page2Zones}
     </tbody>
     <tfoot>
       <tr class="sub"><td colspan="2">Total Built-up Area (excluding water tank capacity)</td><td class="r">${ni(totalArea)} sq.ft</td></tr>
