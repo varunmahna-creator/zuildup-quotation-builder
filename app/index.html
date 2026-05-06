@@ -353,6 +353,20 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
     </details>
   </fieldset>
 
+  <!-- Phase 7E-C Item 11: Floor Summary editor. Renames + numeric overrides
+       per floor-summary row (Basement, Stilt, Ground/First/..., Terrace, Total).
+       Empty inputs fall back to the computed (post-line-item-attribution)
+       values. Edits are reflected on the Area Calculation page floor summary
+       AND in totals. Default open. -->
+  <fieldset id="floor-summary-fs" style="display:none;">
+    <legend>Floor Summary (editable)</legend>
+    <details id="floor-summary-collapse" open>
+      <summary style="cursor:pointer;font-size:11px;color:var(--muted);font-weight:600;padding:4px 0;letter-spacing:0.04em;text-transform:uppercase;">Floor Names &amp; Areas <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">(optional)</span></summary>
+      <p style="font-size:10.5px;color:var(--muted);margin:4px 0 6px;line-height:1.5;">Rename rows or override the auto-computed Lift+Staircase, Covered, Semi-Covered, and Open columns per floor (and the Total row). Leave a field blank to use the computed value.</p>
+      <div id="floor-summary-list"></div>
+    </details>
+  </fieldset>
+
   <!-- Phase 6.3 — Additional Charges (Elevation / GST / Custom). Each toggle is
        opt-in; when off, the zone is omitted entirely from the cost sheet & PDF.
        Each enabled zone is appended after the static A-E zones with a sequential

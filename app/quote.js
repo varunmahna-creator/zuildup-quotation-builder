@@ -121,6 +121,8 @@ const defaultState = () => ({
     // back to the calc-engine-generated default if no override is set.
     itemNameOverrides: {},
     itemDescOverrides: {},
+    // Phase 7E-C Item 11: per-row floor-summary overrides. Keyed by row label.
+    floorSummaryOverrides: {},
   },
   scope: 'full',                 // 'full' | 'structure_only'
   rows: [],                      // [{id, override:{label?, rate?, rate_text?, brands?, description?, location?}, _custom?:bool}]
@@ -179,6 +181,7 @@ function loadState() {
             },
             // Phase 7B Items 14/15/17: defaults when absent on legacy quotes.
             zoneLineItems:     { ...(d.pricing.zoneLineItems||{}),     ...((s.pricing&&s.pricing.zoneLineItems)||{}) },
+            floorSummaryOverrides: { ...(d.pricing.floorSummaryOverrides||{}), ...((s.pricing&&s.pricing.floorSummaryOverrides)||{}) },
             itemNameOverrides: { ...(d.pricing.itemNameOverrides||{}), ...((s.pricing&&s.pricing.itemNameOverrides)||{}) },
             itemDescOverrides: { ...(d.pricing.itemDescOverrides||{}), ...((s.pricing&&s.pricing.itemDescOverrides)||{}) },
             // Phase 6.2: per-floor balcony pricing — preserve rep entries.
@@ -231,6 +234,7 @@ function loadState() {
         },
         // Phase 7B Items 14/15/17: defaults when absent on legacy quotes.
         zoneLineItems:     { ...(d.pricing.zoneLineItems||{}),     ...((s.pricing&&s.pricing.zoneLineItems)||{}) },
+        floorSummaryOverrides: { ...(d.pricing.floorSummaryOverrides||{}), ...((s.pricing&&s.pricing.floorSummaryOverrides)||{}) },
         itemNameOverrides: { ...(d.pricing.itemNameOverrides||{}), ...((s.pricing&&s.pricing.itemNameOverrides)||{}) },
         itemDescOverrides: { ...(d.pricing.itemDescOverrides||{}), ...((s.pricing&&s.pricing.itemDescOverrides)||{}) },
         // Phase 6.2: per-floor balcony pricing — preserve rep entries.
@@ -700,6 +704,23 @@ function computeQuote(state) {
   return c;
 }
 
+// Phase 7E-C Item 7: enumerate the floor-summary row labels available for
+// Zone A line-item attribution. Returned in the same order as buildFloorSummary
+// rows (Basement → Stilt → Ground/First/... → Terrace).
+function floorOptionsForA(state) {
+  const b = (state && state.build) || {};
+  const numFloors = Math.max(0, b.floors || 0);
+  const opts = [];
+  if (b.hasBasement) opts.push('Basement');
+  const isStilt = b.buildType === 'stilt';
+  if (isStilt) opts.push('Stilt');
+  for (let i = 0; i < numFloors; i++) {
+    opts.push(FLOOR_DISPLAY_NAMES[i] || ('Floor ' + (i + 1)));
+  }
+  opts.push('Terrace');
+  return opts;
+}
+
 // Phase 7B Item 15: append rep-added line items to their respective zones.
 // State shape: state.pricing.zoneLineItems = { 'A': [{id,name,desc,area,rate}], ... }.
 // Each row contributes area + cost to the zone subtotal. Triggers `varies=true`
@@ -723,6 +744,10 @@ function appendZoneLineItems(c, state) {
       const cost = Math.round(area * rate);
       const item = { name, desc, area, rate, cost, _zoneLineItem: true, _lineItemId: r.id || null };
       item.origName = name;
+      // Phase 7E-C Item 7: thread the optional floor association through.
+      if (r.floor && typeof r.floor === 'string' && r.floor.trim()) {
+        item._floor = r.floor;
+      }
       zone.items.push(item);
       added += cost;
       if (rate !== zone.rate) zone.varies = true;
@@ -1396,7 +1421,7 @@ async function bootForm() {
     }
   }
 
-  function flush() { saveState(state); renderSpecList(); applyValidation(); renderAreaOverridesPanel(); renderItemRatesPanel(); renderBpfPanel(); }
+  function flush() { saveState(state); renderSpecList(); applyValidation(); renderAreaOverridesPanel(); renderItemRatesPanel(); renderBpfPanel(); renderFloorSummaryEditor(); }
 
   // ---- Customer field listeners ----
   $('f-salutation').oninput = e => { state.customer.salutation = e.target.value; flush(); };
@@ -1417,7 +1442,9 @@ async function bootForm() {
       state.pricing[key] = (v === '') ? null : (parseInt(v) || 0);
       flush();
       renderAreaOverridesPanel();
-  renderItemRatesPanel();  // recompute since totals will change
+  renderItemRatesPanel();
+  // Phase 7E-C Item 11: render floor-summary editor on initial paint.
+  renderFloorSummaryEditor();  // recompute since totals will change
     };
   });
   // P3 #6: layout toggle
@@ -2036,7 +2063,13 @@ async function bootForm() {
         const isLineItem = !!it._zoneLineItem;
         if (isLineItem) {
           // Item 15 row: editable name + desc + area + rate inline, with Remove.
+          // Phase 7E-C Item 7: Zone A line items also get a floor-attribution select.
           const rid = it._lineItemId || '';
+          const floorOpts = (k === 'A') ? floorOptionsForA(state) : [];
+          const liveFloor = (it._floor || '');
+          const floorSelectHtml = (k === 'A')
+            ? `<select data-li-field="floor" title="Add this item's area to a floor's covered total" style="flex:0 0 auto;font-size:11px;padding:4px 6px;background:#fff;color:var(--navy);border:1px solid var(--rule);border-radius:4px;"><option value="">— floor (optional) —</option>${floorOpts.map(f => `<option value="${escapeAttr(f)}"${f === liveFloor ? ' selected' : ''}>${escapeHtml(f)}</option>`).join('')}</select>`
+            : '';
           html.push(`
             <div class="aov-row aov-lineitem" data-zone="${k}" data-lineitem-id="${escapeAttr(rid)}" style="flex-wrap:wrap;gap:4px;align-items:flex-start;">
               <input type="text" data-li-field="name" value="${escapeAttr(it.name)}" placeholder="Item name" style="flex:1 1 auto;min-width:120px;font-size:11.5px;font-weight:600;color:var(--navy);">
@@ -2045,19 +2078,29 @@ async function bootForm() {
               <input type="number" min="0" data-li-field="rate" value="${it.rate || ''}" placeholder="rate" style="width:70px;">
               <span class="aov-unit">₹/${escapeHtml(unit)}</span>
               <button type="button" data-li-remove="1" title="Remove" style="font-size:11px;padding:2px 6px;background:white;color:#c0392b;border:1px solid var(--rule);border-radius:4px;cursor:pointer;">✕</button>
+              ${floorSelectHtml}
               <input type="text" data-li-field="desc" value="${escapeAttr(it.desc || '')}" placeholder="description (optional)" style="flex:1 1 100%;font-size:10.5px;color:var(--muted);">
             </div>
           `);
         } else {
+          // Phase 7E-C Item 5: inline-editable description per row. The desc
+          // input always renders below the rename/area row (flex:1 1 100%
+          // wraps it). Default value comes from the calc-engine desc; rep
+          // edits write to state.pricing.itemDescOverrides via data-desc-key.
+          // Replaces the prompt()-based 📝 button from 7B-17 with a friendlier
+          // always-visible UX.
+          const descDefault = it.desc || '';
+          const descCur = (descOv != null && descOv !== '') ? descOv : descDefault;
+          const descIsOverride = (descOv != null && descOv !== '');
           html.push(`
             <div class="aov-row" style="flex-wrap:wrap;gap:4px;align-items:flex-start;">
               <span class="aov-name aov-name-with-edit" style="flex:1 1 auto;min-width:120px;display:inline-flex;align-items:center;gap:4px;">
                 <span class="aov-display-name">${escapeHtml(displayName)}</span>
                 <button type="button" data-rename-key="${escapeAttr(key)}" title="Rename item" style="font-size:11px;padding:1px 4px;background:transparent;color:var(--muted);border:none;cursor:pointer;">✎</button>
-                <button type="button" data-redesc-key="${escapeAttr(key)}" title="${descOv ? 'Edit description (custom)' : 'Edit description'}" style="font-size:11px;padding:1px 4px;background:transparent;color:${descOv ? 'var(--gold)' : 'var(--muted)'};border:none;cursor:pointer;">📝</button>
               </span>
               <input type="number" min="0" data-aov-key="${escapeAttr(key)}" value="${v === '' ? '' : escapeAttr(String(v))}" placeholder="${escapeAttr(placeholder)}" style="width:90px;">
               <span class="aov-unit">${escapeHtml(unit)}</span>
+              <input type="text" data-desc-key="${escapeAttr(key)}" value="${escapeAttr(descCur)}" placeholder="${escapeAttr('description: ' + descDefault)}" title="${descIsOverride ? 'description (custom)' : 'description (auto)'}" style="flex:1 1 100%;font-size:10.5px;color:${descIsOverride ? 'var(--ink)' : 'var(--muted)'};${descIsOverride ? 'font-style:normal;' : 'font-style:italic;'}">
             </div>
           `);
         }
@@ -2078,6 +2121,23 @@ async function bootForm() {
         saveState(state);
       };
       inp.onblur = e => { renderAreaOverridesPanel(); };
+    });
+
+    // Phase 7E-C Item 5: inline desc editor for static items.
+    list.querySelectorAll('input[data-desc-key]').forEach(inp => {
+      inp.oninput = e => {
+        const key = inp.dataset.descKey;
+        const val = e.target.value;
+        const ph = inp.placeholder || '';
+        const def = ph.startsWith('description: ') ? ph.slice('description: '.length) : '';
+        if (val.trim() === '' || val === def) {
+          delete state.pricing.itemDescOverrides[key];
+        } else {
+          state.pricing.itemDescOverrides[key] = val;
+        }
+        saveState(state);
+      };
+      inp.onblur = () => { renderAreaOverridesPanel(); };
     });
 
     // Item 17: rename button → swap span for input, Enter / blur to commit.
@@ -2111,20 +2171,9 @@ async function bootForm() {
       };
     });
 
-    // Item 17: description edit button → prompt for multi-line desc.
-    list.querySelectorAll('button[data-redesc-key]').forEach(btn => {
-      btn.onclick = () => {
-        const key = btn.dataset.redescKey;
-        const cur = state.pricing.itemDescOverrides[key] || '';
-        const next = window.prompt('Edit description for this item (leave blank to clear and use the default):', cur);
-        if (next === null) return; // cancel
-        const trimmed = next.trim();
-        if (trimmed === '') delete state.pricing.itemDescOverrides[key];
-        else state.pricing.itemDescOverrides[key] = trimmed;
-        saveState(state);
-        renderAreaOverridesPanel();
-      };
-    });
+    // Phase 7E-C Item 5: replaced the prompt()-based 📝 button (7B-17)
+    // with the inline data-desc-key input above. No-op kept defensively.
+    list.querySelectorAll('button[data-redesc-key]').forEach(() => {});
 
     // Item 15: + Add line item to zone.
     list.querySelectorAll('button[data-add-line-zone]').forEach(btn => {
@@ -2162,10 +2211,12 @@ async function bootForm() {
         }
         saveState(state);
       };
-      row.querySelectorAll('input[data-li-field]').forEach(inp => {
+      // Phase 7E-C Item 7: include <select> elements (Zone-A floor picker).
+      row.querySelectorAll('[data-li-field]').forEach(inp => {
         const f = inp.dataset.liField;
         inp.oninput = onField(f);
-        inp.onblur = () => { renderAreaOverridesPanel(); renderItemRatesPanel(); };
+        inp.onchange = onField(f);
+        inp.onblur = () => { renderAreaOverridesPanel(); renderItemRatesPanel(); renderFloorSummaryEditor(); };
       });
       const rm = row.querySelector('button[data-li-remove]');
       if (rm) rm.onclick = () => {
@@ -2308,6 +2359,92 @@ async function bootForm() {
         bpf.rates[idx] = (val === '') ? null : (parseInt(val) || 0);
         saveState(state);
       };
+    });
+  }
+
+  // ---- Phase 7E-C Item 11: Floor Summary editor (left rail) ----
+  // Renders one editable row per floor-summary row + the Total row. Writes
+  // go to state.pricing.floorSummaryOverrides[label]. Clearing a field
+  // (whitespace) deletes the override so the row falls back to computed.
+  function renderFloorSummaryEditor() {
+    const fs = document.getElementById('floor-summary-fs');
+    const list = document.getElementById('floor-summary-list');
+    if (!fs || !list) return;
+    state.pricing.floorSummaryOverrides ||= {};
+    if (!state.build.plotSqYards || !state.build.coverage) {
+      fs.style.display = 'none';
+      return;
+    }
+    fs.style.display = '';
+    let c, rows;
+    try {
+      c = computeQuote(state);
+      rows = buildFloorSummary(state, c);
+    } catch (_) {
+      list.innerHTML = '<p style="font-size:11px;color:var(--muted);margin:0;">Enter pricing & build details to see floor summary.</p>';
+      return;
+    }
+    if (!rows || !rows.length) {
+      list.innerHTML = '<p style="font-size:11px;color:var(--muted);margin:0;">No floors configured.</p>';
+      return;
+    }
+    const fsOv = state.pricing.floorSummaryOverrides;
+    const html = [];
+    html.push(`<div class="aov-zone"><div class="aov-zone-hdr">Floor &amp; Areas <span class="aov-rate">edit to override summary</span></div>`);
+    for (const r of rows) {
+      // Use _origLabel (set by buildFloorSummary when the label was overridden)
+      // as the override key, otherwise current label.
+      const key = r._origLabel || r.label;
+      const ov  = fsOv[key] || {};
+      const isTotal = !!r.isTotal;
+      const hint = isTotal ? 'Total row — edits override the auto-sum' : (r.sublabel ? r.sublabel : '');
+      // Each row: label input (full width) + 4 number inputs side-by-side.
+      html.push(`
+        <div class="fs-edit-row" data-fs-key="${escapeAttr(key)}" style="border-top:1px dashed var(--rule);padding:6px 0;${isTotal ? 'background:rgba(201,162,77,0.06);' : ''}">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <input type="text" data-fs-field="label" value="${escapeAttr(r.label)}" placeholder="${escapeAttr(key)}" title="Row label" style="flex:1 1 auto;font-size:11.5px;font-weight:600;color:var(--navy);background:#fff;">
+            ${hint ? `<span style="font-size:10.5px;color:var(--muted);">${escapeHtml(hint)}</span>` : ''}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;">
+            <label style="display:flex;flex-direction:column;font-size:10px;color:var(--muted);">Lift+Stair<input type="number" min="0" data-fs-field="liftStair" value="${(ov.liftStair != null && ov.liftStair !== '') ? escapeAttr(String(ov.liftStair)) : ''}" placeholder="${escapeAttr(String(r.liftStair || 0))}" style="font-size:11.5px;padding:4px 6px;"></label>
+            <label style="display:flex;flex-direction:column;font-size:10px;color:var(--muted);">Covered<input type="number" min="0" data-fs-field="covered" value="${(ov.covered != null && ov.covered !== '') ? escapeAttr(String(ov.covered)) : ''}" placeholder="${escapeAttr(String(r.covered || 0))}" style="font-size:11.5px;padding:4px 6px;"></label>
+            <label style="display:flex;flex-direction:column;font-size:10px;color:var(--muted);">Semi Cov<input type="number" min="0" data-fs-field="semiCovered" value="${(ov.semiCovered != null && ov.semiCovered !== '') ? escapeAttr(String(ov.semiCovered)) : ''}" placeholder="${escapeAttr(String(r.semiCovered || 0))}" style="font-size:11.5px;padding:4px 6px;"></label>
+            <label style="display:flex;flex-direction:column;font-size:10px;color:var(--muted);">Open<input type="number" min="0" data-fs-field="open" value="${(ov.open != null && ov.open !== '') ? escapeAttr(String(ov.open)) : ''}" placeholder="${escapeAttr(String(r.open || 0))}" style="font-size:11.5px;padding:4px 6px;"></label>
+          </div>
+        </div>
+      `);
+    }
+    html.push('</div>');
+    list.innerHTML = html.join('');
+
+    // Bind edits — both label (text) and the 4 numeric fields.
+    list.querySelectorAll('.fs-edit-row').forEach(rowEl => {
+      const key = rowEl.dataset.fsKey;
+      const onField = (field) => (e) => {
+        const v = e.target.value;
+        const o = state.pricing.floorSummaryOverrides;
+        o[key] ||= {};
+        if (field === 'label') {
+          // Empty / matches default → delete override.
+          if (!v.trim() || v.trim() === key) delete o[key].label;
+          else o[key].label = v;
+        } else {
+          const t = (typeof v === 'string') ? v.trim() : '';
+          if (t === '') delete o[key][field];
+          else o[key][field] = parseInt(t, 10) || 0;
+        }
+        // Garbage-collect empty entries so the override map stays tight.
+        if (Object.keys(o[key]).length === 0) delete o[key];
+        saveState(state);
+      };
+      rowEl.querySelectorAll('[data-fs-field]').forEach(inp => {
+        const f = inp.dataset.fsField;
+        inp.oninput = onField(f);
+        inp.onchange = onField(f);
+        // On blur, re-render so placeholders pick up new computed values
+        // when overrides interact (e.g. label change updates the placeholder).
+        inp.onblur = () => { renderFloorSummaryEditor(); };
+      });
     });
   }
 
@@ -3072,6 +3209,8 @@ async function bootForm() {
   renderSpecList();
   renderAreaOverridesPanel();
   renderItemRatesPanel();
+  // Phase 7E-C Item 11: render floor-summary editor on initial paint.
+  renderFloorSummaryEditor();
   renderBpfPanel();
 }
 // ============================================================================
@@ -3629,6 +3768,33 @@ function buildFloorSummary(state, c) {
     open: isStruct ? terraceStruct : terracePackage,
   });
 
+  // Phase 7E-C Item 7: attribute Zone A line items with `_floor` to the
+  // matching summary row's Covered. Skip line items without _floor.
+  const lineItemsA = (c.zones && c.zones.A && Array.isArray(c.zones.A.items)) ? c.zones.A.items : [];
+  for (const it of lineItemsA) {
+    if (!it || !it._zoneLineItem || !it._floor) continue;
+    const target = rows.find(r => r.label === it._floor);
+    if (!target) continue;
+    target.covered = (target.covered || 0) + (it.area || 0);
+  }
+
+  // Phase 7E-C Item 11: apply per-row floor-summary overrides AFTER all
+  // numeric attribution so the rep's manual edits win.
+  const fsOv = (state && state.pricing && state.pricing.floorSummaryOverrides) || {};
+  for (const r of rows) {
+    const ov = fsOv[r.label];
+    if (!ov) continue;
+    const numKeys = ['liftStair', 'covered', 'semiCovered', 'open'];
+    for (const kk of numKeys) {
+      const v = ov[kk];
+      if (v != null && v !== '' && !isNaN(parseFloat(v))) r[kk] = parseFloat(v);
+    }
+    if (ov.label && typeof ov.label === 'string' && ov.label.trim()) {
+      r._origLabel = r.label;
+      r.label = ov.label;
+    }
+  }
+
   // Totals row.
   const totals = { label: 'Total', sublabel: '', liftStair: 0, covered: 0, semiCovered: 0, open: 0, isTotal: true };
   for (const r of rows) {
@@ -3637,6 +3803,20 @@ function buildFloorSummary(state, c) {
     totals.semiCovered += r.semiCovered;
     totals.open        += r.open;
   }
+  // Phase 7E-C Item 11: optional override on the Total row itself.
+  const totalOv = fsOv['Total'];
+  if (totalOv) {
+    const numKeys = ['liftStair', 'covered', 'semiCovered', 'open'];
+    for (const kk of numKeys) {
+      const v = totalOv[kk];
+      if (v != null && v !== '' && !isNaN(parseFloat(v))) totals[kk] = parseFloat(v);
+    }
+    if (totalOv.label && typeof totalOv.label === 'string' && totalOv.label.trim()) {
+      totals._origLabel = 'Total';
+      totals.label = totalOv.label;
+    }
+  }
+
   rows.push(totals);
   return rows;
 }
