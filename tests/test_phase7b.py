@@ -265,17 +265,21 @@ def test_floor_summary_post_override():
 # Item 12 — Stilt row column reassignment
 # ============================================================================
 def test_stilt_row_columns():
-    """Stilt row: semi-covered = stilt covered area; open = setback."""
+    """Stilt row: semi-covered = stilt covered area; open = setback + ramp.
+
+    Phase 7E-B Item 4: open now includes ramp area (was setback only).
+    """
     s = _state(buildType="stilt", floors=3, hasLift=False)
     rows = _run_node(s, fn="buildFloorSummary")
     stilt = next((r for r in rows if r["label"] == "Stilt"), None)
     assert stilt is not None
     # Plot 240 sq.yd × 9 = 2160 sq.ft; coverage 75% → floorArea = 1620.
     # No lift so stiltCovered = floorAdj = 1620 - 0 - 125 = 1495.
-    # setbackArea = 2160 - 1620 = 540.
+    # setbackArea = 2160 - 1620 = 540; ramp = breadth(36) * RAMP_DEPTH(6) = 216.
+    # open = 540 + 216 = 756 (Phase 7E-B Item 4).
     assert stilt["covered"] == 0, f"covered must be 0 (stilt not enclosed); got {stilt['covered']}"
     assert stilt["semiCovered"] == 1495, f"semiCovered should be 1495 (stilt area); got {stilt['semiCovered']}"
-    assert stilt["open"] == 540, f"open should be 540 (setback); got {stilt['open']}"
+    assert stilt["open"] == 756, f"open should be 756 (setback 540 + ramp 216); got {stilt['open']}"
 
 
 # ============================================================================

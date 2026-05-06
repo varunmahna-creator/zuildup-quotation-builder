@@ -209,6 +209,11 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
 #area-ovr-list .aov-zone-hdr, #item-rate-list .aov-zone-hdr, #bpf-rate-list .aov-zone-hdr { font-size: 11px; font-weight: 600; color: var(--navy); margin-bottom: 4px; padding: 4px 0; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: baseline; }
 #area-ovr-list .aov-zone-hdr .aov-rate, #item-rate-list .aov-zone-hdr .aov-rate, #bpf-rate-list .aov-zone-hdr .aov-rate { font-size: 10px; color: var(--muted); font-weight: 500; }
 #area-ovr-list .aov-row, #item-rate-list .aov-row, #bpf-rate-list .aov-row { display: grid; grid-template-columns: 1fr 90px 40px; gap: 6px; align-items: center; margin: 3px 0; }
+/* Phase 7E-B Item 6: rep-added line items (Zone X +Add line) carry 7
+   children — name input, area, unit, rate, unit, remove btn, desc input.
+   The 3-column grid above clobbers them: override back to flex so the row
+   actually expands and renders all fields. */
+#area-ovr-list .aov-lineitem, #item-rate-list .aov-lineitem { display: flex !important; flex-wrap: wrap; gap: 4px; align-items: flex-start; }
 #area-ovr-list .aov-name, #item-rate-list .aov-name, #bpf-rate-list .aov-name { font-size: 11.5px; color: var(--ink); }
 #area-ovr-list .aov-unit, #item-rate-list .aov-unit, #bpf-rate-list .aov-unit { font-size: 10.5px; color: var(--muted); }
 #area-ovr-list input, #item-rate-list input, #bpf-rate-list input { padding: 5px 8px; font-size: 11.5px; }

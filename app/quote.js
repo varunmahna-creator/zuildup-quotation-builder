@@ -3571,17 +3571,24 @@ function buildFloorSummary(state, c) {
   //     surrounding open ground = open).
   if (hasStilt || isStruct) {
     const stiltCovered = getZoneItemArea('B', 'Stilt', floorAdj);
-    const setbackArea  = Math.max(0, plotSqFt - floorArea);
+    // Phase 7E-B Item 4: stilt 'open area' = setback + ramp. Pull POST-override
+    // values from Zone C when present (Setback / Ramp), else use defaults
+    // matching calcPackage. Keeps stilt summary in sync if rep tweaks
+    // setback or ramp via the Per-Item Area Override panel.
+    const setbackDefault = Math.max(0, plotSqFt - floorArea);
+    const rampDefault    = breadth * RAMP_DEPTH;
+    const setbackArea = getZoneItemArea('C', 'Setback', setbackDefault);
+    const rampArea    = getZoneItemArea('C', 'Ramp',    rampDefault);
     rows.push({
       label: 'Stilt',
       sublabel: '',
       liftStair: liftStairPerFloor,
       // Structure mode: stilt is enclosed at structure rate → covered.
       // Package mode (Phase 7B Item 12): stilt area lives in Semi Covered;
-      // setback (open ground) lives in Open.
+      // setback + ramp (open ground) lives in Open (Phase 7E-B Item 4).
       covered:    isStruct ? floorArea : 0,
       semiCovered: isStruct ? 0 : stiltCovered,
-      open:        isStruct ? 0 : setbackArea,
+      open:        isStruct ? 0 : (setbackArea + rampArea),
     });
   }
 
@@ -3607,8 +3614,12 @@ function buildFloorSummary(state, c) {
 
   // Terrace row — Mumty stop.
   // Compute terrace area same way calcPackage does.
-  const terracePackage = floorArea + balconyPerFloor - staircasePerFloor - (hasLift ? liftPerFloor : 0);
+  const terracePackageDefault = floorArea + balconyPerFloor - staircasePerFloor - (hasLift ? liftPerFloor : 0);
   const terraceStruct  = floorArea;
+  // Phase 7E-B Item 3: respect manual area override on Zone C 'Terrace' (if
+  // any) so the floor summary reflects the rep's edit. Mirrors Phase 7B Item
+  // 11's pattern for Zone A items (was missed for Terrace).
+  const terracePackage = getZoneItemArea('C', 'Terrace', terracePackageDefault);
   rows.push({
     label: 'Terrace',
     sublabel: 'Mumty',
