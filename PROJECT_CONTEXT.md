@@ -47,7 +47,8 @@ A web-based quotation/cost-estimate builder for **ZuildUp's** sales team to gene
 - **Service name:** `zuildup-quotes`
 
 ### Current revision
-- **Active:** `zuildup-quotes-00026-4mf` (deployed 2026-05-04, Phase 7D — move category up/down)
+- **Active:** `zuildup-quotes-00027-ssm` (deployed 2026-05-06, Phase 7E — sales feedback batch C, 11 items)
+- Previous: `00026-4mf` (Phase 7D — move category up/down, 2026-05-04)
 - Previous: `00025-zzz` (Phase 7C — position-based category ordering, 2026-05-04)
 - Previous: `00024-79h` (Phase 7B — calculator + UI fixes batch B, 12 items, 2026-05-04)
 - Previous: `00014-v2v` (Phase 4.1 per-rep logins, 2026-05-01 11:10)
@@ -143,6 +144,89 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
 ---
 
 ## 5. Phase History (Most Recent First)
+
+### Phase 7E (May 6) — Sales feedback batch C (11 items)
+
+Sales team's third post-launch feedback round. Three sub-phases for
+risk isolation; deployed once at the end (revision `00027-ssm`).
+Live URL unchanged: https://zuildup-quotes-zim2owjloq-el.a.run.app
+
+**7E-A — quick fixes (commit `0b5c737`):**
+- **Item 1 — Floor area summary nomenclature parity.** Summary now
+  uses canonical `Ground Floor`, `First Floor`, `Second Floor`, ...
+  matching `calcPackage` / `calcStructure` zone-A item names. Added
+  module-level constant `FLOOR_DISPLAY_NAMES` (single source of truth);
+  `calcPackage`, `calcStructure`, AND `buildFloorSummary` all reference
+  it. Removed the duplicate `['1st Floor', ...]` array.
+- **Item 2 — Removed 'Premium Package' sublabel** from per-floor and
+  basement rows in the floor summary. Terrace keeps `Mumty` (semantic).
+- **Item 8 — Quotation header cleanup.** Removed `Coverage:` and
+  `Floor Area:` `<span>`s from the Area Calculation page params-row.
+- **Item 9 — BPF format parity.** Per-floor balcony pricing panel
+  now inherits `.aov-zone-hdr / .aov-row / .aov-name / .aov-unit / input`
+  styling by extending the shared selectors to include `#bpf-rate-list`.
+- **Item 10 — Spec editor label.** Renamed editor label
+  `Brand Name & Rate` → `Rate` to match the customer PDF column.
+
+**7E-B — bug fixes (commit `b88cb86`):**
+- **Item 3 — Terrace area override.** `buildFloorSummary` now reads
+  the post-override Zone C `Terrace` value via `getZoneItemArea` (was
+  using the raw default formula). Mirrors Phase 7B Item 11 (which
+  covered Zone A floors but missed terrace).
+- **Item 4 — Stilt open area = setback + ramp.** Stilt row's `open`
+  column now sums setback (plot − floor area) **AND** ramp
+  (`breadth × RAMP_DEPTH=6`), both honouring manual Zone C overrides
+  on `Setback` and `Ramp`.
+- **Item 6 — Add-line panel not expanding.** Root cause: CSS
+  specificity. The shared rule
+  `#area-ovr-list .aov-row { display: grid; grid-template-columns: 1fr 90px 40px; }`
+  was clobbering the line-item rows' inline `flex-wrap:wrap`,
+  collapsing the 7-element row into 3 grid cells. Fix: added a
+  higher-specificity rule for `.aov-lineitem` with
+  `display:flex !important; flex-wrap:wrap`.
+
+**7E-C — feature work (commit `eb4bc38`):**
+- **Item 5 — Inline editable description.** Replaced the
+  `prompt()`-based 📝 button (7B-17) with an always-visible inline
+  `<input data-desc-key>` below each row in the area-overrides panel.
+  Reuses existing `state.pricing.itemDescOverrides` (no new map).
+  Empty / matches-default → clears the override; italic+muted when
+  default; solid+ink when overridden.
+- **Item 7 — Per-floor attribution for Zone A line items.**
+  `state.pricing.zoneLineItems['A'][i]` may now carry an optional
+  `floor` field. New helper `floorOptionsForA(state)` enumerates the
+  available labels (`Basement`, `Stilt`, `Ground Floor`, ...,
+  `Terrace`) honouring current build mode. Line-item editor for
+  Zone A renders a `<select data-li-field="floor">`. After computing
+  rows, `buildFloorSummary` walks `c.zones.A.items` and adds the
+  area to the matching row's `covered` for any item with
+  `_zoneLineItem && _floor` set. Backwards-compat: line items
+  without `_floor` don't get attributed.
+- **Item 11 — Editable floor summary + new left-rail tab.** Added
+  `<fieldset id="floor-summary-fs">` (collapsible `<details open>`)
+  with per-row inputs: label (text) + `liftStair / covered /
+  semiCovered / open` (numeric). Total row included so reps can
+  rename ('Grand Total') and override column values.
+  New state map `state.pricing.floorSummaryOverrides` keyed by the
+  row's natural label. Empty fields fall back to computed values;
+  no-op overrides are GC'd. `loadState` merge handles legacy quotes.
+  `renderFloorSummaryEditor()` is wired into `flush()` and the init
+  sequence; `buildFloorSummary` applies overrides as the FINAL pass
+  (override > line-item attribution > computed default).
+
+**Tests:** +34 across 3 new files (`test_phase7e_a.py`/`_b.py`/`_c.py`).
+174 passed (140 prior + 34 new). 3 existing tests updated in 7E-A
+(label parity) and 1 in 7E-B (stilt open = setback + ramp).
+
+**Single source of truth introduced:** `FLOOR_DISPLAY_NAMES` (Item 1).
+
+**Architectural lesson:** Item 6 was a pure CSS-specificity bug —
+the JS handler always worked, but the resulting row was visually
+collapsed. Easy to mis-diagnose as a JS / event handler problem.
+Always inspect computed CSS when "the click did nothing" but the
+state did change.
+
+---
 
 ### Phase 7D (May 4) — Move category up/down (sales QC follow-up)
 
