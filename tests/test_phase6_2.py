@@ -317,8 +317,11 @@ def test_floor_summary_full_basement_stilt_4_floors():
     labels = [r["label"] for r in rows]
     assert labels[0] == "Basement"
     assert labels[1] == "Stilt"
-    assert labels[2] == "1st Floor"
-    assert labels[5] == "4th Floor"
+    # Phase 7E-A Item 1: floor summary uses calc-engine canonical labels
+    # ("Ground Floor", "First Floor", ..) so the summary table matches the
+    # cost-sheet zone-A item names. Was "1st Floor"/"4th Floor".
+    assert labels[2] == "Ground Floor"
+    assert labels[5] == "Third Floor"
     assert labels[6] == "Terrace"
     assert labels[7] == "Total"
     assert rows[-1]["isTotal"] is True
@@ -406,14 +409,16 @@ def test_render_floor_summary_totals_row_styled():
 
 
 def test_premium_package_label_in_full_mode():
-    """Full-build mode rows carry '(Premium Package)' sublabel."""
+    """Phase 7E-A Item 2: floor rows now have EMPTY sublabel
+    (was 'Premium Package' before 7E). Test name kept for git-blame continuity.
+    """
     s = _state(hasBasement=False, hasLift=True, floors=4)
     rows = _run_node(s, fn="buildFloorSummary")
     floor_rows = [r for r in rows if r["label"].endswith("Floor") and not r.get("isTotal")]
     assert len(floor_rows) == 4
     for r in floor_rows:
         if r["label"] != "Terrace":
-            assert r["sublabel"] == "Premium Package"
+            assert r["sublabel"] == "", f"floor sublabel should be empty post-7E; got {r['sublabel']!r}"
 
 
 def test_terrace_labelled_mumty():

@@ -34,6 +34,10 @@ const BALCONY_DEPTH      = 5;         // ft
 const RAMP_DEPTH         = 6;         // ft
 const STAIRCASE_PER_FLOOR = 125;      // sqft per level
 const LIFT_PER_FLOOR     = 25;        // sqft per level
+// Phase 7E-A Item 1 — single source of truth for floor display labels.
+// Used by calcPackage, calcStructure AND buildFloorSummary so the
+// floor-area summary table matches the cost-sheet zone-A item names.
+const FLOOR_DISPLAY_NAMES = ['Ground Floor','First Floor','Second Floor','Third Floor','Fourth Floor'];
 
 // ============================================================================
 // State
@@ -941,7 +945,7 @@ function calcPackage(state) {
   const waterTankFloors = numFloors;
 
   // Zone A — main floors + lift
-  const fn = ['Ground Floor','First Floor','Second Floor','Third Floor','Fourth Floor'];
+  const fn = FLOOR_DISPLAY_NAMES;
   const floorAdj = floorArea - (b.hasLift ? liftPerFloor : 0) - staircasePerFloor;
   const zoneAItems = [];
   for (let i = 0; i < numFloors; i++) {
@@ -1109,7 +1113,7 @@ function calcStructure(state) {
   const waterTankFloors = numFloors;
 
   // Zone A — main floors + stilt + lift (everything at structure rate)
-  const fn = ['Ground Floor','First Floor','Second Floor','Third Floor','Fourth Floor'];
+  const fn = FLOOR_DISPLAY_NAMES;
   const floorAdj = floorArea - (b.hasLift ? liftPerFloor : 0) - staircasePerFloor;
   const zoneAItems = [];
   for (let i = 0; i < numFloors; i++) {
@@ -2683,7 +2687,7 @@ async function bootForm() {
     ed.className = 'editor';
     ed.innerHTML = `
       <div class="full"><label>Label</label><input data-f="label" value="${escapeAttr(label)}"></div>
-      <div class="full"><label>Brand Name &amp; Rate <span style="font-weight:400;color:var(--muted);">(rendered bold in PDF)</span></label><input data-f="brand_rate" placeholder="e.g. Rathi Steel 500FE @ ₹35,000 per bathroom" value="${escapeAttr(brandRate)}"></div>
+      <div class="full"><label>Rate <span style="font-weight:400;color:var(--muted);">(rendered bold in PDF)</span></label><input data-f="brand_rate" placeholder="e.g. Rathi Steel 500FE @ ₹35,000 per bathroom" value="${escapeAttr(brandRate)}"></div>
       <div class="full">
         <label>Description</label>
         <div class="rt-toolbar" role="toolbar" aria-label="Description formatting">
@@ -3520,7 +3524,9 @@ function buildFloorSummary(state, c) {
   const liftStairPerFloor = (hasLift ? liftPerFloor : 0) + staircasePerFloor;
 
   const pkgLabel = isStruct ? 'Structure Only' : 'Premium Package';
-  const floorNames = ['1st Floor','2nd Floor','3rd Floor','4th Floor','5th Floor','6th Floor'];
+  // Phase 7E-A Item 1: use the canonical FLOOR_DISPLAY_NAMES so the summary
+  // table matches the calc engine's Zone A item names exactly.
+  const floorNames = FLOOR_DISPLAY_NAMES;
 
   const rows = [];
 
@@ -3536,7 +3542,8 @@ function buildFloorSummary(state, c) {
       ? c.zones.E.items[0].area : floorAdj;
     rows.push({
       label: 'Basement',
-      sublabel: pkgLabel,
+      // Phase 7E-A Item 2: drop pkgLabel from basement row in summary too.
+      sublabel: '',
       liftStair: liftStairPerFloor,
       covered:   basementArea,
       semiCovered: 0,
@@ -3582,13 +3589,14 @@ function buildFloorSummary(state, c) {
   // area for Covered (Zone A items: Ground/First/Second/...).
   for (let i = 0; i < numFloors; i++) {
     const zoneAName = floorNames[i] ? floorNames[i].replace(' Floor','') + ' Floor' : ((i+1) + 'th Floor');
-    // calc engine uses 'Ground Floor', 'First Floor', ... — match that exactly.
-    const calcNames = ['Ground Floor','First Floor','Second Floor','Third Floor','Fourth Floor'];
-    const lookup = (i < calcNames.length) ? calcNames[i] : `Floor ${i+1}`;
+    // Phase 7E-A Item 1: lookup name === floorNames[i] (FLOOR_DISPLAY_NAMES);
+    // single source of truth for floor labels across summary + calc engine.
+    const lookup = floorNames[i] || `Floor ${i+1}`;
     const coveredArea = getZoneItemArea('A', lookup, floorAdj);
     rows.push({
-      label: floorNames[i] || ((i+1) + 'th Floor'),
-      sublabel: pkgLabel,
+      label: floorNames[i] || `Floor ${i+1}`,
+      // Phase 7E-A Item 2: drop pkgLabel ("Premium Package") from per-floor rows.
+      sublabel: '',
       liftStair: liftStairPerFloor,
       covered:   coveredArea,
       // Package modes have balcony as semi-covered; structure mode has no balcony in the per-floor row (terrace at the top still applies).
@@ -3723,8 +3731,8 @@ function renderAreaPage(state, c) {
     <div class="params-row">
       <span><b>Plot:</b> ${c.plotSqYards} sq.yd / ${ni(c.plotSqFt)} sq.ft</span>
       <span><b>Dims:</b> ${c.breadth}ft × ${c.depth}ft</span>
-      <span><b>Coverage:</b> ${c.coverage}%</span>
-      <span><b>Floor Area:</b> ${ni(c.floorArea)} sq.ft</span>
+      <!-- Phase 7E-A Item 8: hide Coverage % and Floor Area from the cover params-row.
+           Values are still in c.coverage / c.floorArea for downstream calcs. -->
       <span><b>Build:</b> ${escapeHtml(c.buildLabel)}</span>
       ${state.build.hasBasement ? '<span><b>Basement:</b> Yes</span>' : ''}
       ${state.build.hasLift ? '<span><b>Lift:</b> Yes</span>' : ''}

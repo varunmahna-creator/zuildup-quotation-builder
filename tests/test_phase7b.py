@@ -251,14 +251,14 @@ def test_floor_summary_post_override():
     """Override Zone A 'First Floor' → corresponding summary row reflects it."""
     s = _state(floors=4)
     # Override 'First Floor' (Zone A index 1) to a value clearly different from default.
-    # The floor summary's '2nd Floor' label maps to the same calc-engine 'First Floor' item.
+    # Phase 7E-A Item 1: summary now uses canonical calc labels, so the row label
+    # IS 'First Floor' directly (not '2nd Floor').
     s["areaOverrides"] = {"A:First Floor": 2200}
     rows = _run_node(s, fn="buildFloorSummary")
-    # Find the "2nd Floor" row in the summary (calc-engine 'First Floor').
-    second = next((r for r in rows if r["label"] == "2nd Floor"), None)
+    second = next((r for r in rows if r["label"] == "First Floor"), None)
     assert second is not None
     assert second["covered"] == 2200, \
-        f"Floor summary 2nd Floor 'covered' should reflect override 2200; got {second['covered']}"
+        f"Floor summary First Floor 'covered' should reflect override 2200; got {second['covered']}"
 
 
 # ============================================================================
