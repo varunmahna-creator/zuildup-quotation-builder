@@ -3469,15 +3469,28 @@ function quoteCss() {
   .calc-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
   /* tfoot grand-total stays with the last sub-total row when possible. */
   .calc-table tfoot tr.grand { break-before: avoid-page; page-break-before: avoid; }
-  /* Phase 7F — Cost Calculation page: keep the cost table fully on one page so
-     a late-added zone (e.g. Zone J Steel Extra via Custom Charges) cannot get
-     orphaned onto a second page where Chrome would repeat <thead>/<tfoot> and
-     produce what looks like a duplicate table with stale totals. The cost
-     table is short enough that this is safe; if a quote ever has so many
-     additional zones that it overflows A4, we will revisit. */
-  .cost-calc-table { break-inside: avoid; page-break-inside: avoid; }
-  .cost-calc-table tfoot { break-before: avoid-page; page-break-before: avoid; break-inside: avoid; page-break-inside: avoid; }
-  .cost-calc-table tfoot tr { break-before: avoid-page; page-break-before: avoid; }
+  /* Phase 7F-B — Cost Calculation page pagination strategy.
+     Goal: cost-calc page must NEVER produce blank pages or page-only-totals.
+     Approach:
+       1. Totals (Sub-total / Lift Machine / Construction Total) live in <tbody>
+          (not <tfoot>) so they don't auto-repeat on every paginated page.
+       2. The 3 totals rows have break-before:avoid so they stay attached to
+          the last zone row above them — they cannot get orphaned onto their
+          own page.
+       3. We do NOT force the whole table onto one page (that strategy from
+          7F-A produced a blank "header-only" page when the table was tall
+          enough to push to page 2). The table is allowed to paginate naturally
+          between zones; <thead> repeats on each page (browser default, table-
+          header-group); rows still avoid mid-row breaks via the existing
+          .calc-table tbody tr rule. */
+  .cost-calc-table tbody tr.cost-totals-sub,
+  .cost-calc-table tbody tr.cost-totals-grand {
+    break-before: avoid-page; page-break-before: avoid;
+    break-inside:  avoid;    page-break-inside:  avoid;
+  }
+  /* Style the in-body totals rows the same as the old tfoot rows. */
+  .cost-calc-table tbody tr.cost-totals-sub td   { padding: 10px; background: rgba(10,31,68,0.04); font-weight: 600; }
+  .cost-calc-table tbody tr.cost-totals-grand td { padding: 10px; background: var(--navy); color: white; font-weight: 700; font-size: 13.5px; }
   /* Floor summary table — its title + subtitle should stay with the table on the same page. */
   .floor-summary-title, .floor-summary-subtitle { break-after: avoid-page; page-break-after: avoid; }
   .calc-table tbody tr.cost-zone-sub td { background: rgba(10,31,68,0.02); padding: 6px 10px; border-bottom: 1px solid var(--rule); }
@@ -3994,7 +4007,7 @@ function renderAreaPage(state, c) {
       ${page1Zones}
     </tbody>
   </table>
-  <p class="lede" style="color:var(--muted);font-size:11px;margin-top:auto;">Continued on next page →</p>
+  <p class="lede" style="color:var(--muted);font-size:11px;margin-top:6mm;">Continued on next page →</p>
   <div class="pg-foot"><span>Area Calculation (1/2)</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>
 <section class="pg">
@@ -4104,12 +4117,15 @@ function renderCostPage(state, c) {
       ${costRow('D', c.zones.D)}
       ${c.zones.E ? costRow('E', c.zones.E) : ''}
       ${(c.additionalZones || []).map(additionalRow).join('')}
+      <!-- Phase 7F-B: totals moved from <tfoot> into <tbody>. tfoot would
+           auto-repeat on each PDF page when the table paginates, producing
+           duplicate "Sub-total / Construction Total" rows. As tbody rows
+           with break-before:avoid (via .cost-totals-* classes) they stay
+           glued to the last zone and appear exactly once. -->
+      <tr class="sub cost-totals-sub"><td colspan="3">Sub-total (zones)</td><td class="r">${fmtINR(c.zoneSubtotal)}</td></tr>
+      ${c.lift ? `<tr class="sub cost-totals-sub"><td colspan="3">Lift Machine</td><td class="r">${fmtINR(c.lift.cost)}</td></tr>` : ''}
+      <tr class="grand cost-totals-grand"><td colspan="3">Construction Total</td><td class="r">${fmtINR(c.grandTotal)}</td></tr>
     </tbody>
-    <tfoot>
-      <tr class="sub"><td colspan="3">Sub-total (zones)</td><td class="r">${fmtINR(c.zoneSubtotal)}</td></tr>
-      ${c.lift ? `<tr class="sub"><td colspan="3">Lift Machine</td><td class="r">${fmtINR(c.lift.cost)}</td></tr>` : ''}
-      <tr class="grand"><td colspan="3">Construction Total</td><td class="r">${fmtINR(c.grandTotal)}</td></tr>
-    </tfoot>
   </table>
 
   <p class="lede" style="margin-top:6mm; color: var(--muted); font-size: 11px;">Final billed at actual brand and finish selection. GST and any liaisoning fees are quoted separately outside this document.</p>
