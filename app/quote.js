@@ -3915,17 +3915,17 @@ function renderAreaPage(state, c) {
   if (splitPage) {
     const ab = aRows + bRows;
     const abc = ab + cRows;
-    // Empirical budget after the headerBlock + floor-summary table + lede:
-    // Page 1's zone-table region fits ~9 rows max before overflow into a second
-    // printed A4 page (Chrome auto-pagination). Page 2 (continuation header
-    // only) fits ~22 rows. Goal: keep page 1 ≤9 rows so the .pg section stays
-    // within one printed A4. We fall back to 'AB' only when even Zone A alone
-    // exceeds the budget (which would always force a print-break anyway).
-    if (ab <= 9) {
+    // Empirical budget after the headerBlock + floor-summary table + lede.
+    // Phase 7F-B measurement (basement+lift+4-floor quote): with ab=9, the .pg
+    // section measured 305mm — i.e. 8mm overflow that orphaned the "Continued"
+    // line onto its own physical page. Tightening the AB budget to 6 forces
+    // pivot='A' for any non-trivial build, which keeps section 1 well under
+    // 297mm. The 'A'-only fallback is the safest default for dense quotes.
+    if (ab <= 6) {
       splitPivot = 'AB';        // small total — both fit on page 1
-    } else if (aRows <= 9 && (rowCount - aRows) >= 4) {
+    } else if (aRows <= 8 && (rowCount - aRows) >= 4) {
       splitPivot = 'A';          // page 1 = A only; the rest dense on page 2
-    } else if (abc <= 9 && (rowCount - abc) >= 4) {
+    } else if (abc <= 6 && (rowCount - abc) >= 4) {
       splitPivot = 'ABC';        // rare: tiny A+B+C still fits
     } else {
       splitPivot = 'A';          // safest — A alone, even if oversized
