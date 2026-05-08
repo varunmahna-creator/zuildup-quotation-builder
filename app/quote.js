@@ -3409,13 +3409,13 @@ function quoteCss() {
   .cat-section .keep-together { break-inside: avoid; page-break-inside: avoid; }
 
   /* Phase 6.2 — Floor Area Summary table (top of Area Calculation page). */
-  .floor-summary-block { margin: 0 0 6mm; break-inside: avoid; page-break-inside: avoid; }
-  .floor-summary-title { font-family: 'Fraunces', serif; font-size: 16px; color: var(--navy); margin: 4mm 0 1mm; font-weight: 600; letter-spacing: 0.01em; }
+  .floor-summary-block { margin: 0 0 3mm; break-inside: avoid; page-break-inside: avoid; }
+  .floor-summary-title { font-family: 'Fraunces', serif; font-size: 16px; color: var(--navy); margin: 2mm 0 1mm; font-weight: 600; letter-spacing: 0.01em; }
   .floor-summary-subtitle { font-size: 11px; color: var(--muted); margin: 0 0 3mm; font-style: italic; }
   .floor-summary-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-  .floor-summary-table thead th { background: #0A1F44; color: white; text-align: left; font-weight: 500; font-size: 10.5px; letter-spacing: 0.04em; padding: 8px 10px; text-transform: uppercase; }
+  .floor-summary-table thead th { background: #0A1F44; color: white; text-align: left; font-weight: 500; font-size: 10.5px; letter-spacing: 0.04em; padding: 5px 10px; text-transform: uppercase; }
   .floor-summary-table thead th.r { text-align: right; }
-  .floor-summary-table tbody td { padding: 7px 10px; border-bottom: 1px solid rgba(10,31,68,0.06); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .floor-summary-table tbody td { padding: 4px 10px; border-bottom: 1px solid rgba(10,31,68,0.06); color: var(--ink); font-variant-numeric: tabular-nums; }
   .floor-summary-table tbody td.r { text-align: right; }
   .floor-summary-table tbody tr.floor-sum-alt td { background: rgba(10,31,68,0.025); }
   .floor-summary-table tbody tr.floor-sum-total td { background: rgba(201,162,77,0.08); border-top: 2px solid #C9A24D; border-bottom: none; color: var(--navy); font-weight: 600; }
