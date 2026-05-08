@@ -3491,6 +3491,15 @@ function quoteCss() {
   /* Style the in-body totals rows the same as the old tfoot rows. */
   .cost-calc-table tbody tr.cost-totals-sub td   { padding: 10px; background: rgba(10,31,68,0.04); font-weight: 600; }
   .cost-calc-table tbody tr.cost-totals-grand td { padding: 10px; background: var(--navy); color: white; font-weight: 700; font-size: 13.5px; }
+  /* Phase 7F-C — Cost page: lede full-width (override 440px max-width)
+     and suppress thead-repeat on page 2 of paginated cost table. Varun:
+     "if the cost table is running into page 6, no need to give the
+     headers for the table again — it is the continuation of the same
+     table, so it should be directly zone J (not the headers)."
+     Setting <thead> display:table-row-group makes it behave as a normal
+     tbody row group → renders ONCE at the start, no auto-repeat. */
+  .cost-calc-page p.lede { max-width: none; }
+  .cost-calc-table thead { display: table-row-group; }
   /* Floor summary table — its title + subtitle should stay with the table on the same page. */
   .floor-summary-title, .floor-summary-subtitle { break-after: avoid-page; page-break-after: avoid; }
   .calc-table tbody tr.cost-zone-sub td { background: rgba(10,31,68,0.02); padding: 6px 10px; border-bottom: 1px solid var(--rule); }
@@ -4099,7 +4108,7 @@ function renderCostPage(state, c) {
     return `<tr><td>${tag} Zone ${escapeHtml(z.letter)} — ${escapeHtml(z.name)}</td><td>${descLine}</td><td class="r">—</td><td class="r">${fmtINR(z.cost)}</td></tr>`;
   };
   return `
-<section class="pg">
+<section class="pg cost-calc-page">
   <div class="pg-head">
     ${logoSvg({ size:'large' })}
     <div class="breadcrumb"><span class="current">Cost Calculation</span></div>
