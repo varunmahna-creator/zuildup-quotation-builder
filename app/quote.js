@@ -3469,6 +3469,15 @@ function quoteCss() {
   .calc-table tbody tr { break-inside: avoid; page-break-inside: avoid; }
   /* tfoot grand-total stays with the last sub-total row when possible. */
   .calc-table tfoot tr.grand { break-before: avoid-page; page-break-before: avoid; }
+  /* Phase 7F — Cost Calculation page: keep the cost table fully on one page so
+     a late-added zone (e.g. Zone J Steel Extra via Custom Charges) cannot get
+     orphaned onto a second page where Chrome would repeat <thead>/<tfoot> and
+     produce what looks like a duplicate table with stale totals. The cost
+     table is short enough that this is safe; if a quote ever has so many
+     additional zones that it overflows A4, we will revisit. */
+  .cost-calc-table { break-inside: avoid; page-break-inside: avoid; }
+  .cost-calc-table tfoot { break-before: avoid-page; page-break-before: avoid; break-inside: avoid; page-break-inside: avoid; }
+  .cost-calc-table tfoot tr { break-before: avoid-page; page-break-before: avoid; }
   /* Floor summary table — its title + subtitle should stay with the table on the same page. */
   .floor-summary-title, .floor-summary-subtitle { break-after: avoid-page; page-break-after: avoid; }
   .calc-table tbody tr.cost-zone-sub td { background: rgba(10,31,68,0.02); padding: 6px 10px; border-bottom: 1px solid var(--rule); }
@@ -4086,7 +4095,7 @@ function renderCostPage(state, c) {
   <h1 class="section">Cost Calculation</h1>
   <p class="lede">Each zone's area multiplied by its applicable rate. Lift cost added separately if enabled. Taxes and any liaisoning are quoted separately, outside this document.</p>
 
-  <table class="calc-table">
+  <table class="calc-table cost-calc-table">
     <thead><tr><th>Zone</th><th>Area</th><th class="r">Rate</th><th class="r">Total</th></tr></thead>
     <tbody>
       ${costRow('A', c.zones.A)}
