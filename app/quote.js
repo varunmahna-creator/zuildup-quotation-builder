@@ -512,7 +512,25 @@ const QuoteStorage = {
     return id;
   },
 
-  /** Internal — silent overwrite-only used by saveState() auto-persist. */
+  /** Internal — silent overwrite-only used by saveState() auto-persist.
+   *
+   * 7G-A Bug #8: Previously this also refreshed entry.customer_name on every
+   * keystroke. That caused the load-modal subtitle to drift away from the
+   * title between explicit saves: a rep could load quote "Hardik — 2026-05-07"
+   * (entry.name = "Hardik..."), edit state.customer.name to "Davinder Juneja",
+   * and the next auto-save would silently rewrite entry.customer_name to
+   * "Davinder Juneja" while leaving entry.name as "Hardik...". Reps then saw
+   *   title:    "Hardik — 2026-05-07"
+   *   subtitle: "Davinder Juneja - by avish - …"
+   * in the Load modal. Confusing AND data-integrity scary.
+   *
+   * Fix: _touch persists the slot blob and bumps modified_at + row_count, but
+   * does NOT touch entry.customer_name (or entry.name). Those stay frozen
+   * until the user explicitly clicks Save (overwrite path in save() above
+   * captures customer_name from the live state at click time, paired with
+   * the user-confirmed name). Title and subtitle now always reflect the
+   * SAME save snapshot.
+   */
   _touch(id, state) {
     const idx = this._readIndex();
     const entry = idx.find(e => e.id === id);
@@ -523,7 +541,8 @@ const QuoteStorage = {
     cloned.modifiedAt = now;
     localStorage.setItem(this._slotKey(id), JSON.stringify(cloned));
     entry.modified_at  = now;
-    entry.customer_name = (cloned.customer && cloned.customer.name) || entry.customer_name || '';
+    // Bug #8: customer_name intentionally NOT updated here — only explicit Save
+    // (or Save As New) refreshes it, paired with the user-confirmed name.
     entry.row_count    = (cloned.rows || []).length;
     this._writeIndex(idx);
     // Phase 4: debounced push to cloud (background) — auto-save fires this on every keystroke,
@@ -1486,6 +1505,8 @@ async function bootForm() {
   { const row = document.getElementById('lift-cost-row'); if (row) row.style.display = state.build.hasLift ? '' : 'none'; }
   // P1.7: applyValidation defined just below — call after first paint so initial state is reflected.
   setTimeout(() => { try { applyValidation(); } catch(_) {} }, 0);
+  // 7G-C: initial FAR fetch on boot.
+  setTimeout(() => { try { maybeFarFetch(state); } catch(_) {} }, 0);
 
   // ---- P1.7: field validation + business rules ----
   function applyValidation() {
@@ -1640,6 +1661,8 @@ async function bootForm() {
       // moving back from structure → keep structure_only scope (user can flip if they want full)
     }
     flush();
+    // 7G-C: build type flips wantStilt — re-fetch FAR.
+    maybeFarFetch(state);
   };
 
   // ---- Pricing ----
