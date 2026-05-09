@@ -2119,6 +2119,41 @@ async function bootForm() {
           `);
         }
       });
+      // 7G-A Bug #5: Render PENDING line items — those in state.pricing.zoneLineItems[k]
+      // but NOT yet present in z.items. The calc engine (appendZoneLineItems) skips
+      // rows where area<=0 OR rate<=0 because they can't contribute cost. That made
+      // the "+ Add line" button appear to do nothing — clicks pushed an empty row
+      // into state, but renderAreaOverridesPanel() couldn't show it because the row
+      // was filtered out at calc time. Now we render incomplete rows here so reps
+      // can fill area/rate inline. Once both are >0, the calc engine picks them up
+      // on the next render and the row "promotes" to a full item (still rendered
+      // by the loop above — we de-dupe by _lineItemId).
+      const pendingRows = (state.pricing.zoneLineItems[k] || []).filter(r => {
+        const areaVal = (r.area != null && r.area !== '' && !isNaN(parseFloat(r.area))) ? parseFloat(r.area) : 0;
+        const rateVal = (r.rate != null && r.rate !== '' && !isNaN(parseFloat(r.rate))) ? parseFloat(r.rate) : 0;
+        return areaVal <= 0 || rateVal <= 0;
+      });
+      pendingRows.forEach(r => {
+        const rid = r.id || '';
+        const unit = z.unit ? z.unit : 'sqft';
+        const floorOpts = (k === 'A') ? floorOptionsForA(state) : [];
+        const liveFloor = (r.floor || '');
+        const floorSelectHtml = (k === 'A')
+          ? `<select data-li-field="floor" title="Add this item's area to a floor's covered total" style="flex:0 0 auto;font-size:11px;padding:4px 6px;background:#fff;color:var(--navy);border:1px solid var(--rule);border-radius:4px;"><option value="">— floor (optional) —</option>${floorOpts.map(f => `<option value="${escapeAttr(f)}"${f === liveFloor ? ' selected' : ''}>${escapeHtml(f)}</option>`).join('')}</select>`
+          : '';
+        html.push(`
+          <div class="aov-row aov-lineitem aov-lineitem-pending" data-zone="${k}" data-lineitem-id="${escapeAttr(rid)}" style="flex-wrap:wrap;gap:4px;align-items:flex-start;background:#fffbe6;">
+            <input type="text" data-li-field="name" value="${escapeAttr(r.name || '')}" placeholder="Item name" style="flex:1 1 auto;min-width:120px;font-size:11.5px;font-weight:600;color:var(--navy);">
+            <input type="number" min="0" data-li-field="area" value="${r.area || ''}" placeholder="area" style="width:70px;">
+            <span class="aov-unit">${escapeHtml(unit)}</span>
+            <input type="number" min="0" data-li-field="rate" value="${r.rate || ''}" placeholder="rate" style="width:70px;">
+            <span class="aov-unit">₹/${escapeHtml(unit)}</span>
+            <button type="button" data-li-remove="1" title="Remove" style="font-size:11px;padding:2px 6px;background:white;color:#c0392b;border:1px solid var(--rule);border-radius:4px;cursor:pointer;">✕</button>
+            ${floorSelectHtml}
+            <input type="text" data-li-field="desc" value="${escapeAttr(r.desc || '')}" placeholder="description (optional)" style="flex:1 1 100%;font-size:10.5px;color:var(--muted);">
+          </div>
+        `);
+      });
       // Item 15: + Add line item button per zone.
       html.push(`<div class="aov-row" style="border-top:1px dashed var(--rule);padding-top:6px;margin-top:4px;"><button type="button" data-add-line-zone="${k}" style="font-size:11px;padding:4px 10px;background:white;color:var(--navy);border:1px dashed var(--rule);border-radius:4px;cursor:pointer;font-weight:600;">+ Add line item to Zone ${k}</button></div>`);
       html.push('</div>');

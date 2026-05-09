@@ -319,19 +319,35 @@ def test_editor_persists_descriptionRich_flag():
 
 def test_pdf_grid_branches_on_descIsRich():
     """Grid mode emits HTML when descIsRich, else escapes."""
-    # Find the .desc paragraph in grid mode.
-    assert re.search(
+    # Phase 7G-C: grid renderer now emits an optional brand line ABOVE the desc
+    # paragraph (`${brandHtml}` before `<p class="desc">`). The descIsRich branch
+    # may live in either the inline `.desc` template or a `descBody` const that
+    # is then inlined. Accept both shapes.
+    inline_p = re.search(
         r'<p class="desc">\$\{f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)\}</p>',
         QUOTE_JS,
-    ), "Grid mode must branch on descIsRich"
+    )
+    via_const = re.search(
+        r'\$\{f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)\}',
+        QUOTE_JS,
+    )
+    assert inline_p or via_const, "Grid mode must branch on descIsRich"
 
 
 def test_pdf_table_branches_on_descIsRich():
     """Table mode emits HTML when descIsRich."""
-    assert re.search(
+    # Phase 7G-C: table renderer now interpolates `${brandHtml}${descBody}` where
+    # descBody is computed via the descIsRich ternary. Accept either inline or
+    # via-const shape.
+    inline_td = re.search(
         r'<td class="desc">\$\{f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)\}</td>',
         QUOTE_JS,
-    ), "Table mode must branch on descIsRich"
+    )
+    via_const = re.search(
+        r'\$\{f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)\}',
+        QUOTE_JS,
+    )
+    assert inline_td or via_const, "Table mode must branch on descIsRich"
 
 
 def test_rowfields_returns_descIsRich():
