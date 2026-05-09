@@ -72,13 +72,13 @@ const defaultState = () => ({
     // P3 #3 + #4: per-zone rate overrides (null/'' => formula default).
     zoneARate:    null,          // override Zone A (default = costPerSqft)
     zoneBRate:    null,          // override Zone B (default = 50% of A)
-    zoneCRate:    null,          // override Zone C (default = 600 ₹/sqft)
+    zoneCRate:    null,          // 7G-B: override Zone C (default = 500 ₹/sqft, Hardik baseline)
     zoneDRate:    null,          // override Zone D (default = 15 ₹/L)
     basementRate: null,          // override Zone E basement (default = 2700 ₹/sqft)
     // P3 v2 (A): per-line-item rate overrides. Key '<zone>:<item.name>' -> ₹/sqft (or ₹/L for Zone D).
     // null/missing => use zone default. Lets sales charge Terrace ₹650 while keeping Ramp/Setback at ₹600.
     itemRates: {},
-    // P3 v2.1: editable lift machine cost (default ₹12,00,000). null = default.
+    // 7G-B: editable lift machine cost (default ₹10,00,000, Hardik baseline). null = default.
     liftCost: null,
     // Phase 6.3: opt-in additional charge zones, appended to the cost sheet
     // AFTER the static A/B/C/D/E zones. Each disabled by default → omitted
@@ -2475,7 +2475,7 @@ async function bootForm() {
       const strR = parseInt(p.structureRate) || 0;
       if (k === 'A') zoneDefault = isStruct ? strR : ovr(p.zoneARate, baseFormula);
       else if (k === 'B') zoneDefault = isStruct ? 500 : ovr(p.zoneBRate, Math.round(baseFormula * 0.5));
-      else if (k === 'C') zoneDefault = ovr(p.zoneCRate, 600);
+      else if (k === 'C') zoneDefault = ovr(p.zoneCRate, C_RATE); // 7G-B
       else if (k === 'D') zoneDefault = ovr(p.zoneDRate, 15);
       else if (k === 'E') zoneDefault = ovr(p.basementRate, 2700);
       const unit = z.unit ? '/' + z.unit : '/sqft';

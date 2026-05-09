@@ -260,7 +260,16 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
     <div class="row cols-3">
       <div><label>Plot (sq.yd)</label><input id="f-plot" type="number" min="50" step="10"></div>
       <div><label>Breadth (ft)</label><input id="f-breadth" type="number" min="10" step="0.5"></div>
-      <div><label>Coverage (%)</label><input id="f-coverage" type="number" min="0" max="100"></div>
+      <div>
+        <label>Coverage (%)</label>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input id="f-coverage" type="number" min="0" max="100" style="flex:1;">
+          <!-- 7G-C: Reset to FAR default — re-fetches FAR API and overrides current value -->
+          <button type="button" id="far-reset" title="Reset to FAR API default" aria-label="Reset to FAR API default" style="flex:0 0 auto;padding:6px 8px;font-size:13px;line-height:1;background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--muted);cursor:pointer;">↻</button>
+        </div>
+        <!-- 7G-C: FAR API auto-populate hint. Updated dynamically by quote.js -->
+        <small id="far-hint" style="display:block;font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.3;">Coverage auto-populates from FAR API once plot details are entered.</small>
+      </div>
     </div>
     <div class="row">
       <div><label>Build Type</label>
