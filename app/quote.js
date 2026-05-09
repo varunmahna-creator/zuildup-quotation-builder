@@ -1130,7 +1130,12 @@ function calcPackage(state) {
   // Zone B — stilt + balcony + staircase
   const stiltArea       = hasStilt ? floorAdj : 0;
   const balconyPerFloor = b.breadth * BALCONY_DEPTH;
-  const balconyTotal    = balconyPerFloor * numFloors;
+  // 7G-B: nostilt ground-floor logic — ground floor has NO balcony (it sits
+  // directly on plot, no setback/ramp accounted via Zone C item, no balcony
+  // jut over the stilt). For nostilt, balcony only applies to floors 2..N.
+  const isNostilt = b.buildType === 'nostilt';
+  const balconyFloorCount = isNostilt ? Math.max(0, numFloors - 1) : numFloors;
+  const balconyTotal    = balconyPerFloor * balconyFloorCount;
   const staircaseTotal  = staircasePerFloor * staircaseLevels;
   const zoneBItems = [];
   if (hasStilt) zoneBItems.push({ name: 'Stilt', desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: stiltArea });
@@ -1139,10 +1144,13 @@ function calcPackage(state) {
   // When ON, expand to N rows (one per floor) each at the rep-supplied rate;
   // null/blank cells fall back to Zone B default so the calc never breaks.
   // PDF collapse-when-equal rule lives in renderCostPage, NOT here.
+  // 7G-B: for nostilt, skip ground floor (i=0) — no balcony on ground.
   const balconyFloorNames = ['Floor 1','Floor 2','Floor 3','Floor 4','Floor 5','Floor 6'];
   const bpf = (state.pricing && state.pricing.balconyPerFloor) || { enabled: false, rates: [] };
   if (bpf.enabled) {
     for (let i = 0; i < numFloors; i++) {
+      // 7G-B: nostilt ground-floor (i=0) has no balcony.
+      if (isNostilt && i === 0) continue;
       const fname = balconyFloorNames[i] || ('Floor ' + (i+1));
       zoneBItems.push({
         name: `Balcony — ${fname}`,
@@ -1152,7 +1160,11 @@ function calcPackage(state) {
       });
     }
   } else {
-    zoneBItems.push({ name: 'Balcony', desc: `${b.breadth}ft × ${BALCONY_DEPTH}ft × ${numFloors} floors`, area: balconyTotal });
+    // 7G-B: nostilt → balcony spans (numFloors-1) floors (skip ground).
+    const balconyFloorsLabel = isNostilt
+      ? `${balconyFloorCount} floors (excl. ground)`
+      : `${numFloors} floors`;
+    zoneBItems.push({ name: 'Balcony', desc: `${b.breadth}ft × ${BALCONY_DEPTH}ft × ${balconyFloorsLabel}`, area: balconyTotal });
   }
   zoneBItems.push({ name: 'Staircase', desc: `${staircaseLevels} levels × ${staircasePerFloor} sq.ft`, area: staircaseTotal });
   const totalB = zoneBItems.reduce((s,f) => s + f.area, 0);
@@ -3993,12 +4005,22 @@ function buildFloorSummary(state, c) {
 
   // Floor 1..N (habitable floors). Phase 7B Item 11: use the post-override
   // area for Covered (Zone A items: Ground/First/Second/...).
+  // 7G-B: for nostilt, the ground floor (i=0) has NO balcony (semiCovered=0)
+  // and Open = setback + ramp (since there's no separate stilt row absorbing
+  // the open ground area). Floors 1..N-1 retain normal balcony semiCovered.
+  const isNostiltSummary = b.buildType === 'nostilt';
+  const nostiltSetbackDefault = Math.max(0, plotSqFt - floorArea);
+  const nostiltRampDefault    = breadth * RAMP_DEPTH;
+  const nostiltSetbackArea = isNostiltSummary ? getZoneItemArea('C', 'Setback', nostiltSetbackDefault) : 0;
+  const nostiltRampArea    = isNostiltSummary ? getZoneItemArea('C', 'Ramp',    nostiltRampDefault)    : 0;
   for (let i = 0; i < numFloors; i++) {
     const zoneAName = floorNames[i] ? floorNames[i].replace(' Floor','') + ' Floor' : ((i+1) + 'th Floor');
     // Phase 7E-A Item 1: lookup name === floorNames[i] (FLOOR_DISPLAY_NAMES);
     // single source of truth for floor labels across summary + calc engine.
     const lookup = floorNames[i] || `Floor ${i+1}`;
     const coveredArea = getZoneItemArea('A', lookup, floorAdj);
+    // 7G-B: nostilt ground floor (i=0) — no balcony, open = setback + ramp.
+    const isNostiltGround = isNostiltSummary && i === 0;
     rows.push({
       label: floorNames[i] || `Floor ${i+1}`,
       // Phase 7E-A Item 2: drop pkgLabel ("Premium Package") from per-floor rows.
@@ -4006,8 +4028,10 @@ function buildFloorSummary(state, c) {
       liftStair: liftStairPerFloor,
       covered:   coveredArea,
       // Package modes have balcony as semi-covered; structure mode has no balcony in the per-floor row (terrace at the top still applies).
-      semiCovered: isStruct ? 0 : balconyPerFloor,
-      open: 0,
+      // 7G-B: nostilt ground floor — semiCovered=0 (no balcony on ground).
+      semiCovered: isStruct ? 0 : (isNostiltGround ? 0 : balconyPerFloor),
+      // 7G-B: nostilt ground floor — open = setback + ramp.
+      open: isNostiltGround ? (nostiltSetbackArea + nostiltRampArea) : 0,
     });
   }
 
