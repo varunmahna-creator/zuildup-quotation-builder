@@ -23,9 +23,9 @@ const STORE_KEY = 'zuildup.quote.v2';
 // ============================================================================
 // Calculator constants (verbatim from zuildup-cost-calculator.html)
 // ============================================================================
-const C_RATE             = 600;       // Zone C — Terrace + Ramp + Setback (₹/sqft)
+const C_RATE             = 500;       // 7G-B: Zone C — Terrace + Ramp + Setback (₹/sqft) — Hardik baseline
 const D_RATE             = 1000;      // Reserved (canonical defines but Zone D in canonical is water-tank)
-const LIFT_COST          = 1200000;   // Lift machine fixed cost (₹12,00,000)
+const LIFT_COST          = 1000000;   // 7G-B: Lift machine fixed cost (₹10,00,000) — Hardik baseline
 const STRUCT_B_RATE      = 500;       // Structure-only mode Zone B fixed rate (₹/sqft)
 const BASEMENT_RATE      = 2700;      // Zone E — Basement (₹/sqft)
 const WATER_TANK_RATE    = 15;        // Zone D — Underground water tank (₹/litre)
@@ -621,6 +621,124 @@ const QuoteStorage = {
 
 // Test hook: expose to window so unit tests + CDP tests can poke at storage.
 try { if (typeof window !== 'undefined') window.QuoteStorage = QuoteStorage; } catch (_) {}
+
+// ============================================================================
+// 7G-C: FAR API integration (coverage % auto-populate)
+// ============================================================================
+// Live service: https://far-service-176777907104.asia-south1.run.app
+// Endpoint: POST /api/v1/far/calculate
+// CORS: open ('access-control-allow-origin: *') — direct browser → API call.
+// Auth: none (public endpoint).
+// Returns ground coverage % among many other fields (groundCoverage).
+// We auto-populate state.build.coverage from the FAR response when:
+//   (a) the field is empty, OR
+//   (b) the field still equals the previous auto-populated value.
+// If the user types a different value, state.far.manualOverride flips to
+// true and we stop overwriting until they clear the field.
+// ----------------------------------------------------------------------------
+const FAR_API_URL = 'https://far-service-176777907104.asia-south1.run.app/api/v1/far/calculate';
+
+function ensureFarState(s) {
+  if (!s.far) s.far = { lastAuto: null, manualOverride: false, lastCity: null, lastError: null };
+  return s.far;
+}
+
+// 7G-C: parse the customer.address string for a known FAR city. Default
+// 'gurugram' (most common case in our pipeline — Hardik example was Gurugram).
+function detectFarCity(addressStr) {
+  const s = (addressStr || '').toLowerCase();
+  if (/gurugram|gurgaon/.test(s)) return 'gurugram';
+  if (/faridabad/.test(s)) return 'faridabad';
+  if (/ghaziabad/.test(s)) return 'ghaziabad';
+  if (/noida|greater noida/.test(s)) return 'noida';
+  if (/delhi|new delhi/.test(s)) return 'delhi';
+  return 'gurugram';
+}
+
+// 7G-C: build the FAR API request body from current state. Returns null if
+// inputs are insufficient (e.g. plotSqYards == 0).
+function buildFarRequest(s) {
+  const b = s.build || {};
+  if (!b.plotSqYards || b.plotSqYards <= 0) return null;
+  const SQYD_TO_SQM = 0.836127;
+  const FT_TO_M = 0.3048;
+  const plotAreaSqm = +(b.plotSqYards * SQYD_TO_SQM).toFixed(2);
+  const widthM = b.breadth ? +(b.breadth * FT_TO_M).toFixed(2) : undefined;
+  const depthM = (b.breadth && b.plotSqYards)
+    ? +((b.plotSqYards * 9 / b.breadth) * FT_TO_M).toFixed(2)
+    : undefined;
+  const city = detectFarCity(s.customer && s.customer.address);
+  const desiredFloors = Math.max(1, b.floors || 1) + (b.buildType === 'stilt' ? 1 : 0);
+  return {
+    city,
+    plotArea: plotAreaSqm,
+    plotUnit: 'sqm',
+    plotWidth: widthM,
+    plotDepth: depthM,
+    desiredFloors,
+    wantBasement: !!b.hasBasement,
+    wantStilt: b.buildType === 'stilt',
+    wantTerrace: true,
+    wantBalcony: true,
+    wantLift: !!b.hasLift,
+  };
+}
+
+// 7G-C: in-flight guard + debounce so rapid input changes don't stack fetches.
+let _farInFlight = null;
+let _farDebounceTimer = null;
+
+function maybeFarFetch() {
+  if (_farDebounceTimer) clearTimeout(_farDebounceTimer);
+  _farDebounceTimer = setTimeout(() => { _farDebounceTimer = null; _doFarFetch(); }, 600);
+}
+
+async function _doFarFetch() {
+  const req = buildFarRequest(state);
+  if (!req) return;
+  const farS = ensureFarState(state);
+  if (farS.manualOverride) return;
+  if (_farInFlight) return;
+  _farInFlight = (async () => {
+    const hint = document.getElementById('far-hint');
+    try {
+      const r = await fetch(FAR_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req),
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      const cov = (typeof data.groundCoverage === 'number') ? data.groundCoverage : null;
+      if (cov == null) throw new Error('no groundCoverage in response');
+      farS.lastCity = req.city;
+      farS.lastError = null;
+      const cur = state.build.coverage;
+      if (!farS.manualOverride && (cur === 0 || cur === farS.lastAuto || cur == null || cur === '')) {
+        state.build.coverage = cov;
+        const fc = document.getElementById('f-coverage');
+        if (fc) fc.value = cov;
+      }
+      farS.lastAuto = cov;
+      saveState(state);
+      if (hint) {
+        const cityName = ({ gurugram: 'Gurugram', faridabad: 'Faridabad', ghaziabad: 'Ghaziabad', noida: 'Noida', delhi: 'Delhi' })[req.city] || req.city;
+        hint.textContent = `Auto-populated ${cov}% from FAR API (${cityName} bylaws). Edit to override.`;
+        hint.style.color = 'var(--muted)';
+      }
+      try { renderAreaOverridesPanel(); applyValidation(); renderFloorSummaryEditor(); } catch (_) {}
+    } catch (err) {
+      farS.lastError = String(err && err.message || err);
+      saveState(state);
+      if (hint) {
+        hint.textContent = 'FAR API unavailable — enter coverage manually.';
+        hint.style.color = 'var(--gold)';
+      }
+    } finally {
+      _farInFlight = null;
+    }
+  })();
+}
 
 // ============================================================================
 // Catalog
@@ -1456,19 +1574,42 @@ async function bootForm() {
   // P3 #6: layout toggle
   if ($('f-specs-layout')) $('f-specs-layout').onchange = e => { state.specsLayout = e.target.value; flush(); };
   $('f-name').oninput        = e => { state.customer.name = e.target.value; flush(); };
-  $('f-address').oninput     = e => { state.customer.address = e.target.value; flush(); };
+  // 7G-C: address change can flip FAR city (gurugram vs delhi vs noida etc).
+  $('f-address').oninput     = e => { state.customer.address = e.target.value; flush(); maybeFarFetch(); };
 
   // ---- Build geometry listeners ----
-  $('f-plot').oninput     = e => { state.build.plotSqYards = +e.target.value || 0; flush(); };
-  $('f-breadth').oninput  = e => { state.build.breadth = +e.target.value || 0; flush(); };
-  $('f-coverage').oninput = e => { state.build.coverage = +e.target.value || 0; flush(); };
-  $('f-floors').oninput   = e => { state.build.floors = +e.target.value || 1; syncBpfRatesLength(); flush(); };
-  $('f-basement').onchange= e => { state.build.hasBasement = !!e.target.checked; syncBasementRows(); flush(); };
+  $('f-plot').oninput     = e => { state.build.plotSqYards = +e.target.value || 0; flush(); maybeFarFetch(state); };
+  $('f-breadth').oninput  = e => { state.build.breadth = +e.target.value || 0; flush(); maybeFarFetch(state); };
+  // 7G-C: coverage input — track whether the user has manually overridden the
+  // auto-populated value. Empty field => unlock auto-populate (re-fetch).
+  $('f-coverage').oninput = e => {
+    const raw = e.target.value;
+    const v = +raw || 0;
+    state.build.coverage = v;
+    const farS = ensureFarState(state);
+    if (raw === '' || raw == null) {
+      // User cleared the field — reset manual override and re-fetch.
+      farS.manualOverride = false;
+      farS.lastAuto = null;
+      flush();
+      maybeFarFetch(state);
+      return;
+    }
+    if (farS.lastAuto != null && v !== farS.lastAuto) {
+      farS.manualOverride = true;
+      const hint = document.getElementById('far-hint');
+      if (hint) { hint.textContent = 'Manual override active. Clear field to re-enable FAR auto-populate.'; hint.style.color = 'var(--gold)'; }
+    }
+    flush();
+  };
+  $('f-floors').oninput   = e => { state.build.floors = +e.target.value || 1; syncBpfRatesLength(); flush(); maybeFarFetch(state); };
+  $('f-basement').onchange= e => { state.build.hasBasement = !!e.target.checked; syncBasementRows(); flush(); maybeFarFetch(state); };
   $('f-lift').onchange    = e => {
     state.build.hasLift = !!e.target.checked;
     const row = document.getElementById('lift-cost-row');
     if (row) row.style.display = state.build.hasLift ? '' : 'none';
     flush();
+    maybeFarFetch(state);
   };
   // Phase 7B Item 3: water-tank toggle. Sets state.build.hasWaterTank;
   // calc engine omits Zone D entirely when false (zones.D = null).
