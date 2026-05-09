@@ -1619,10 +1619,26 @@ async function bootForm() {
     if (farS.lastAuto != null && v !== farS.lastAuto) {
       farS.manualOverride = true;
       const hint = document.getElementById('far-hint');
-      if (hint) { hint.textContent = 'Manual override active. Clear field to re-enable FAR auto-populate.'; hint.style.color = 'var(--gold)'; }
+      if (hint) { hint.textContent = 'Manual override active. Click ↻ to reset to FAR default, or clear field to re-enable auto-populate.'; hint.style.color = 'var(--gold)'; }
     }
     flush();
   };
+  // 7G-C: Reset to FAR default button. Clears manual override and forces a
+  // fresh fetch + override of the current field value.
+  if ($('far-reset')) {
+    $('far-reset').onclick = () => {
+      const farS = ensureFarState(state);
+      farS.manualOverride = false;
+      farS.lastAuto = null;
+      const fc = document.getElementById('f-coverage');
+      if (fc) fc.value = '';
+      state.build.coverage = 0;
+      flush();
+      const hint = document.getElementById('far-hint');
+      if (hint) { hint.textContent = 'Fetching FAR default…'; hint.style.color = 'var(--muted)'; }
+      maybeFarFetch(state);
+    };
+  }
   $('f-floors').oninput   = e => { state.build.floors = +e.target.value || 1; syncBpfRatesLength(); flush(); maybeFarFetch(state); };
   $('f-basement').onchange= e => { state.build.hasBasement = !!e.target.checked; syncBasementRows(); flush(); maybeFarFetch(state); };
   $('f-lift').onchange    = e => {
