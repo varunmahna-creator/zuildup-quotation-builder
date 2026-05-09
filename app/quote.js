@@ -464,8 +464,10 @@ const QuoteStorage = {
     let id = (state && state.quoteId && state.quoteId.startsWith('q_')) ? state.quoteId : null;
     let entry = id ? idx.find(e => e.id === id) : null;
 
-    // Overwrite path
-    if (entry && name === undefined) {
+    // Overwrite path. 7G-A Bug #4: when `name` is provided AND non-empty AND
+    // differs from the current entry.name, update the entry name (rename).
+    // When name is undefined OR empty/whitespace, leave entry.name as-is.
+    if (entry) {
       const cloned = JSON.parse(JSON.stringify(state));
       cloned.quoteId = id;
       cloned.modifiedAt = now;
@@ -473,6 +475,10 @@ const QuoteStorage = {
       entry.modified_at  = now;
       entry.customer_name = (cloned.customer && cloned.customer.name) || entry.customer_name || '';
       entry.row_count    = (cloned.rows || []).length;
+      const trimmed = (typeof name === 'string') ? name.trim() : '';
+      if (trimmed && trimmed !== entry.name) {
+        entry.name = trimmed;
+      }
       // bubble up to front
       const others = idx.filter(e => e.id !== id);
       this._writeIndex([entry, ...others]);
@@ -1780,13 +1786,17 @@ async function bootForm() {
     const existName  = document.getElementById('save-existing-name');
 
     if (aid) {
-      // Existing slot: 3-button mode (Save / Save As New / Cancel)
+      // 7G-A Bug #4: Existing slot now ALSO shows the name input pre-filled
+      // with the current name so the rep can rename on resave. Save button
+      // overwrites in place (same id) but with the (possibly edited) name.
+      // Save As New still creates a fresh copy.
       const entry = QuoteStorage.list().find(e => e.id === aid);
-      promptDiv.style.display  = 'none';
+      promptDiv.style.display  = '';
       existDiv.style.display   = '';
       saveAsNew.style.display  = '';
       titleEl.textContent      = 'Save quote';
       existName.textContent    = entry ? entry.name : '(unknown)';
+      nameInput.value          = entry ? entry.name : '';
     } else {
       // No slot: prompt for name with sensible default.
       const cn = (state.customer.name || '').trim() || 'Untitled';
@@ -1798,7 +1808,9 @@ async function bootForm() {
       nameInput.value         = cn + ' — ' + today;
     }
     openModal(saveModal);
-    if (!aid) setTimeout(() => { nameInput.focus(); nameInput.select(); }, 30);
+    // 7G-A Bug #4: focus & select name input on open in BOTH modes so the
+    // rep can immediately type to rename.
+    setTimeout(() => { nameInput.focus(); nameInput.select(); }, 30);
   };
 
   document.getElementById('save-cancel').onclick = () => closeModal(saveModal);
@@ -1808,12 +1820,14 @@ async function bootForm() {
     let id;
     try {
       const aid = QuoteStorage.activeId();
+      const nameInputVal = (document.getElementById('save-name-input').value || '').trim();
       if (aid) {
-        // Overwrite path
-        id = QuoteStorage.save(state); // no name → overwrite
+        // 7G-A Bug #4: overwrite path now also accepts a (possibly renamed)
+        // name. QuoteStorage.save() updates entry.name if the second arg is
+        // non-undefined on an existing slot.
+        id = QuoteStorage.save(state, nameInputVal || undefined);
       } else {
-        const name = (document.getElementById('save-name-input').value || '').trim();
-        id = QuoteStorage.save(state, name);
+        id = QuoteStorage.save(state, nameInputVal);
       }
       QuoteStorage.setActiveId(id);
       state.quoteId = id; // mirror into in-memory state
