@@ -1096,7 +1096,7 @@ function calcPackage(state) {
 
   const plotSqFt   = b.plotSqYards * 9;
   const depth      = b.breadth ? Math.round(plotSqFt / b.breadth) : 0;
-  const floorArea  = Math.round(plotSqFt * b.coverage / 100);
+  const floorArea  = plotSqFt * b.coverage / 100; // 7G-B: keep precision; display via niA()
   const numFloors  = b.floors;
 
   // Phase 7B Item 14: lift / staircase per-floor sqft are now per-quote
@@ -1119,7 +1119,7 @@ function calcPackage(state) {
   for (let i = 0; i < numFloors; i++) {
     zoneAItems.push({
       name: fn[i] || `Floor ${i+1}`,
-      desc: `Floor Area (${ni(floorArea)})${b.hasLift ? ' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`,
+      desc: `Floor Area (${niA(floorArea)})${b.hasLift ? ' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`,
       area: floorAdj,
     });
   }
@@ -1138,7 +1138,7 @@ function calcPackage(state) {
   const balconyTotal    = balconyPerFloor * balconyFloorCount;
   const staircaseTotal  = staircasePerFloor * staircaseLevels;
   const zoneBItems = [];
-  if (hasStilt) zoneBItems.push({ name: 'Stilt', desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: stiltArea });
+  if (hasStilt) zoneBItems.push({ name: 'Stilt', desc: `Floor Area (${niA(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: stiltArea });
   // Phase 6.2 — per-floor balcony pricing. When toggle OFF (default), one
   // combined Balcony row at the Zone B default rate (unchanged from pre-6.2).
   // When ON, expand to N rows (one per floor) each at the rep-supplied rate;
@@ -1174,9 +1174,9 @@ function calcPackage(state) {
   const ramp    = b.breadth * RAMP_DEPTH;
   const setback = plotSqFt - floorArea;
   const zoneCItems = [
-    { name: 'Terrace', desc: `Floor (${ni(floorArea)}) + 1 balcony (${ni(balconyPerFloor)}) − Staircase (${staircasePerFloor})${b.hasLift?' − Lift ('+liftPerFloor+')':''}`, area: terrace },
+    { name: 'Terrace', desc: `Floor (${niA(floorArea)}) + 1 balcony (${niA(balconyPerFloor)}) − Staircase (${staircasePerFloor})${b.hasLift?' − Lift ('+liftPerFloor+')':''}`, area: terrace },
     { name: 'Ramp',    desc: `${b.breadth}ft × ${RAMP_DEPTH}ft`, area: ramp },
-    { name: 'Setback', desc: `Plot Area (${ni(plotSqFt)}) − Floor Area (${ni(floorArea)})`, area: setback },
+    { name: 'Setback', desc: `Plot Area (${niA(plotSqFt)}) − Floor Area (${niA(floorArea)})`, area: setback },
   ];
   const totalC = zoneCItems.reduce((s,f) => s + f.area, 0);
 
@@ -1190,7 +1190,7 @@ function calcPackage(state) {
   // (the gross built-up before lift/staircase deductions), which made the
   // basement area inconsistent with what's actually buildable below grade.
   const totalE = b.hasBasement ? floorAdj : 0;
-  const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: totalE }] : [];
+  const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: `Floor Area (${niA(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: totalE }] : [];
 
   // P3 v2 (A): per-line-item rates. Each item gets item.rate (override or zone default)
   // and item.cost (area * rate). Zone cost = sum(items.cost). Zone label shows "varies"
@@ -1284,7 +1284,7 @@ function calcStructure(state) {
 
   const plotSqFt = b.plotSqYards * 9;
   const depth = b.breadth ? Math.round(plotSqFt / b.breadth) : 0;
-  const floorArea = Math.round(plotSqFt * b.coverage / 100);
+  const floorArea = plotSqFt * b.coverage / 100; // 7G-B: keep precision; display via niA()
 
   // Phase 5 (Issue 3): unified formula. Structure mode always has stilt; mumty (+1) always present.
   // Same formula as calcPackage with hasStilt=true: numFloors + 1 (stilt) + basement? + 1 (mumty).
@@ -1299,7 +1299,7 @@ function calcStructure(state) {
   for (let i = 0; i < numFloors; i++) {
     zoneAItems.push({
       name: fn[i] || `Floor ${i+1}`,
-      desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`,
+      desc: `Floor Area (${niA(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`,
       area: floorAdj,
     });
   }
@@ -1327,7 +1327,7 @@ function calcStructure(state) {
   // (the gross built-up before lift/staircase deductions), which made the
   // basement area inconsistent with what's actually buildable below grade.
   const totalE = b.hasBasement ? floorAdj : 0;
-  const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: `Floor Area (${ni(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: totalE }] : [];
+  const zoneEItems = b.hasBasement ? [{ name: 'Basement', desc: `Floor Area (${niA(floorArea)})${b.hasLift?' − Lift ('+liftPerFloor+')':''} − Staircase (${staircasePerFloor})`, area: totalE }] : [];
 
   // P3 v2 (A): per-line-item rates in structure mode.
   const itemRates = (state.pricing.itemRates) || {};
@@ -1400,6 +1400,16 @@ function fmtINR(n) {
   return (n < 0 ? '−' : '') + '₹' + parts.join(',') + ',' + l;
 }
 function ni(n) { if (n === null || n === undefined || isNaN(n)) return '—'; return Math.round(n).toLocaleString('en-IN'); }
+// 7G-B: Area formatter — display areas with 2 decimal places (no rounding
+// to whole numbers). Unlike ni() which is Math.round → toLocaleString, niA
+// preserves up to 2 decimal places of precision so non-integer areas (e.g.
+// 33.5ft × 72ft = 2412.0 sqft, or 1556.50 sqft) render faithfully. Used
+// everywhere AREA values display (sqft, sqyd). Money still uses fmtINR /
+// integer values (ni). Liter volumes (Zone D) still use ni (integer).
+function niA(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -2262,7 +2272,7 @@ async function bootForm() {
         const v = state.areaOverrides[key] ?? '';
         const unit = z.unit ? z.unit : 'sqft';
         const computed = (state.areaOverrides[key] != null && state.areaOverrides[key] !== '') ? null : it.area;
-        const placeholder = `auto: ${ni(computed != null ? computed : it.area)}`;
+        const placeholder = `auto: ${niA(computed != null ? computed : it.area)}`; // 7G-B
         const nameOv = state.pricing.itemNameOverrides[key];
         const descOv = state.pricing.itemDescOverrides[key];
         const displayName = (nameOv && nameOv.trim()) ? nameOv : it.name;
@@ -3923,7 +3933,7 @@ function buildFloorSummary(state, c) {
   const numFloors = b.floors;
   const breadth   = b.breadth;
   const plotSqFt  = b.plotSqYards * 9;
-  const floorArea = Math.round(plotSqFt * b.coverage / 100);
+  const floorArea = plotSqFt * b.coverage / 100; // 7G-B: keep precision; display via niA()
   // Phase 7B Item 14: respect per-quote editable lift/staircase sqft.
   const _p7bfs = state.pricing || {};
   const _ovr7bfs = (v, fb) => (v != null && v !== '' && !isNaN(parseInt(v))) ? parseInt(v) : fb;
@@ -4113,8 +4123,8 @@ function buildFloorSummary(state, c) {
 function renderFloorSummaryTable(state, c) {
   const rows = buildFloorSummary(state, c);
   if (!rows.length) return '';
-  const subtitle = `Plot Area — ${c.plotSqYards} Sq. Yard / ${ni(c.plotSqFt)} Sq. Ft.`;
-  const cell = (n) => (n === 0 || n == null) ? '<span style="color:var(--muted);">—</span>' : (ni(n) + ' sq.ft');
+  const subtitle = `Plot Area — ${c.plotSqYards} Sq. Yard / ${niA(c.plotSqFt)} Sq. Ft.`;
+  const cell = (n) => (n === 0 || n == null) ? '<span style="color:var(--muted);">—</span>' : (niA(n) + ' sq.ft'); // 7G-B
   const trs = rows.map((r, i) => {
     const labelCell = r.sublabel
       ? `${escapeHtml(r.label)} <span style="color:var(--muted);font-weight:400;font-size:10.5px;">(${escapeHtml(r.sublabel)})</span>`
@@ -4151,8 +4161,8 @@ function renderAreaPage(state, c) {
     const tag = `<span class="zone-tag z${key.toLowerCase()}">${key}</span>`;
     return `
       <tr class="zone-hdr"><td colspan="3">${tag} Zone ${key} — ${zone.rateLabel}</td></tr>
-      ${zone.items.map(it => `<tr><td>${escapeHtml(resolveItemName(state, key, it))}</td><td class="desc">${escapeHtml(resolveItemDesc(state, key, it))}</td><td class="r"><b>${ni(it.area)}${zone.unit ? ' '+zone.unit : ''}</b></td></tr>`).join('')}
-      <tr class="zone-total"><td colspan="2">Total Zone ${key}</td><td class="r">${ni(zone.total)}${zone.unit ? ' '+zone.unit : ''}</td></tr>
+      ${zone.items.map(it => `<tr><td>${escapeHtml(resolveItemName(state, key, it))}</td><td class="desc">${escapeHtml(resolveItemDesc(state, key, it))}</td><td class="r"><b>${zone.unit ? ni(it.area) : niA(it.area)}${zone.unit ? ' '+zone.unit : ''}</b></td></tr>`).join('')}
+      <tr class="zone-total"><td colspan="2">Total Zone ${key}</td><td class="r">${zone.unit ? ni(zone.total) : niA(zone.total)}${zone.unit ? ' '+zone.unit : ''}</td></tr>
     `;
   };
   const totalArea = (c.zones.A?.total || 0) + (c.zones.B?.total || 0) + (c.zones.C?.total || 0) + (c.zones.E?.total || 0);
@@ -4204,7 +4214,7 @@ function renderAreaPage(state, c) {
     <p class="lede">Built-up area derived from plot dimensions, coverage and the chosen build configuration. Each zone bills at a different rate (see Cost Calculation).</p>
 
     <div class="params-row">
-      <span><b>Plot:</b> ${c.plotSqYards} sq.yd / ${ni(c.plotSqFt)} sq.ft</span>
+      <span><b>Plot:</b> ${c.plotSqYards} sq.yd / ${niA(c.plotSqFt)} sq.ft</span>
       <span><b>Dims:</b> ${c.breadth}ft × ${c.depth}ft</span>
       <!-- Phase 7E-A Item 8: hide Coverage % and Floor Area from the cover params-row.
            Values are still in c.coverage / c.floorArea for downstream calcs. -->
@@ -4239,7 +4249,7 @@ function renderAreaPage(state, c) {
       ${c.zones.E ? zoneRows('E', c.zones.E) : ''}
     </tbody>
     <tfoot>
-      <tr class="sub"><td colspan="2">Total Built-up Area (excluding water tank capacity)</td><td class="r">${ni(totalArea)} sq.ft</td></tr>
+      <tr class="sub"><td colspan="2">Total Built-up Area (excluding water tank capacity)</td><td class="r">${niA(totalArea)} sq.ft</td></tr>
     </tfoot>
   </table>
   <div class="pg-foot"><span>Area Calculation</span><span>+91 92172 63051 · info@zuildup.com</span></div>
@@ -4280,7 +4290,7 @@ function renderAreaPage(state, c) {
       ${page2Zones}
     </tbody>
     <tfoot>
-      <tr class="sub"><td colspan="2">Total Built-up Area (excluding water tank capacity)</td><td class="r">${ni(totalArea)} sq.ft</td></tr>
+      <tr class="sub"><td colspan="2">Total Built-up Area (excluding water tank capacity)</td><td class="r">${niA(totalArea)} sq.ft</td></tr>
     </tfoot>
   </table>
   <div class="pg-foot"><span>Area Calculation (2/2)</span><span>+91 92172 63051 · info@zuildup.com</span></div>
@@ -4345,11 +4355,11 @@ function renderCostPage(state, c) {
     });
     // P3 v2 (A): if zone has per-item rate overrides, expand into one row per item.
     if (zone.varies || hasNameOverride) {
-      const itemRows = zone.items.map(it => `<tr class="cost-item-row"><td style="padding-left:18px;color:var(--muted);font-size:11.5px;">— ${escapeHtml(resolveItemName(state, key, it))}</td><td>${ni(it.area)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(it.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(it.cost)}</td></tr>`).join('');
+      const itemRows = zone.items.map(it => `<tr class="cost-item-row"><td style="padding-left:18px;color:var(--muted);font-size:11.5px;">— ${escapeHtml(resolveItemName(state, key, it))}</td><td>${zone.unit ? ni(it.area) : niA(it.area)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(it.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(it.cost)}</td></tr>`).join('');
       const subtitle = zone.varies ? '— per-item rates' : '';
       return `<tr class="cost-zone-hdr"><td colspan="4">${tag} Zone ${key} ${subtitle ? `<span style="color:var(--muted);font-size:11px;">${subtitle}</span>` : ''}</td></tr>${itemRows}<tr class="cost-zone-sub"><td colspan="3" style="text-align:right;color:var(--navy);font-weight:600;">Zone ${key} subtotal</td><td class="r"><b>${fmtINR(zone.cost)}</b></td></tr>`;
     }
-    return `<tr><td>${tag} Zone ${key}</td><td>${ni(zone.total)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(zone.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(zone.cost)}</td></tr>`;
+    return `<tr><td>${tag} Zone ${key}</td><td>${zone.unit ? ni(zone.total) : niA(zone.total)}${zone.unit ? ' '+zone.unit : ''}</td><td class="r">${fmtINR(zone.rate)}${zone.unit ? '/'+zone.unit : '/sqft'}</td><td class="r">${fmtINR(zone.cost)}</td></tr>`;
   };
   // Phase 6.3 — additional zones (Elevation / GST / Custom). Single-line each,
   // dynamic letter, header label "Zone X — {Name}". Rate column shows em-dash
