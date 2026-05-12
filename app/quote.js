@@ -265,7 +265,30 @@ async function ensureQuoteId(state) {
   }
 }
 
+// 7H-D: deep-walk a state object and normalise Rs.→₹ in every string field.
+// Skips internal keys (prefixed `_`) and the catalog-rebuilt items array.
+// Idempotent — already-₹ text is unchanged. Mutates in-place for speed.
+function _normaliseStateRupee(obj) {
+  if (obj == null || typeof obj !== 'object') return;
+  for (const k of Object.keys(obj)) {
+    if (k.startsWith('_')) continue;            // skip _uiCatOpen etc.
+    const v = obj[k];
+    if (typeof v === 'string') {
+      obj[k] = normaliseRupee(v);
+    } else if (Array.isArray(v)) {
+      for (let i = 0; i < v.length; i++) {
+        if (typeof v[i] === 'string') v[i] = normaliseRupee(v[i]);
+        else if (v[i] && typeof v[i] === 'object') _normaliseStateRupee(v[i]);
+      }
+    } else if (v && typeof v === 'object') {
+      _normaliseStateRupee(v);
+    }
+  }
+}
+
 function saveState(s) {
+  // 7H-D: normalise Rs.→₹ on every save so the stored copy is canonical.
+  try { _normaliseStateRupee(s); } catch(_) {}
   localStorage.setItem(STORE_KEY, JSON.stringify(s));
   // P1.5: if there's an active named quote, also persist into the named slot
   // and keep the index entry's modified_at fresh. This is what makes the
@@ -796,6 +819,52 @@ function rowCategoryGroup(row) {
 // (PDF / preview) and on save so localStorage never holds active script.
 // Implementation note: regex-based — works in both Node (test shim, no DOM)
 // and browsers.
+// 7H-D: Rs. → ₹ normalisation. Applied:
+//   1) On blur in any text input / textarea / contenteditable (in-editor)
+//   2) At HTML preview + PDF render time on every text field (descriptions,
+//      brands, labels, item names, notes, etc.)
+//   3) On state save (via saveState wrapper) so stored data is normalised too.
+//
+// Matches case-insensitively: "Rs.", "Rs ", "RS.", "rs.", and bare "Rs" when
+// followed by a digit or currency-ish context. Does NOT match "Mrs.", "Rsv",
+// or words where "Rs" is part of a larger word (word-boundary anchored).
+//
+// Test cases (handled in tests/test_phase7h_rs_normalise.js):
+//   "Rs. 2,500"   → "₹2,500"
+//   "Rs 100/kg"   → "₹100/kg"
+//   "RS.500"      → "₹500"
+//   "rs. 1000"    → "₹1000"
+//   "₹ 500"       → unchanged
+//   "Mrs. Sharma" → unchanged
+//   "Rsv"         → unchanged
+//   "earn 5 Rs"   → "earn 5 ₹" (trailing Rs with leading word-boundary)
+function normaliseRupee(s) {
+  if (s == null) return s;
+  if (typeof s !== 'string') return s;
+  // Primary form: "Rs." optionally with trailing space, followed by digit / whitespace / comma.
+  // Also covers "Rs " (no dot, with trailing space) when followed by a digit.
+  // \bRs\.?\s? → word-boundary, "Rs", optional ".", optional single whitespace.
+  // Lookahead (?=[\d.,\s]) ensures we're at a price prefix, not "Rsv" or "Rshape".
+  return s.replace(/\bRs\.?\s?(?=[\d.,])/gi, '₹')
+          // Trailing form: "5 Rs" → "5 ₹" (number then space then Rs at word end).
+          .replace(/(\d)\s?Rs\.?\b/g, '$1 ₹');
+}
+
+// 7H-D: walk an HTML fragment string and replace Rs. → ₹ in TEXT only,
+// preserving tag structure. Splits on tag boundaries, normalises non-tag
+// chunks, rejoins. Lightweight + safe (no DOM dependency).
+function normaliseRupeeHtml(html) {
+  if (html == null) return html;
+  if (typeof html !== 'string') return html;
+  // Split into alternating [text, tag, text, tag, ...] segments.
+  const parts = html.split(/(<[^>]*>)/);
+  for (let i = 0; i < parts.length; i++) {
+    // Even indexes are text; odd indexes are tags. Only transform text.
+    if (i % 2 === 0) parts[i] = normaliseRupee(parts[i]);
+  }
+  return parts.join('');
+}
+
 const RT_ALLOWED = /^(b|strong|i|em|u|br)$/i;
 function sanitizeRichText(html) {
   if (html == null) return '';
@@ -3464,6 +3533,41 @@ async function bootForm() {
   // Phase 7E-C Item 11: render floor-summary editor on initial paint.
   renderFloorSummaryEditor();
   renderBpfPanel();
+
+  // 7H-D: global Rs. → ₹ normaliser on blur. Captures EVERY text input,
+  // textarea, and contenteditable in the page (including the dynamically-
+  // mounted spec editor and area-override panel rows). Fires on blur so we
+  // don't fight the rep mid-keystroke — only after they leave the field.
+  // The transform is idempotent (already-₹ text is unchanged) so re-applying
+  // is safe.
+  document.addEventListener('blur', (ev) => {
+    const t = ev.target;
+    if (!t) return;
+    if (t.tagName === 'INPUT' && (t.type === 'text' || t.type === '' || !t.type)) {
+      const before = t.value;
+      const after  = normaliseRupee(before);
+      if (after !== before) {
+        t.value = after;
+        // Trigger an input event so the bound handler re-persists to state.
+        t.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    } else if (t.tagName === 'TEXTAREA') {
+      const before = t.value;
+      const after  = normaliseRupee(before);
+      if (after !== before) {
+        t.value = after;
+        t.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    } else if (t.isContentEditable) {
+      const before = t.innerHTML;
+      const after  = normaliseRupeeHtml(before);
+      if (after !== before) {
+        t.innerHTML = after;
+        // contenteditable bound handlers listen on 'input', dispatch it.
+        t.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+  }, true); // capture phase — fires before the field's own blur listeners
 }
 // ============================================================================
 // PREVIEW PAGE
@@ -3530,6 +3634,11 @@ ${renderSpecPages(state, sortedCats, byCat)}
   if (state.draft) {
     html = html.replace(/<\/section>/g, '<div class="draft-watermark">DRAFT</div></section>');
   }
+  // 7H-D: final Rs. → ₹ normalisation across the entire rendered quote
+  // (HTML preview and the PDF that's printed from it). normaliseRupeeHtml
+  // walks text nodes only — never tags/attrs — so CSS classes, styles, and
+  // base64-encoded font data are untouched.
+  html = normaliseRupeeHtml(html);
   return html;
 }
 
