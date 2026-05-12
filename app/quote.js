@@ -3141,7 +3141,8 @@ async function bootForm() {
     // Phase 6.4 #11c: prepare the initial HTML for the contenteditable editor.
     // Rich descriptions are stored as sanitised HTML; legacy/plain descriptions
     // are escaped and have newlines converted to <br>.
-    const descIsRich = !!(o.descriptionRich);
+    // 7H-A: rich if explicitly flagged OR if the source string has HTML.
+    const descIsRich = !!(o.descriptionRich) || /<[a-z]/i.test(String(desc));
     const descRichInitial = descIsRich
       ? sanitizeRichText(desc)
       : escapeHtml(desc).replace(/\n/g, '<br>');
@@ -3163,12 +3164,35 @@ async function bootForm() {
       else if (item.rate > 0) parts.push(fmtINR(item.rate));
       brandRate = parts.join(' · ');
     }
+    // 7H-A: separate Brand field. Pre-fills from catalog item.brands[] joined
+    // with ' · ' for fresh rows. Editable. Empty = rep deliberately blanked,
+    // suppressed in render. Supports bold via contenteditable + sanitizer
+    // (allows <b><strong><i><em><u><br>). Saved as o.brand (HTML string).
+    let brandText = (o.brand !== undefined) ? o.brand : '';
+    if (brandText === '' && item && canDefault && o.brand === undefined) {
+      const cBrands = (item.brands || []);
+      if (cBrands.length) brandText = cBrands.join(' · ');
+    }
+    // If brand is stored as plain text, render it directly; if rich (saved
+    // with bold markup), sanitise. Treat any string containing < as rich.
+    const brandIsRich = !!o.brandRich || /<[a-z]/i.test(brandText);
+    const brandRichInitial = brandIsRich
+      ? sanitizeRichText(brandText)
+      : escapeHtml(brandText);
 
     const ed = document.createElement('div');
     ed.className = 'editor';
     ed.innerHTML = `
       <div class="full"><label>Label</label><input data-f="label" value="${escapeAttr(label)}"></div>
       <div class="full"><label>Rate <span style="font-weight:400;color:var(--muted);">(rendered bold in PDF)</span></label><input data-f="brand_rate" placeholder="e.g. Rathi Steel 500FE @ ₹35,000 per bathroom" value="${escapeAttr(brandRate)}"></div>
+      <div class="full">
+        <label>Brand <span style="font-weight:400;color:var(--muted);">(bold above body in PDF, blank = hide)</span></label>
+        <div class="rt-toolbar" role="toolbar" aria-label="Brand formatting">
+          <button type="button" class="rt-btn" data-rt="bold" title="Bold (Ctrl+B)" tabindex="-1"><b>B</b></button>
+          <button type="button" class="rt-btn" data-rt="italic" title="Italic" tabindex="-1"><i>I</i></button>
+        </div>
+        <div data-f="brand" class="rt-editor" contenteditable="true" role="textbox" spellcheck="true" style="min-height:34px;">${brandRichInitial}</div>
+      </div>
       <div class="full">
         <label>Description</label>
         <div class="rt-toolbar" role="toolbar" aria-label="Description formatting">
@@ -3199,7 +3223,11 @@ async function bootForm() {
       const f = e.target.dataset.f;
       if (!f) return;
       state.rows[idx].override ??= {};
-      if (f === 'description' && e.target.classList.contains('rt-editor')) {
+      if (f === 'brand' && e.target.classList.contains('rt-editor')) {
+        // 7H-A: brand field — store sanitised HTML (preserves bold).
+        state.rows[idx].override.brand = sanitizeRichText(e.target.innerHTML);
+        state.rows[idx].override.brandRich = true;
+      } else if (f === 'description' && e.target.classList.contains('rt-editor')) {
         // Phase 6.4 #11c: rich-text path — store sanitised HTML and flag.
         state.rows[idx].override.description = sanitizeRichText(e.target.innerHTML);
         state.rows[idx].override.descriptionRich = true;
@@ -3926,6 +3954,8 @@ function quoteCss() {
   .spec-card .desc { color: var(--ink); font-size: 10.5px; line-height: 1.5; margin: 2px 0 0; white-space: pre-line; }
   /* P3 #10: brand-rate combined field (bold). */
   .spec-card .brand-rate { font-size: 11px; color: var(--navy); font-weight: 600; margin: 4px 0 0; }
+  /* 7H-A: separate brand line (rendered bold above body, both layouts). */
+  .spec-card .spec-brand, .spec-table-block .spec-brand { font-size: 10.5px; color: var(--navy); font-weight: 600; margin: 2px 0 1px; line-height: 1.4; }
   /* P3 #6: table layout. */
   .spec-table-block { width: 100%; border-collapse: collapse; margin-bottom: 6mm; break-inside: avoid; }
   .spec-table-block thead .cat-row th { text-align: left; padding: 4mm 0 1mm; border-bottom: 1px solid var(--rule); }
@@ -4603,8 +4633,45 @@ function renderSpecPages(state, sortedCats, byCat) {
     const loc  = o.location || '';
     // Phase 6.4 #11c: pass through richness so renderers can emit HTML
     // (sanitised) instead of escaping. Legacy/plain stays escaped.
-    const descIsRich = !!o.descriptionRich;
-    return { lab, brandRate, desc, loc, descIsRich };
+    // 7H-A: catalog descriptions can also contain <b>/<br> markup — auto-
+    // detect by presence of a tag-like sequence and treat as rich.
+    const descIsRich = !!o.descriptionRich || /<[a-z]/i.test(String(desc));
+    // 7H-A: separate brand field. Pre-fills from catalog brands[] for fresh
+    // rows. Empty = rep blanked → suppress. brandIsRich = stored as HTML
+    // (with possible <b>/<i>) — sanitise on render. Plain text → escape.
+    let brand = '';
+    if (o.brand !== undefined) {
+      brand = o.brand || '';
+    } else if (_canDefault && it && Array.isArray(it.brands) && it.brands.length) {
+      brand = it.brands.join(' · ');
+    }
+    const brandIsRich = !!o.brandRich || /<[a-z]/i.test(brand);
+    // 7H-A: de-dup. If brand text (plain) matches the first line of body
+    // (plain text, after stripping HTML tags / whitespace / bold markers),
+    // skip that first line in the rendered description. Case-insensitive.
+    let descForRender = desc;
+    const brandPlain = String(brand).replace(/<[^>]+>/g, '').trim().toLowerCase();
+    if (brandPlain) {
+      // Split body into lines (rich = on <br> or </p>; plain = on \n).
+      if (descIsRich) {
+        // Split on <br> tags into segments; first non-empty segment is first line.
+        const segs = String(desc).split(/<br\s*\/?>/i);
+        if (segs.length) {
+          const firstPlain = segs[0].replace(/<[^>]+>/g, '').trim().toLowerCase();
+          if (firstPlain === brandPlain) {
+            descForRender = segs.slice(1).join('<br>');
+            // Trim leading <br>s if any.
+            descForRender = descForRender.replace(/^(\s*<br\s*\/?>\s*)+/i, '');
+          }
+        }
+      } else {
+        const lines = String(desc).split(/\n/);
+        if (lines.length && lines[0].trim().toLowerCase() === brandPlain) {
+          descForRender = lines.slice(1).join('\n').replace(/^\n+/, '');
+        }
+      }
+    }
+    return { lab, brandRate, brand, brandIsRich, desc: descForRender, loc, descIsRich };
   }
 
   const isTable = state.specsLayout === 'table';
@@ -4613,11 +4680,16 @@ function renderSpecPages(state, sortedCats, byCat) {
     if (isTable) {
       const rowsHtml = byCat[cat].map(({row, item: it}) => {
         const f = rowFields(row, it);
+        // 7H-A: brand line (bold) renders above body when present.
+        const brandHtml = f.brand
+          ? `<div class="spec-brand"><b>${f.brandIsRich ? sanitizeRichText(f.brand) : escapeHtml(f.brand)}</b></div>`
+          : '';
+        const bodyHtml = f.descIsRich ? sanitizeRichText(f.desc) : escapeHtml(f.desc);
         return `
           <tr>
             <td class="lab">${escapeHtml(f.lab)}${f.loc ? ' <span class="loc">— '+escapeHtml(f.loc)+'</span>' : ''}</td>
             <td class="br"><b>${escapeHtml(f.brandRate || '—')}</b></td>
-            <td class="desc">${f.descIsRich ? sanitizeRichText(f.desc) : escapeHtml(f.desc)}</td>
+            <td class="desc">${brandHtml}${bodyHtml}</td>
           </tr>`;
       }).join('');
       return `
@@ -4634,11 +4706,17 @@ function renderSpecPages(state, sortedCats, byCat) {
     // Grid mode (default)
     const cardArr = byCat[cat].map(({row, item: it}) => {
       const f = rowFields(row, it);
+      // 7H-A: brand line (bold) above the body in spec cards too.
+      const brandHtml = f.brand
+        ? `<div class="spec-brand"><b>${f.brandIsRich ? sanitizeRichText(f.brand) : escapeHtml(f.brand)}</b></div>`
+        : '';
+      const bodyHtml = f.descIsRich ? sanitizeRichText(f.desc) : escapeHtml(f.desc);
       return `
         <div class="spec-card${f.brandRate ? '' : ' unedited'}">
           <h3 class="lab">${escapeHtml(f.lab)}${f.loc ? ' <span class="loc">— '+escapeHtml(f.loc)+'</span>' : ''}</h3>
           ${f.brandRate ? `<div class="brand-rate"><b>${escapeHtml(f.brandRate)}</b></div>` : `<span class="rate-pill set">Set details</span>`}
-          <p class="desc">${f.descIsRich ? sanitizeRichText(f.desc) : escapeHtml(f.desc)}</p>
+          ${brandHtml}
+          <p class="desc">${bodyHtml}</p>
         </div>`;
     });
     return `

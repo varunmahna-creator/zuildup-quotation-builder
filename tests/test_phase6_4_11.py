@@ -320,34 +320,25 @@ def test_editor_persists_descriptionRich_flag():
 def test_pdf_grid_branches_on_descIsRich():
     """Grid mode emits HTML when descIsRich, else escapes."""
     # Phase 7G-C: grid renderer now emits an optional brand line ABOVE the desc
-    # paragraph (`${brandHtml}` before `<p class="desc">`). The descIsRich branch
-    # may live in either the inline `.desc` template or a `descBody` const that
-    # is then inlined. Accept both shapes.
-    inline_p = re.search(
-        r'<p class="desc">\$\{f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)\}</p>',
+    # paragraph. Phase 7H-A: brand line is a SEPARATE field; body is computed
+    # into a `bodyHtml` const via the descIsRich ternary. Accept any shape that
+    # branches on f.descIsRich + sanitizeRichText/escapeHtml.
+    branch = re.search(
+        r'f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)',
         QUOTE_JS,
     )
-    via_const = re.search(
-        r'\$\{f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)\}',
-        QUOTE_JS,
-    )
-    assert inline_p or via_const, "Grid mode must branch on descIsRich"
+    assert branch, "Grid mode must branch on f.descIsRich"
 
 
 def test_pdf_table_branches_on_descIsRich():
     """Table mode emits HTML when descIsRich."""
-    # Phase 7G-C: table renderer now interpolates `${brandHtml}${descBody}` where
-    # descBody is computed via the descIsRich ternary. Accept either inline or
-    # via-const shape.
-    inline_td = re.search(
-        r'<td class="desc">\$\{f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)\}</td>',
+    # Phase 7H-A: table renderer computes a bodyHtml const via the descIsRich
+    # ternary, then interpolates ${brandHtml}${bodyHtml} into <td class="desc">.
+    branch = re.search(
+        r'f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)',
         QUOTE_JS,
     )
-    via_const = re.search(
-        r'\$\{f\.descIsRich\s*\?\s*sanitizeRichText\(f\.desc\)\s*:\s*escapeHtml\(f\.desc\)\}',
-        QUOTE_JS,
-    )
-    assert inline_td or via_const, "Table mode must branch on descIsRich"
+    assert branch, "Table mode must branch on f.descIsRich"
 
 
 def test_rowfields_returns_descIsRich():
@@ -438,6 +429,8 @@ try {
     customer:{name:'',address:''}, build:{plotSqYards:240,breadth:36,coverage:75,buildType:'stilt',floors:1,hasBasement:false,hasLift:false},
     pricing:{costPerSqft:1000,structureRate:1000,itemRates:{}}, scope:'full',
     rows:[{id:'structure.steel', override:{}}], notes:'',
+    // Phase 7H-B: harness state = fresh quote so rowFields exercises defaults.
+    _isFreshQuote:true,
     draft:false, specsLayout:'grid', _uiCatOpen:{}, _uiPickerOpen:{}, areaOverrides:{},
     quoteId:'X', createdAt:'2026-05-04',
   }, null);

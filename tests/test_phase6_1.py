@@ -130,6 +130,9 @@ try {
     customer:{name:'',address:''}, build:{plotSqYards:240,breadth:36,coverage:75,buildType:'stilt',floors:1,hasBasement:false,hasLift:false},
     pricing:{costPerSqft:1000,structureRate:1000,itemRates:{}}, scope:'full',
     rows:[{id:'structure.steel', override:{}}], notes:'',
+    // Phase 7H-B: harness state mimics a fresh quote so legacy rowFields
+    // fall-back behaviour (catalog defaults) is exercised by tests.
+    _isFreshQuote:true,
     draft:false, specsLayout:'grid', _uiCatOpen:{}, _uiPickerOpen:{}, areaOverrides:{},
     quoteId:'X', createdAt:'2026-05-04',
   }, null);

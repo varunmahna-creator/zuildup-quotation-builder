@@ -99,11 +99,18 @@ def test_picker_does_not_set_category_group():
     """Items added via the picker push {id, override:{}} — no categoryGroup leak."""
     # The picker's onclick pushes a row directly. Verify it doesn't carry
     # a categoryGroup field (so newly-added items use catalog default).
+    # Phase 7H-B: picker push now carries `_isFresh: true` so freshly-added
+    # rows can still pick up catalog defaults even on a loaded quote.
+    # categoryGroup must STILL be absent (the original guard).
     m = re.search(
-        r"el\.onclick = \(\) => \{\s*state\.rows\.push\(\{\s*id:\s*it\.id,\s*override:\s*\{\}\s*\}\);",
+        r"el\.onclick = \(\) => \{[^}]*state\.rows\.push\(\{\s*id:\s*it\.id,\s*override:\s*\{\}(?:,\s*_isFresh:\s*true)?\s*\}\);",
         QUOTE_JS,
+        re.DOTALL,
     )
     assert m, "Picker push pattern not found / now leaks categoryGroup"
+    # Explicitly ensure categoryGroup is NOT in the picker push.
+    assert "categoryGroup" not in m.group(0), \
+        f"Picker push leaks categoryGroup: {m.group(0)!r}"
 
 
 # ----------------------------------------------------------------------------
