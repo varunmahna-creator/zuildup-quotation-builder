@@ -129,8 +129,9 @@ const defaultState = () => ({
   notes: '',
   // P1.6: DRAFT watermark toggle. When true, every PDF page gets a diagonal "DRAFT" overlay.
   draft: false,
-  // P3 #6: specs layout — 'grid' (default cards) or 'table' (compact table form).
-  specsLayout: 'grid',
+  // P3 #6: specs layout — 'grid' (cards) or 'table' (compact table form).
+  // 7H-C: default flipped to 'table' (was 'grid'). Sales reps requested.
+  specsLayout: 'table',
   // P3 v2 (C): per-category open/close state in left-rail spec list.
   // Default: all collapsed. Lives in state but excluded from PDF render.
   _uiCatOpen: {},
@@ -1515,7 +1516,7 @@ async function bootForm() {
   if ($('f-lift-cost'))     $('f-lift-cost').value     = state.pricing.liftCost     ?? '';
   if ($('f-lift-cost'))     $('f-lift-cost').value     = state.pricing.liftCost     ?? '';
   // P3 #6: layout toggle
-  if ($('f-specs-layout'))  $('f-specs-layout').value  = state.specsLayout || 'grid';
+  if ($('f-specs-layout'))  $('f-specs-layout').value  = state.specsLayout || 'table';
   $('f-notes').value      = state.notes ?? '';
   for (const btn of $('f-scope').querySelectorAll('button')) {
     btn.classList.toggle('active', btn.dataset.v === state.scope);
