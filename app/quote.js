@@ -42,7 +42,16 @@ const FLOOR_DISPLAY_NAMES = ['Ground Floor','First Floor','Second Floor','Third 
 // ============================================================================
 // State
 // ============================================================================
+// 7H-B: PERMANENT — loaded quotes preserve user-edited descriptions/brands.
+// Never re-apply catalog defaults on load.
+// `_isFreshQuote` is true ONLY for brand-new quotes (defaultState). loadState
+// returns set it to false. Render fall-throughs that auto-populate from
+// catalog (description text, brand defaults, brand_rate text) MUST gate on
+// `state._isFreshQuote === true || row._isFresh === true`. The per-row
+// `_isFresh` flag is set true when a row is added via the catalog picker on
+// an already-loaded quote, so new picks get defaults but old rows don't.
 const defaultState = () => ({
+  _isFreshQuote: true,
   customer: {
     salutation: '',
     name: '',
@@ -155,6 +164,9 @@ function loadState() {
         const d = defaultState();
         return {
           ...d, ...s,
+          // 7H-B: explicit false — this state came from a saved slot, so
+          // catalog defaults must NOT be re-applied to descriptions/brands.
+          _isFreshQuote: false,
           customer: { ...d.customer, ...(s.customer||{}) },
           build:    (function(sb){
             // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
@@ -208,6 +220,8 @@ function loadState() {
     const d = defaultState();
     return {
       ...d, ...s,
+      // 7H-B: scratch-state load also counts as "loaded" — preserve edits.
+      _isFreshQuote: false,
       customer: { ...d.customer, ...(s.customer||{}) },
       build:    (function(sb){
             // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
@@ -1551,7 +1565,7 @@ async function bootForm() {
     if (!haveBasement) {
       const basementItems = (CATALOG?.items || []).filter(it => it.category === 'basement'
         && it.scope.includes(state.scope === 'structure_only' ? 'structure_only' : 'full'));
-      basementItems.forEach(it => state.rows.push({ id: it.id, override: {} }));
+      basementItems.forEach(it => state.rows.push({ id: it.id, override: {}, _isFresh: true }));
       saveState(state);
     }
   }
@@ -2964,7 +2978,8 @@ async function bootForm() {
         .map(r => r.id));
       for (const it of items) {
         if (!have.has(it.id)) {
-          state.rows.push({ id: it.id, override: {} });
+          // 7H-B: auto-added basement rows are fresh — defaults can apply.
+          state.rows.push({ id: it.id, override: {}, _isFresh: true });
         }
       }
     } else {
@@ -3115,8 +3130,14 @@ async function bootForm() {
     const row = state.rows[idx];
     const item = row._custom ? null : catalogItem(row.id);
     const o = row.override || {};
+    // 7H-B: PERMANENT — loaded quotes preserve user-edited descriptions/brands.
+    // Never re-apply catalog defaults on load. Only fall back to catalog
+    // description for fresh quotes OR rows added after load (row._isFresh).
+    const canDefault = (state._isFreshQuote === true) || (row._isFresh === true);
     const label = o.label ?? (item ? item.label : '');
-    const desc  = o.description ?? (item ? item.description : '');
+    const desc  = (o.description !== undefined)
+      ? o.description
+      : (canDefault && item ? item.description : '');
     // Phase 6.4 #11c: prepare the initial HTML for the contenteditable editor.
     // Rich descriptions are stored as sanitised HTML; legacy/plain descriptions
     // are escaped and have newlines converted to <br>.
@@ -3129,8 +3150,10 @@ async function bootForm() {
 
     // P3 #10: 3-field model — Label / Brand Name & Rate / Description.
     // Auto-populate brand_rate from catalog on first open if override has none.
+    // 7H-B: PERMANENT — only auto-populate for fresh quotes or freshly-added
+    // rows. Loaded quotes preserve whatever the rep had (including empty).
     let brandRate = (o.brand_rate !== undefined) ? o.brand_rate : '';
-    if (brandRate === '' && item) {
+    if (brandRate === '' && item && canDefault && o.brand_rate === undefined) {
       // Compose from catalog: brands joined · rate_text or fmtINR(rate)
       const cBrands = (item.brands || []);
       const cRT = (item.rate_text || '');
@@ -3167,7 +3190,7 @@ async function bootForm() {
     el.appendChild(ed);
     if (row._custom) ed.querySelector('select[data-f="category_label"]').value = cat;
     // P3 #10: persist the auto-populated brand_rate immediately so the form preview reflects it.
-    if ((o.brand_rate === undefined) && brandRate) {
+    if (canDefault && (o.brand_rate === undefined) && brandRate) { // 7H-B
       state.rows[idx].override ??= {};
       state.rows[idx].override.brand_rate = brandRate;
       saveState(state);
@@ -3421,7 +3444,9 @@ async function bootForm() {
           <span class="r">${it.rate_text || (it.rate>0 ? fmtINR(it.rate) : 'descriptive')}</span>
         `;
         el.onclick = () => {
-          state.rows.push({ id: it.id, override: {} });
+          // 7H-B: mark freshly-added rows so catalog defaults still apply to
+          // them even if the parent quote was loaded from save.
+          state.rows.push({ id: it.id, override: {}, _isFresh: true });
           flush(); closePicker();
         };
         inner.appendChild(el);
@@ -4555,8 +4580,14 @@ function renderSpecPages(state, sortedCats, byCat) {
     // tweak this manually per row (rich-text formatting comes in Phase 6.4).
     let desc;
     const userOverroteDesc = (o.description !== undefined && o.description !== null);
+    // 7H-B: only fall back to catalog defaults for fresh quotes or freshly-
+    // added rows. Loaded quotes preserve user-edited descriptions verbatim,
+    // including the absence of a description (renders empty).
+    const _canDefault = (state._isFreshQuote === true) || (row._isFresh === true);
     if (userOverroteDesc) {
       desc = o.description;
+    } else if (!_canDefault) {
+      desc = '';  // 7H-B: loaded quote, no override → render empty, NOT catalog.
     } else {
       const baseDesc = (it ? it.description : '') || '';
       const brands = (o.brands !== undefined && Array.isArray(o.brands))
