@@ -911,7 +911,7 @@ function defaultRowsFor(scope, opts) {
     if (it.category === 'basement' && !hasBasement) return false;
     return true;
   });
-  return cat.map(it => ({ id: it.id, override: {} }));
+  return cat.map(it => ({ id: it.id, override: {}, _isFresh: true }));
 }
 
 // ============================================================================
