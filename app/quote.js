@@ -152,6 +152,30 @@ const defaultState = () => ({
   createdAt: new Date().toISOString().slice(0,10),
 });
 
+// 7I-migration (2026-05-13): Phase 7H-B introduced the _isFresh per-row flag.
+// Quotes saved BEFORE 7H-B don't have it. Without _isFresh, the _canDefault
+// render gate (line ~4616) forces desc='' on any row with an empty override —
+// which is every legacy catalog-default row. Heal those rows on load: if a
+// row has empty override AND no _isFresh flag, stamp _isFresh: true so it
+// falls through to the catalog default. Edited rows (override.description or
+// other override.* set) are left untouched — the userOverroteDesc branch
+// wins for them, so 7H-B preserve-edits invariant remains intact.
+function _migrateLegacyRows(rows) {
+  if (!Array.isArray(rows)) return rows;
+  return rows.map(r => {
+    if (!r || typeof r !== 'object') return r;
+    if (r._isFresh === true) return r; // already marked, leave alone
+    const ov = r.override || {};
+    const hasEdit = Object.keys(ov).some(k => {
+      const v = ov[k];
+      // treat undefined/null as "not edited"; treat '' as "explicit blank by user"
+      return v !== undefined && v !== null;
+    });
+    if (hasEdit) return r; // user actually edited — preserve verbatim
+    return { ...r, _isFresh: true };
+  });
+}
+
 function loadState() {
   // P1.5: prefer the active named slot. Falls back to scratch state (zuildup.quote.v2)
   // when no active id is set, or the active id points to a missing slot.
@@ -167,6 +191,8 @@ function loadState() {
           // 7H-B: explicit false — this state came from a saved slot, so
           // catalog defaults must NOT be re-applied to descriptions/brands.
           _isFreshQuote: false,
+          // 7I-migration: heal legacy rows missing the _isFresh flag.
+          rows: _migrateLegacyRows(s.rows),
           customer: { ...d.customer, ...(s.customer||{}) },
           build:    (function(sb){
             // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
@@ -222,6 +248,8 @@ function loadState() {
       ...d, ...s,
       // 7H-B: scratch-state load also counts as "loaded" — preserve edits.
       _isFreshQuote: false,
+      // 7I-migration: heal legacy rows missing the _isFresh flag.
+      rows: _migrateLegacyRows(s.rows),
       customer: { ...d.customer, ...(s.customer||{}) },
       build:    (function(sb){
             // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
