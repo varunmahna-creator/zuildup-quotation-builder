@@ -970,13 +970,13 @@
       "category_label": "Electrical Work",
       "label": "UPS Wiring",
       "rate": 0,
-      "rate_text": "Included",
+      "rate_text": "",
       "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
       ],
-      "description": "Provision for UPS wiring shall be provided for each floor."
+      "description": ""
     },
     {
       "id": "electrical.ev_charging_point",
@@ -984,13 +984,13 @@
       "category_label": "Electrical Work",
       "label": "EV Charging Point",
       "rate": 0,
-      "rate_text": "Included",
+      "rate_text": "",
       "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
       ],
-      "description": "Provision for one electric vehicle charging point shall be provided per floor."
+      "description": ""
     },
     {
       "id": "electrical.solar_electrical_provision",
@@ -998,13 +998,13 @@
       "category_label": "Electrical Work",
       "label": "Solar Electrical Provision",
       "rate": 0,
-      "rate_text": "Included",
+      "rate_text": "",
       "unit": "descriptive",
       "brands": [],
       "scope": [
         "full"
       ],
-      "description": "Provision for solar electrical system shall be included."
+      "description": ""
     },
     {
       "id": "electrical.mcb_elcb",

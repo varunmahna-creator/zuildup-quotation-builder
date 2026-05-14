@@ -193,6 +193,10 @@ function loadState() {
           _isFreshQuote: false,
           // 7I-migration: heal legacy rows missing the _isFresh flag.
           rows: _migrateLegacyRows(s.rows),
+          // Issue-4 (sales fix 2026-05-13): always reset per-category UI
+          // open/close state so the left-rail spec list defaults to all-
+          // collapsed every time the form loads.
+          _uiCatOpen: {},
           customer: { ...d.customer, ...(s.customer||{}) },
           build:    (function(sb){
             // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
@@ -250,6 +254,8 @@ function loadState() {
       _isFreshQuote: false,
       // 7I-migration: heal legacy rows missing the _isFresh flag.
       rows: _migrateLegacyRows(s.rows),
+      // Issue-4 (sales fix 2026-05-13): reset per-category UI open/close.
+      _uiCatOpen: {},
       customer: { ...d.customer, ...(s.customer||{}) },
       build:    (function(sb){
             // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
@@ -4672,6 +4678,13 @@ function renderSpecPages(state, sortedCats, byCat) {
       brand = o.brand || '';
     } else if (_canDefault && it && Array.isArray(it.brands) && it.brands.length) {
       brand = it.brands.join(' · ');
+    }
+    // Issue-8 (sales fix 2026-05-13): when the rep clears a previously-set
+    // brand the contenteditable leaves residue like '<br>', '&nbsp;', or
+    // bare whitespace. Treat any brand whose plain-text strip is empty as
+    // "no brand" so the renderer collapses the brand line entirely.
+    if (brand && !String(brand).replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').trim()) {
+      brand = '';
     }
     const brandIsRich = !!o.brandRich || /<[a-z]/i.test(brand);
     // 7H-A: de-dup. If brand text (plain) matches the first line of body
