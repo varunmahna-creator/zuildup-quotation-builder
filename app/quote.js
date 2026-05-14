@@ -3790,6 +3790,10 @@ function quoteCss() {
   .pg.pg-specs-flow .eyebrow,
   .pg.pg-specs-flow .section,
   .pg.pg-specs-flow .lede { break-after: avoid-page; page-break-after: avoid; }
+  /* Issue-2 (sales fix 2026-05-13): full-page-width divider directly under
+     the "Detailed Specifications" h1, spanning content margin to content
+     margin (the .pg has 20mm side padding so 100% spans page-content area). */
+  .pg.pg-specs-flow h1.section { padding-bottom: 4mm; border-bottom: 1px solid var(--rule); width: 100%; margin-bottom: 5mm; }
   /* Cat-section: keep header with at least the first card; allow break inside
      a long category only AT card boundaries (.spec-card has break-inside avoid). */
   .pg.pg-specs-flow .cat-section { break-inside: auto; page-break-inside: auto; margin-top: 6mm; }
@@ -3948,6 +3952,22 @@ function quoteCss() {
      tbody row group → renders ONCE at the start, no auto-repeat. */
   .cost-calc-page p.lede { max-width: none; }
   .cost-calc-table thead { display: table-row-group; }
+  /* Issue-5 (sales fix 2026-05-13): cost calculation MUST fit on a single
+     A4 page. Compact font + tighter padding + lock notes height. */
+  .cost-calc-page { padding-top: 18mm; padding-bottom: 14mm; }
+  .cost-calc-page h1.section { font-size: 26px; margin-bottom: 3mm; }
+  .cost-calc-page p.lede { font-size: 11px; margin-bottom: 4mm; line-height: 1.5; }
+  .cost-calc-table { font-size: 10.5px; margin-bottom: 4mm; }
+  .cost-calc-table thead th { padding: 5px 8px; font-size: 10px; }
+  .cost-calc-table tbody td { padding: 4px 8px; }
+  .cost-calc-table tbody tr.zone-hdr td { padding: 5px 8px; font-size: 11px; }
+  .cost-calc-table tbody tr.cost-zone-hdr td { padding: 5px 8px; }
+  .cost-calc-table tbody tr.cost-item-row td { padding: 3px 8px; font-size: 10.5px; }
+  .cost-calc-table tbody tr.cost-zone-sub td { padding: 4px 8px; }
+  .cost-calc-table tbody tr.cost-totals-sub td   { padding: 6px 8px; font-size: 10.5px; }
+  .cost-calc-table tbody tr.cost-totals-grand td { padding: 7px 8px; font-size: 12px; }
+  .cost-calc-page .cost-notes-block { margin-top: 3mm; padding: 3mm 4mm; max-height: 22mm; }
+  .cost-calc-page .cost-notes-body { font-size: 9.5px; line-height: 1.4; }
   /* Floor summary table — its title + subtitle should stay with the table on the same page. */
   .floor-summary-title, .floor-summary-subtitle { break-after: avoid-page; page-break-after: avoid; }
   .calc-table tbody tr.cost-zone-sub td { background: rgba(10,31,68,0.02); padding: 6px 10px; border-bottom: 1px solid var(--rule); }
@@ -4478,7 +4498,6 @@ function renderAreaPage(state, c) {
       ${page1Zones}
     </tbody>
   </table>
-  <p class="lede" style="color:var(--muted);font-size:11px;margin-top:6mm;">Continued on next page →</p>
   <div class="pg-foot"><span>Area Calculation (1/2)</span><span>+91 92172 63051 · info@zuildup.com</span></div>
 </section>
 <section class="pg">
