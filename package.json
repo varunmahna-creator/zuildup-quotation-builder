@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google-cloud/firestore": "^7.10.0",
+    "puppeteer-core": "^25.0.2",
     "sharp": "^0.33.0"
   }
 }

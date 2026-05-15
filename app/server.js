@@ -335,41 +335,57 @@ function injectImageLoadWait(html) {
   return boot + '\n' + html;
 }
 
+// Phase 7N (2026-05-15): switched from Chrome `--print-to-pdf` CLI to puppeteer-core.
+// Why: `--print-to-pdf` captures at virtual-time-budget expiry but font decoding
+// from inline base64 happens in REAL time, not virtual time. With font-display:swap,
+// Chrome prints the system fallback (LiberationSans) before Inter is parsed,
+// so the PDF embeds the wrong font. Puppeteer lets us explicitly await
+// `document.fonts.ready` before capture — guaranteeing Inter is the active glyph
+// source when the PDF is rendered.
 async function renderPdf(html, cb) {
-  // Drop the supplied HTML into a temp file, run Chrome headless --print-to-pdf, return the bytes.
-  const tmpDir  = fs.mkdtempSync(path.join(os.tmpdir(), 'zu-quote-'));
-  const tmpHtml = path.join(tmpDir, 'render.html');
-  const tmpPdf  = path.join(tmpDir, 'render.pdf');
-
   // P1.1: inline all local assets as data-URLs so the temp HTML is self-contained.
   // P1.6: async variant compresses raster images > 200KB to JPEG q70 to keep PDF < 1MB.
   const { html: inlined, stats } = await inlineLocalAssetsAsync(html, ROOT);
   const final = injectImageLoadWait(inlined);
   console.log(`[pdf] inlined assets=${stats.inlinedCount} compressed=${stats.compressedCount} bytes_saved=${stats.bytesSaved} stylesheets=${stats.inlinedStylesheets} stripped_scripts=${stats.strippedScripts}` + (stats.skipped.length ? ` skipped=${JSON.stringify(stats.skipped)}` : ''));
 
-  fs.writeFileSync(tmpHtml, final);
-  const args = [
-    '--headless=new','--no-sandbox','--disable-dev-shm-usage','--disable-gpu','--hide-scrollbars',
-    '--print-to-pdf-no-header',
-    `--print-to-pdf=${tmpPdf}`,
-    '--virtual-time-budget=15000',
-    `file://${tmpHtml}`,
-  ];
+  const puppeteer = require('puppeteer-core');
   const CHROME = process.env.CHROME_BIN || 'google-chrome';
-  const p = spawn(CHROME, args, { stdio: ['ignore','ignore','pipe'] });
-  let stderr = '';
-  p.stderr.on('data', d => stderr += d.toString());
-  p.on('close', code => {
-    fs.readFile(tmpPdf, (err, buf) => {
-      try {
-        fs.unlinkSync(tmpHtml);
-        if (fs.existsSync(tmpPdf)) fs.unlinkSync(tmpPdf);
-        fs.rmdirSync(tmpDir);
-      } catch(_){}
-      if (err) return cb(new Error(`PDF read fail: ${err.message}\nchrome rc=${code}\nstderr=${stderr.slice(-300)}`));
-      cb(null, buf);
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      executablePath: CHROME,
+      headless: 'new',
+      args: ['--no-sandbox','--disable-dev-shm-usage','--disable-gpu','--hide-scrollbars']
     });
-  });
+    const page = await browser.newPage();
+    await page.setContent(final, { waitUntil: 'networkidle0', timeout: 30000 });
+    // Wait for fonts to actually be parsed and applied (CRITICAL — Phase 7N fix)
+    try {
+      await page.evaluate(() => document.fonts && document.fonts.ready);
+    } catch(e) { /* non-fatal */ }
+    // Wait for boot-script readiness marker (max 12s — boot self-times-out at 6s img + 4s font)
+    try {
+      await page.waitForFunction(
+        () => document.documentElement.getAttribute('data-print-ready') === '1' ||
+              document.documentElement.getAttribute('data-print-ready') === 'error',
+        { timeout: 12000 }
+      );
+    } catch(e) {
+      console.warn('[pdf] data-print-ready timeout, proceeding anyway');
+    }
+    const buf = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      preferCSSPageSize: true,
+      margin: { top: 0, right: 0, bottom: 0, left: 0 }
+    });
+    await browser.close();
+    cb(null, buf);
+  } catch (e) {
+    if (browser) try { await browser.close(); } catch(_){}
+    cb(new Error(`PDF render fail: ${e.message}`));
+  }
 }
 
 // --- Production basic auth gate ---------------------------------------------
