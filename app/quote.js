@@ -197,6 +197,11 @@ function loadState() {
           // open/close state so the left-rail spec list defaults to all-
           // collapsed every time the form loads.
           _uiCatOpen: {},
+          // Phase 7P (2026-05-15): force specs layout to 'table' on every load.
+          // Legacy quotes saved before 7H-C have 'grid' baked in; sales reps
+          // requested table as the default. Reps can still flip to grid via
+          // the toolbar dropdown in-session.
+          specsLayout: 'table',
           customer: { ...d.customer, ...(s.customer||{}) },
           build:    (function(sb){
             // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
@@ -256,6 +261,9 @@ function loadState() {
       rows: _migrateLegacyRows(s.rows),
       // Issue-4 (sales fix 2026-05-13): reset per-category UI open/close.
       _uiCatOpen: {},
+      // Phase 7P (2026-05-15): force specs layout to 'table' on every load.
+      // Sales reps requested table as the default; legacy quotes had 'grid'.
+      specsLayout: 'table',
       customer: { ...d.customer, ...(s.customer||{}) },
       build:    (function(sb){
             // Phase 7B Item 3: legacy quotes had no `hasWaterTank`. Treat absence
@@ -3781,7 +3789,7 @@ function quoteCss() {
   .pg.pg-specs-flow .pg-head,
   .pg.pg-specs-flow .eyebrow,
   .pg.pg-specs-flow .section,
-  .pg.pg-specs-flow .lede { break-after: avoid-page; page-break-after: avoid; }
+  .pg.pg-specs-flow .lede { break-after: avoid-page; page-break-after: avoid; max-width: none; }
   /* Issue-2 (sales fix 2026-05-13): full-page-width divider directly under
      the "Detailed Specifications" h1, spanning content margin to content
      margin (the .pg has 20mm side padding so 100% spans page-content area). */
