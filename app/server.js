@@ -346,8 +346,20 @@ async function renderPdf(html, cb) {
   // P1.1: inline all local assets as data-URLs so the temp HTML is self-contained.
   // P1.6: async variant compresses raster images > 200KB to JPEG q70 to keep PDF < 1MB.
   const { html: inlined, stats } = await inlineLocalAssetsAsync(html, ROOT);
-  const final = injectImageLoadWait(inlined);
-  console.log(`[pdf] inlined assets=${stats.inlinedCount} compressed=${stats.compressedCount} bytes_saved=${stats.bytesSaved} stylesheets=${stats.inlinedStylesheets} stripped_scripts=${stats.strippedScripts}` + (stats.skipped.length ? ` skipped=${JSON.stringify(stats.skipped)}` : ''));
+  let final = injectImageLoadWait(inlined);
+  // Phase 7O (2026-05-15): inject <base href="http://127.0.0.1:PORT/"> so relative
+  // URLs like /fonts/Inter.var.woff2 resolve when the page is loaded via page.setContent
+  // (whose default base is about:blank). The font endpoints (added below) are mounted
+  // before basic-auth, so puppeteer can fetch them without credentials.
+  const baseTag = `<base href="http://127.0.0.1:${PORT}/">`;
+  if (/<head[^>]*>/i.test(final)) {
+    final = final.replace(/<head[^>]*>/i, m => m + baseTag);
+  } else if (/<html[^>]*>/i.test(final)) {
+    final = final.replace(/<html[^>]*>/i, m => m + '<head>' + baseTag + '</head>');
+  } else {
+    final = '<head>' + baseTag + '</head>' + final;
+  }
+  console.log(`[pdf] inlined assets=${stats.inlinedCount} compressed=${stats.compressedCount} bytes_saved=${stats.bytesSaved} stylesheets=${stats.inlinedStylesheets} stripped_scripts=${stats.strippedScripts} base_href=http://127.0.0.1:${PORT}/` + (stats.skipped.length ? ` skipped=${JSON.stringify(stats.skipped)}` : ''));
 
   const puppeteer = require('puppeteer-core');
   const CHROME = process.env.CHROME_BIN || 'google-chrome';
@@ -520,6 +532,26 @@ const server = http.createServer((req, res) => {
   // Public health endpoint — no auth, used by Cloud Run startup probe
   if (req.method === 'GET' && earlyPath === '/healthz') {
     return send(res, 200, 'ok', { 'Content-Type': 'text/plain; charset=utf-8' });
+  }
+  // Phase 7O (2026-05-15): public font endpoints — NO auth, so puppeteer can fetch
+  // them during PDF rendering (page.setContent with <base href="http://127.0.0.1:PORT/">).
+  // Strict whitelist: only the two known variable woff2 files. Mounted BEFORE requireAuth.
+  if (req.method === 'GET' && /^\/fonts\/[^/]+$/.test(earlyPath)) {
+    const fname = earlyPath.slice('/fonts/'.length);
+    const ALLOWED = new Set(['Inter.var.woff2', 'Fraunces.var.woff2']);
+    if (!ALLOWED.has(fname)) return send(res, 404, 'font not found');
+    const fp = path.join(APP, 'fonts', fname);
+    fs.stat(fp, (err, st) => {
+      if (err || !st.isFile()) return send(res, 404, 'font missing on disk');
+      res.writeHead(200, {
+        'Content-Type': 'font/woff2',
+        'Content-Length': st.size,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Access-Control-Allow-Origin': '*',
+      });
+      fs.createReadStream(fp).pipe(res);
+    });
+    return;
   }
   // Production auth gate (no-op in dev when AUTH_USER/AUTH_PASS unset).
   if (!requireAuth(req, res)) return;
