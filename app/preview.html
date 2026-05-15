@@ -6,7 +6,9 @@
 <style>
   /* Don't apply browser margins; quote.js renders A4 pages itself. */
   html, body { margin: 0; padding: 0; background: #F9FAF7; }
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+  /* Phase 7M (2026-05-15): removed Google Fonts @import — fonts are
+     now embedded as base64 woff2 inside quote.js (`quoteCss()`), so
+     the preview AND the printed PDF both work without network. */
   body { font-family: 'Inter', system-ui, sans-serif; }
 </style>
 </head>
