@@ -4334,7 +4334,8 @@ function buildFloorSummary(state, c) {
 function renderFloorSummaryTable(state, c) {
   const rows = buildFloorSummary(state, c);
   if (!rows.length) return '';
-  const subtitle = `Plot Area — ${c.plotSqYards} Sq. Yard / ${niA(c.plotSqFt)} Sq. Ft.`;
+  // Phase 7P (2026-05-15): removed duplicate "Plot Area — X Sq.Yard / Y Sq.Ft."
+  // subtitle line; the same info is already shown in the metrics row above.
   const cell = (n) => (n === 0 || n == null) ? '<span style="color:var(--muted);">—</span>' : (niA(n) + ' sq.ft'); // 7G-B
   const trs = rows.map((r, i) => {
     const labelCell = r.sublabel
@@ -4350,7 +4351,6 @@ function renderFloorSummaryTable(state, c) {
   return `
     <div class="floor-summary-block">
       <h2 class="floor-summary-title">Floor Area Summary</h2>
-      <p class="floor-summary-subtitle">${escapeHtml(subtitle)}</p>
       <table class="floor-summary-table">
         <thead>
           <tr>
