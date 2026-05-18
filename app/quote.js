@@ -4880,4 +4880,277 @@ function renderNotesPage(state) {
 </section>`;
 }
 
+// ============================================================================
+// Phase 8C — Quick Build Wizard
+// ============================================================================
+// Pre-fills customer + build + per-zone tier rates from catalog.tiered.json
+// then triggers a New-Quote-style reset so the existing render path picks up
+// the fresh state. Rep can edit any cell after.
+// ============================================================================
+(function initWizard() {
+  const openBtn = document.getElementById('wizard-open');
+  const modal   = document.getElementById('wizard-modal');
+  if (!openBtn || !modal) return; // Defensive: if HTML wasn't updated yet
+
+  let tieredCatalog = null;
+  let catalogLoadPromise = null;
+
+  function loadTieredCatalog() {
+    if (tieredCatalog) return Promise.resolve(tieredCatalog);
+    if (catalogLoadPromise) return catalogLoadPromise;
+    catalogLoadPromise = fetch('/catalog/catalog.tiered.json', { credentials: 'same-origin' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(j => { tieredCatalog = j; return j; })
+      .catch(err => { console.error('[wizard] catalog load fail:', err); throw err; });
+    return catalogLoadPromise;
+  }
+
+  let currentStep = 1;
+
+  function showStep(n) {
+    currentStep = n;
+    modal.querySelectorAll('.wiz-step').forEach(el => {
+      el.style.display = (parseInt(el.dataset.step, 10) === n) ? '' : 'none';
+    });
+    modal.querySelectorAll('.wiz-tab').forEach(t => {
+      const isActive = parseInt(t.dataset.step, 10) === n;
+      t.style.borderBottomColor = isActive ? '#C9A24D' : 'transparent';
+      t.style.color = isActive ? '#0A1F44' : '#6b7280';
+      t.style.fontWeight = isActive ? '600' : '400';
+      t.classList.toggle('active', isActive);
+    });
+    document.getElementById('wiz-prev').style.display = (n === 1) ? 'none' : '';
+    document.getElementById('wiz-next').style.display = (n === 3) ? 'none' : '';
+    document.getElementById('wiz-apply').style.display = (n === 3) ? '' : 'none';
+    if (n === 3) recomputeWizSummary();
+  }
+
+  function getWizValues() {
+    const tierRadio = modal.querySelector('input[name="wiz-tier"]:checked');
+    const tier = tierRadio ? tierRadio.value : 'mid_luxury';
+    return {
+      salutation: document.getElementById('wiz-salutation').value || '',
+      name:       document.getElementById('wiz-name').value.trim(),
+      address:    document.getElementById('wiz-address').value.trim(),
+      plotSqYd:   parseFloat(document.getElementById('wiz-plot-sqyd').value) || 0,
+      breadth:    parseFloat(document.getElementById('wiz-breadth').value) || 0,
+      coverage:   parseFloat(document.getElementById('wiz-coverage').value) || 75,
+      buildType:  document.getElementById('wiz-build-type').value,
+      floors:     parseInt(document.getElementById('wiz-floors').value, 10) || 4,
+      hasLift:    document.getElementById('wiz-has-lift').checked,
+      hasBasement:document.getElementById('wiz-has-basement').checked,
+      hasWaterTank: document.getElementById('wiz-has-watertank').checked,
+      tier,
+      customA: parseFloat(document.getElementById('wiz-custom-A').value) || null,
+      customB: parseFloat(document.getElementById('wiz-custom-B').value) || null,
+      customC: parseFloat(document.getElementById('wiz-custom-C').value) || null,
+      customD: parseFloat(document.getElementById('wiz-custom-D').value) || null,
+    };
+  }
+
+  function recomputeWizSummary() {
+    const out = document.getElementById('wiz-summary-text');
+    if (!out) return;
+    const v = getWizValues();
+    loadTieredCatalog().then(cat => {
+      const z = cat.zones;
+      const lift = cat.fixed_costs.lift_machine[v.tier];
+      const A = v.customA || z.A[v.tier];
+      const B = v.customB || z.B[v.tier];
+      const C = v.customC || z.C[v.tier];
+      const D = v.customD || z.D[v.tier];
+      // Sample area estimate based on plot inputs:
+      // - Floor footprint = plotSqYd × 9 × coverage% (1 sq.yd = 9 sq.ft)
+      // - Zone A area ≈ footprint × number-of-Zone-A-floors + lift area
+      // - Zone B area ≈ stilt + balcony estimate + staircase
+      const footprint = v.plotSqYd * 9 * (v.coverage / 100);
+      const floorsAboveZoneA = v.floors; // floors count
+      const liftArea = v.hasLift ? 150 : 0;
+      const zoneAArea = footprint * floorsAboveZoneA + liftArea;
+      const stiltArea = (v.buildType === 'stilt') ? footprint : 0;
+      const balconyArea = Math.round(footprint * 0.18 * floorsAboveZoneA); // ~18% per floor heuristic
+      const staircaseArea = 150 * floorsAboveZoneA; // ~150 sq.ft per landing
+      const zoneBArea = stiltArea + balconyArea + staircaseArea;
+      const terraceArea = footprint;
+      const rampSetbackArea = footprint * 0.2;
+      const zoneCArea = terraceArea + rampSetbackArea;
+      const waterTankL = v.hasWaterTank ? 8000 : 0;
+      const eCost = (cat.zones.E[v.tier] || 0);
+      const total =
+        zoneAArea * A +
+        zoneBArea * B +
+        zoneCArea * C +
+        waterTankL * D +
+        eCost +
+        (v.hasLift ? lift : 0);
+      const fmt = n => '₹' + Math.round(n).toLocaleString('en-IN');
+      out.innerHTML =
+        '<b>Tier:</b> ' + v.tier.replace('_',' ') + '<br>' +
+        '<b>Est. Zone A area:</b> ' + zoneAArea.toFixed(0) + ' sq.ft × ₹' + A + ' = ' + fmt(zoneAArea * A) + '<br>' +
+        '<b>Est. Zone B area:</b> ' + zoneBArea.toFixed(0) + ' sq.ft × ₹' + B + ' = ' + fmt(zoneBArea * B) + '<br>' +
+        '<b>Est. Zone C area:</b> ' + zoneCArea.toFixed(0) + ' sq.ft × ₹' + C + ' = ' + fmt(zoneCArea * C) + '<br>' +
+        (waterTankL ? '<b>Zone D:</b> ' + waterTankL + ' L × ₹' + D + ' = ' + fmt(waterTankL * D) + '<br>' : '') +
+        (eCost ? '<b>Zone E (elevation):</b> ' + fmt(eCost) + '<br>' : '') +
+        (v.hasLift ? '<b>Lift machine:</b> ' + fmt(lift) + '<br>' : '') +
+        '<hr style="margin:8px 0;border:none;border-top:1px solid #d0d4dc">' +
+        '<b style="color:#0A1F44">Estimated total: ' + fmt(total) + '</b><br>' +
+        '<span style="color:#6b7280;font-size:11px">Heuristic preview only — actual quote uses the live calc engine with full per-floor breakdown.</span>';
+    }).catch(err => {
+      out.innerHTML = '<span style="color:#b91c1c">Catalog load failed: ' + (err.message || err) + '</span>';
+    });
+  }
+
+  function validateStep(n) {
+    if (n === 1) {
+      const name = document.getElementById('wiz-name').value.trim();
+      if (!name) { toast('Customer name is required', 'warn'); return false; }
+      return true;
+    }
+    if (n === 2) {
+      const plot = parseFloat(document.getElementById('wiz-plot-sqyd').value);
+      if (!plot || plot <= 0) { toast('Plot size (sq.yd) is required', 'warn'); return false; }
+      const breadth = parseFloat(document.getElementById('wiz-breadth').value);
+      if (!breadth || breadth <= 0) { toast('Front (breadth, ft) is required', 'warn'); return false; }
+      return true;
+    }
+    return true;
+  }
+
+  function applyWizard() {
+    const v = getWizValues();
+    loadTieredCatalog().then(cat => {
+      // Build the new state object that the live calc engine will consume.
+      // We pre-load existing state then surgically overwrite customer + build + pricing.
+      const newState = JSON.parse(JSON.stringify(state)); // deep clone current
+      newState.customer = {
+        salutation: v.salutation,
+        name: v.name,
+        address: v.address,
+      };
+      newState.build = {
+        ...newState.build,
+        plotSqYards: v.plotSqYd,
+        breadth: v.breadth,
+        coverage: v.coverage,
+        buildType: v.buildType,
+        floors: v.floors,
+        hasBasement: v.hasBasement,
+        hasLift: v.hasLift,
+        hasWaterTank: v.hasWaterTank,
+      };
+      const z = cat.zones;
+      const lift = cat.fixed_costs.lift_machine[v.tier];
+      const A = v.customA || z.A[v.tier];
+      const B = v.customB || z.B[v.tier];
+      const C = v.customC || z.C[v.tier];
+      const D = v.customD || z.D[v.tier];
+      newState.pricing = {
+        ...newState.pricing,
+        costPerSqft:  A,
+        zoneARate:    A,
+        zoneBRate:    B,
+        zoneCRate:    C,
+        zoneDRate:    D,
+        basementRate: (v.tier === 'luxury' || v.tier === 'mid_luxury') ? 2700 : 2700,
+        liftCost:     lift,
+      };
+      // Reset rows so the catalog defaults regenerate for the new scope.
+      newState.rows = [];
+      // Tag the source tier so future LLM edits and analytics know origin.
+      newState._wizardSource = {
+        tier: v.tier,
+        createdAt: new Date().toISOString(),
+        catalogSchemaVersion: cat._meta && cat._meta.schema_version,
+      };
+      // Mark as fresh so the catalog defaults get applied on next load.
+      newState._isFreshQuote = true;
+
+      // Wipe the active slot pointer (so this becomes a scratch quote that the
+      // rep then saves with a customer name), then persist new state and reload.
+      try { QuoteStorage.setActiveId(''); } catch (_) {}
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify(newState));
+      } catch (e) {
+        toast('Wizard apply failed: ' + e.message, 'err');
+        return;
+      }
+      toast('Quote generated from ' + v.tier.replace('_',' ') + ' template');
+      setTimeout(() => location.reload(), 400);
+    }).catch(err => {
+      toast('Wizard apply failed (catalog): ' + (err.message || err), 'err');
+    });
+  }
+
+  // Wire toolbar button
+  openBtn.onclick = () => {
+    // Pre-warm catalog fetch
+    loadTieredCatalog().catch(()=>{});
+    // Pre-fill from current state if any
+    document.getElementById('wiz-salutation').value = state.customer.salutation || 'Mr.';
+    document.getElementById('wiz-name').value       = state.customer.name || '';
+    document.getElementById('wiz-address').value    = state.customer.address || '';
+    document.getElementById('wiz-plot-sqyd').value  = state.build.plotSqYards || '';
+    document.getElementById('wiz-breadth').value    = state.build.breadth || '';
+    document.getElementById('wiz-coverage').value   = state.build.coverage || 75;
+    document.getElementById('wiz-build-type').value = state.build.buildType || 'stilt';
+    document.getElementById('wiz-floors').value     = state.build.floors || 4;
+    document.getElementById('wiz-has-lift').checked     = !!state.build.hasLift;
+    document.getElementById('wiz-has-basement').checked = !!state.build.hasBasement;
+    document.getElementById('wiz-has-watertank').checked= state.build.hasWaterTank !== false;
+    document.getElementById('wiz-custom-A').value = '';
+    document.getElementById('wiz-custom-B').value = '';
+    document.getElementById('wiz-custom-C').value = '';
+    document.getElementById('wiz-custom-D').value = '';
+    showStep(1);
+    openModal(modal);
+    setTimeout(() => { try { document.getElementById('wiz-name').focus(); } catch(_){} }, 50);
+  };
+
+  // Wire navigation
+  document.getElementById('wiz-next').onclick = () => {
+    if (!validateStep(currentStep)) return;
+    showStep(Math.min(currentStep + 1, 3));
+  };
+  document.getElementById('wiz-prev').onclick = () => showStep(Math.max(currentStep - 1, 1));
+  document.getElementById('wiz-close').onclick = () => closeModal(modal);
+  document.getElementById('wiz-apply').onclick = () => {
+    if (!validateStep(1) || !validateStep(2)) { showStep(1); return; }
+    if (!confirm('Generate quote from "' + getWizValues().tier.replace('_',' ') + '" template? Current quote will be replaced.')) return;
+    closeModal(modal);
+    applyWizard();
+  };
+  // Tab clicks jump (with validation)
+  modal.querySelectorAll('.wiz-tab').forEach(t => {
+    t.onclick = () => {
+      const n = parseInt(t.dataset.step, 10);
+      if (n > currentStep) {
+        for (let i = currentStep; i < n; i++) if (!validateStep(i)) return;
+      }
+      showStep(n);
+    };
+  });
+  // Live summary update on Step 3
+  ['wiz-plot-sqyd','wiz-breadth','wiz-coverage','wiz-build-type','wiz-floors',
+   'wiz-has-lift','wiz-has-basement','wiz-has-watertank',
+   'wiz-custom-A','wiz-custom-B','wiz-custom-C','wiz-custom-D'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { if (currentStep === 3) recomputeWizSummary(); });
+  });
+  modal.querySelectorAll('input[name="wiz-tier"]').forEach(r => {
+    r.addEventListener('change', () => {
+      // Visually highlight the chosen card
+      modal.querySelectorAll('.wiz-pkg').forEach(c => {
+        const isPicked = c.querySelector('input').checked;
+        c.style.borderColor = isPicked ? '#C9A24D' : '#d0d4dc';
+        c.style.background  = isPicked ? '#fffdf8' : 'transparent';
+      });
+      if (currentStep === 3) recomputeWizSummary();
+    });
+  });
+  // Trigger initial card highlight
+  modal.querySelectorAll('input[name="wiz-tier"]:checked').forEach(r => {
+    r.dispatchEvent(new Event('change'));
+  });
+})();
+
 })();

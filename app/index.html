@@ -447,6 +447,7 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
       </select>
     </label>
     <button class="secondary" id="new-quote" title="Clear current quote and start fresh">New Quote</button>
+    <button class="secondary" id="wizard-open" title="Quick Build wizard — prefill from a tier template" style="background:linear-gradient(135deg,#C9A24D,#b8923e);color:white;border-color:#b8923e">✨ Quick Build</button>
     <button class="secondary" id="save-quote" title="Save quote (Ctrl/Cmd+S)">Save</button>
     <button class="secondary" id="load-quote" title="Open a saved quote">Load</button>
     <button class="secondary" id="export-quote" title="Download quote as JSON">Export</button>
@@ -507,6 +508,112 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
     </div>
     <div class="body" id="load-modal-body"></div>
     <footer><button id="load-close">Close</button></footer>
+  </div>
+</div>
+
+<!-- Phase 8C: Quick Build wizard modal -->
+<div class="qb-modal" id="wizard-modal" role="dialog" aria-label="Quick Build wizard">
+  <div class="panel" style="max-width:640px">
+    <header>
+      <h3>✨ Quick Build — Quote from Template</h3>
+    </header>
+    <div class="body" id="wizard-modal-body" style="padding:14px 18px">
+      <!-- Step tabs -->
+      <div id="wiz-tabs" style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #e5e7eb;padding-bottom:8px">
+        <button type="button" class="wiz-tab active" data-step="1" style="padding:6px 12px;background:transparent;border:none;border-bottom:2px solid #C9A24D;color:#0A1F44;font-weight:600;cursor:pointer">1. Client</button>
+        <button type="button" class="wiz-tab" data-step="2" style="padding:6px 12px;background:transparent;border:none;border-bottom:2px solid transparent;color:#6b7280;cursor:pointer">2. Plot & Build</button>
+        <button type="button" class="wiz-tab" data-step="3" style="padding:6px 12px;background:transparent;border:none;border-bottom:2px solid transparent;color:#6b7280;cursor:pointer">3. Package</button>
+      </div>
+
+      <!-- Step 1: Client -->
+      <div class="wiz-step" data-step="1">
+        <div style="display:grid;grid-template-columns:120px 1fr;gap:10px 12px;align-items:center;font-size:14px">
+          <label>Salutation</label>
+          <select id="wiz-salutation" style="padding:6px 8px;border:1px solid #d0d4dc;border-radius:6px">
+            <option value="Mr.">Mr.</option>
+            <option value="Mrs.">Mrs.</option>
+            <option value="Ms.">Ms.</option>
+            <option value="Dr.">Dr.</option>
+            <option value="">(none)</option>
+          </select>
+          <label>Full name</label>
+          <input type="text" id="wiz-name" placeholder="Customer name" style="padding:6px 10px;border:1px solid #d0d4dc;border-radius:6px">
+          <label>Site address</label>
+          <textarea id="wiz-address" rows="2" placeholder="Plot / sector / city" style="padding:6px 10px;border:1px solid #d0d4dc;border-radius:6px;resize:vertical"></textarea>
+        </div>
+      </div>
+
+      <!-- Step 2: Plot & Build -->
+      <div class="wiz-step" data-step="2" style="display:none">
+        <div style="display:grid;grid-template-columns:170px 1fr;gap:10px 12px;align-items:center;font-size:14px">
+          <label>Plot size (sq.yd)</label>
+          <input type="number" id="wiz-plot-sqyd" min="1" placeholder="e.g. 170" style="padding:6px 10px;border:1px solid #d0d4dc;border-radius:6px">
+          <label>Front (breadth, ft)</label>
+          <input type="number" id="wiz-breadth" min="1" placeholder="e.g. 27" style="padding:6px 10px;border:1px solid #d0d4dc;border-radius:6px">
+          <label>Coverage (%)</label>
+          <input type="number" id="wiz-coverage" min="1" max="100" value="75" style="padding:6px 10px;border:1px solid #d0d4dc;border-radius:6px">
+          <label>Build type</label>
+          <select id="wiz-build-type" style="padding:6px 8px;border:1px solid #d0d4dc;border-radius:6px">
+            <option value="stilt">Stilt + Floors</option>
+            <option value="nostilt">No Stilt (Ground + Floors)</option>
+            <option value="structure">Structure Only</option>
+          </select>
+          <label>Number of floors</label>
+          <input type="number" id="wiz-floors" min="1" max="6" value="4" style="padding:6px 10px;border:1px solid #d0d4dc;border-radius:6px">
+          <label>Has lift?</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px"><input type="checkbox" id="wiz-has-lift"> Yes, include lift machine + Zone A lift area</label>
+          <label>Has basement?</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px"><input type="checkbox" id="wiz-has-basement"> Yes, include basement (Zone E)</label>
+          <label>Underground water tank?</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px"><input type="checkbox" id="wiz-has-watertank" checked> Yes (Zone D)</label>
+        </div>
+      </div>
+
+      <!-- Step 3: Package -->
+      <div class="wiz-step" data-step="3" style="display:none">
+        <p style="margin:0 0 12px;font-size:13px;color:#6b7280">Pick a tier. Rates auto-fill; you can edit any cell after the quote is generated.</p>
+        <div id="wiz-package-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <label class="wiz-pkg" data-tier="basic" style="border:2px solid #d0d4dc;border-radius:8px;padding:12px;cursor:pointer">
+            <input type="radio" name="wiz-tier" value="basic" style="margin-bottom:8px"><br>
+            <b style="color:#0A1F44">Basic</b>
+            <div style="font-size:12px;color:#6b7280;margin-top:6px">Zone A: ₹2,300/sqft<br>Zone B: ₹1,200/sqft<br>Plyboard kitchen, Hindware bath</div>
+          </label>
+          <label class="wiz-pkg" data-tier="mid_luxury" style="border:2px solid #d0d4dc;border-radius:8px;padding:12px;cursor:pointer">
+            <input type="radio" name="wiz-tier" value="mid_luxury" checked style="margin-bottom:8px"><br>
+            <b style="color:#0A1F44">Mid Luxury</b>
+            <div style="font-size:12px;color:#6b7280;margin-top:6px">Zone A: ₹2,850/sqft<br>Zone B: ₹1,425/sqft<br>HDHMR kitchen, Jaquar bath</div>
+          </label>
+          <label class="wiz-pkg" data-tier="luxury" style="border:2px solid #d0d4dc;border-radius:8px;padding:12px;cursor:pointer">
+            <input type="radio" name="wiz-tier" value="luxury" style="margin-bottom:8px"><br>
+            <b style="color:#0A1F44">Luxury</b>
+            <div style="font-size:12px;color:#6b7280;margin-top:6px">Zone A: ₹3,850/sqft<br>Zone B: ₹1,925/sqft<br>Italian marble, Kohler bath</div>
+          </label>
+        </div>
+        <details style="margin-top:14px">
+          <summary style="cursor:pointer;font-size:13px;color:#6b7280">Custom rates? Click to expand</summary>
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:8px 10px;margin-top:10px;font-size:13px">
+            <label>Zone A ₹/sqft</label>
+            <input type="number" id="wiz-custom-A" placeholder="leave blank for tier default" style="padding:5px 8px;border:1px solid #d0d4dc;border-radius:5px">
+            <label>Zone B ₹/sqft</label>
+            <input type="number" id="wiz-custom-B" placeholder="leave blank for tier default" style="padding:5px 8px;border:1px solid #d0d4dc;border-radius:5px">
+            <label>Zone C ₹/sqft</label>
+            <input type="number" id="wiz-custom-C" placeholder="leave blank for tier default" style="padding:5px 8px;border:1px solid #d0d4dc;border-radius:5px">
+            <label>Zone D ₹/L</label>
+            <input type="number" id="wiz-custom-D" placeholder="leave blank for tier default" style="padding:5px 8px;border:1px solid #d0d4dc;border-radius:5px">
+          </div>
+        </details>
+        <div id="wiz-summary" style="margin-top:14px;padding:10px;background:#f6f7f9;border-radius:6px;font-size:13px;color:#0A1F44">
+          <div style="color:#6b7280;font-size:12px;margin-bottom:4px">Estimated cost preview</div>
+          <div id="wiz-summary-text">Fill in the form above…</div>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <button id="wiz-prev" type="button">← Back</button>
+      <button id="wiz-next" type="button" class="btn-primary">Next →</button>
+      <button id="wiz-apply" type="button" class="btn-primary" style="display:none">Generate Quote</button>
+      <button id="wiz-close" type="button">Cancel</button>
+    </footer>
   </div>
 </div>
 

@@ -1,0 +1,3665 @@
+{
+  "_meta": {
+    "version": "2.0.0",
+    "built": "2026-04-29",
+    "source": "_hardik_reference_quote.pdf (Mr. Hardik, 37x82, Stilt+3) — Phase 7G-B baseline",
+    "schema": "tier-less catalog (existing) PLUS additive tiers block per item + top-level zones + fixed_costs",
+    "tier_system": "removed in Phase 2 P0.1",
+    "items_total": 94,
+    "phase64_basement_added": "2026-05-04",
+    "phase7g_b_updated": "2026-05-09",
+    "phase_8a_tiered": "2026-05-18",
+    "tiers_added": [
+      "basic",
+      "mid_luxury",
+      "luxury"
+    ],
+    "sources": [
+      "reference_quotes/basic.pdf",
+      "reference_quotes/mid_luxury.pdf",
+      "reference_quotes/luxury.pdf"
+    ],
+    "items_matched": 82
+  },
+  "zones": {
+    "A": {
+      "basic": 2300,
+      "mid_luxury": 2850,
+      "luxury": 3850,
+      "unit": "per_sqft",
+      "applies_to": "covered area incl lift+staircase"
+    },
+    "B": {
+      "basic": 1200,
+      "mid_luxury": 1425,
+      "luxury": 1925,
+      "unit": "per_sqft",
+      "applies_to": "semi-covered (stilt, balcony, staircase)"
+    },
+    "C": {
+      "basic": 600,
+      "mid_luxury": 600,
+      "luxury": 600,
+      "unit": "per_sqft",
+      "applies_to": "open (terrace, ramp, setback)"
+    },
+    "D": {
+      "basic": 15,
+      "mid_luxury": 25,
+      "luxury": 25,
+      "unit": "per_litre",
+      "applies_to": "underground water tank capacity"
+    },
+    "E": {
+      "basic": null,
+      "mid_luxury": 500000,
+      "luxury": 1000000,
+      "unit": "lump_sum",
+      "applies_to": "elevation wallet"
+    }
+  },
+  "fixed_costs": {
+    "lift_machine": {
+      "basic": 1000000,
+      "mid_luxury": 1000000,
+      "luxury": 1350000,
+      "unit": "lump_sum"
+    }
+  },
+  "items": [
+    {
+      "id": "design_drawings.architectural_layout",
+      "category": "design_drawings",
+      "category_label": "Design & Drawings",
+      "label": "Architectural Layout",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "2D Architectural Design\nModern 3D Elevation\nStructural Design\nMEP Drawings\nAll construction work to be carried out as per approved plan\nNo. of 2D floor plan iteration is not a constrain. The number of changes will be done till the floor plan is finalized.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "2D Architectural DesignModern 3D Elevation\nStructural Design\nMEP Drawings\nAll construction work to be carried out as per\napproved plan\nNo. of 2D floor plan iteration is not a constrain. The\nnumber of changes will be done till the floor plan is\nfinalized.",
+          "source_label": "Architectural Layout"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "2D Architectural DesignModern 3D Elevation\nStructural Design\nMEP Drawings\nAll construction work to be carried out as per\napproved plan\nNo. of 2D floor plan iteration is not a constrain. The\nnumber of changes will be done till the floor plan is\nfinalized.",
+          "source_label": "Architectural Layout"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "2D Architectural DesignModern 3D Elevation\nStructural Design\nMEP Drawings\nAll construction work to be carried out as per\napproved plan\nNo. of 2D floor plan iteration is not a constrain. The\nnumber of changes will be done till the floor plan is\nfinalized.",
+          "source_label": "Architectural Layout"
+        }
+      }
+    },
+    {
+      "id": "structure.structural_design_seismic_compliance",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Structural Design & Seismic Compliance",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Structure shall be designed as per IS 456, IS 1893, and IS 13920 for seismic Zone IV, with ductile detailing for safety.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "structure.steel",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Steel",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Rathi Steel Fe500/Fe550"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Rathi Steel Fe500/Fe550<br>We have taken <b>4.5Kg per sqft</b> average<br>Any variation from 4.5kg will not be charged additionally, Giving the strength for <b>S+4 floors</b>.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Rathi Fe500/ Fe550",
+          "spec": "4.5Kg per sqft\nAny variation above and below 4.5kg is charged and\nrefunded on pro rata basis.",
+          "source_label": "Steel"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Rathi Fe500/Fe550",
+          "spec": "4.5Kg per sqft\nAny variation above and below 4.5kg is charged and\nrefunded on pro rata basis.",
+          "source_label": "Steel"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "TATA Fe500 / Fe550",
+          "spec": "4.5Kg per sq ft\nAny variation above and below 4.5kg is charged and\nrefunded on pro rata basis.",
+          "source_label": "Steel"
+        }
+      }
+    },
+    {
+      "id": "structure.cement",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Cement",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Shree",
+        "Dalmia",
+        "Ambuja"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Shree/Dalmia/Ambuja\nSame brand shall be used for all RCC, brickwork, and plastering works. Fluctuation of pricing is taken care of, this will not be passed on to the client.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Shree/Dalmia/Ambuja",
+          "spec": "Same brand shall be used for all RCC, brickwork, and\nplastering works.",
+          "source_label": "Cement"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Ultratech / ACC",
+          "spec": "Same brand shall be used for all RCC, brickwork, and\nplastering works.",
+          "source_label": "Cement"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Ultratech / ACC",
+          "spec": "Same brand shall be used for all RCC, brickwork, and\nplastering works.",
+          "source_label": "Cement"
+        }
+      }
+    },
+    {
+      "id": "structure.bricks",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Bricks",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Baghpat (U.P) A Class Red Brick\nExternal walls shall be constructed using 9-inch (4.5 inch in case of common wall) thick brickwork and internal partition walls shall be 4.5-inch thick",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Baghpat (U.P)",
+          "spec": "A Class Red Brick\nExternal walls shall be constructed using 9-inch (4.5\ninch in case of common wall) thick brickwork and\ninternal partition walls shall be 4.5-inch thick",
+          "source_label": "Bricks"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Baghpat (U.P)",
+          "spec": "A Class Red Brick\nExternal walls shall be constructed using 9-inch (4.5\ninch in case of common wall) thick brickwork and\ninternal partition walls shall be 4.5-inch thick",
+          "source_label": "Bricks"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Baghpat (U.P)",
+          "spec": "A Class Red Brick\nExternal walls shall be constructed using 9-inch thick\nbrickwork and internal partition walls shall be 4.5-\ninch thick",
+          "source_label": "Bricks"
+        }
+      }
+    },
+    {
+      "id": "structure.concrete",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Concrete",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "M25\nRCC work in Slab, Beam, Column, and Foundation to be carried but achieving M25 strength.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "M25",
+          "spec": "RCC work in Slab, Beam, Column, and Foundation to\nbe carried out.\nM25 ratio is 1:1:2 (Cement : Sand : Coarse\nAggregates).\nProper use of Vibrators and Cover Blocks in Slabs,\nbeams, columns and foundation.",
+          "source_label": "Concrete"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "M25",
+          "spec": "RCC work in Slab, Beam, Column, and Foundation to\nbe carried out.\nM25 ratio is 1:1:2 (Cement : Sand : Coarse\nAggregates).\nProper use of Vibrators and Cover Blocks in Slabs,\nbeams, columns and foundation.",
+          "source_label": "Concrete"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "M25",
+          "spec": "RCC work in Slab, Beam, Column, and Foundation to\nbe carried out.\nM25 ratio is 1:1:2 (Cement : Sand : Coarse\nAggregates).\nProper use of Vibrators and Cover Blocks in Slabs,\nbeams, columns and foundation.",
+          "source_label": "Concrete"
+        }
+      }
+    },
+    {
+      "id": "structure.plinth_floor_and_stilt_level",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Plinth, Floor and Stilt Level",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft on first and second floors.\nStilt height as per the government norms",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft on first\nand second floors.\nStilt height as per the government norms",
+          "source_label": "Plinth, Floor and Stilt Level"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft on first\nand second floors.\nStilt height as per the government norms",
+          "source_label": "Plinth, Floor and Stilt Level"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10.5 ft or as\nper actuals.\nStilt height as per the government norms",
+          "source_label": "Plinth, Floor and Stilt Level"
+        }
+      }
+    },
+    {
+      "id": "structure.aggregates_rodi",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Aggregates (Rodi)",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "20mm & 10mm\nMost superior bluish color aggregates to be used in all concrete work.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "20mm & 10mm\nMost superior bluish color aggregates to be used in\nall concrete work.\nPCC in Foundation / Stilt and",
+          "source_label": "Aggregates (Rodi)"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "20mm & 10mm\nMost superior bluish color aggregates to be used in\nall concrete work.\nPCC in Foundation / Stilt and",
+          "source_label": "Aggregates (Rodi)"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "20mm & 10mm\nMost superior bluish color aggregates to be used in\nall concrete work.\nPCC in Foundation / Stilt and",
+          "source_label": "Aggregates (Rodi)"
+        }
+      }
+    },
+    {
+      "id": "structure.pcc_in_foundation_stilt_and_terrace",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "PCC in Foundation / Stilt and Terrace",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "100mm (4 inch) thick PCC in ratio of 1:3:6 (Cement:Sand:Aggregate)\nPCC to be done below the foundation jal, in stilt area below the granite work and also in terrace below the terrace tile flooring",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft on first\nand second floors.\nStilt height as per the government norms",
+          "source_label": "Plinth, Floor and Stilt Level"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft on first\nand second floors.\nStilt height as per the government norms",
+          "source_label": "Plinth, Floor and Stilt Level"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10.5 ft or as\nper actuals.\nStilt height as per the government norms",
+          "source_label": "Plinth, Floor and Stilt Level"
+        }
+      }
+    },
+    {
+      "id": "structure.plaster_work",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Plaster Work",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Interior Plaster : 8-10mm thick with ratio of 1:2:3 (Cement:Coarse Sand:Fine Sand)\nSingle coat plaster of 8-10mm thick would be provided.\nExterior Plaster : 12-15mm thick with ratio of 1:2:2 (Cement:Coarse sand:Fine Sand)\nDouble coat plaster totalling to 12-15 mm would be provided for durability and strength",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Interior Plaster : 8-10mm thick with ratio of 1:2:3\n(Cement:Coarse Sand:Fine Sand). Single coat plaster\nof 8-10mm thick would be provided.\nExterior Plaster : 12-15mm thick with ratio of 1:2:2\n(Cement:Coarse sand:Fine Sand). Double coat\nplaster totaling to 12-15 mm would be provided for\ndurability and strength",
+          "source_label": "Plaster Work"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Interior Plaster : 8-10mm thick with ratio of 1:2:3\n(Cement:Coarse Sand:Fine Sand). Single coat plaster\nof 8-10mm thick would be provided.\nExterior Plaster : 12-15mm thick with ratio of 1:2:2\n(Cement:Coarse sand:Fine Sand). Double coat\nplaster totaling to 12-15 mm would be provided for\ndurability and strength",
+          "source_label": "Plaster Work"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Interior Plaster : 8-10mm thick with ratio of 1:2:3\n(Cement:Coarse Sand:Fine Sand). Single coat plaster\nof 8-10mm thick would be provided.\nExterior Plaster : 12-15mm thick with ratio of 1:2:2\n(Cement:Coarse sand:Fine Sand). Double coat\nplaster totaling to 12-15 mm would be provided for\ndurability and strength",
+          "source_label": "Plaster Work"
+        }
+      }
+    },
+    {
+      "id": "structure.compound_wall",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Compound Wall",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "4.5 Inch thick compound wall will be provided with 6 ft height from the plinth level on open areas perimeter",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "4.5 Inch thick compound wall will be provided with 6\nft height from the plinth level on open areas perimeter",
+          "source_label": "Compound Wall"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "4.5 Inch thick compound wall will be provided with 6\nft height from the plinth level on open areas perimeter",
+          "source_label": "Compound Wall"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "9 Inch thick compound wall will be provided with 6 ft\nheight from the plinth level on open areas perimeter",
+          "source_label": "Compound Wall"
+        }
+      }
+    },
+    {
+      "id": "structure.parapet_wall",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Parapet Wall",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "4.5 inch thick wall with 3.3 ft will be provided on terrace on entire terrace perimeter.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "9 inch thick wall with 3.3 ft will be provided on terrace\non entire terrace perimeter.",
+          "source_label": "Parapet Wall"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "9 inch thick wall with 3.3 ft will be provided on terrace\non entire terrace perimeter.",
+          "source_label": "Parapet Wall"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "9 inch thick wall with 3.3 ft will be provided on terrace\non entire terrace perimeter.",
+          "source_label": "Parapet Wall"
+        }
+      }
+    },
+    {
+      "id": "structure.curing",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Curing",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Sika Antisol"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Sika Antisol\nAll RCC and masonry works shall be properly cured using continuous water curing methods to maintain adequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14 days for brickwork and plaster twice a day\nColumns will be covered with jute bag during curing to retain water",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Sika Antisol",
+          "spec": "All RCC and masonry works shall be properly cured\nusing continuous water curing methods to maintain\nadequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14\ndays for brickwork and plaster twice a day",
+          "source_label": "Curing"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Sika Antisol",
+          "spec": "All RCC and masonry works shall be properly cured\nusing continuous water curing methods to maintain\nadequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14\ndays for brickwork and plaster twice a day",
+          "source_label": "Curing"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Sika Antisol",
+          "spec": "All RCC and masonry works shall be properly cured\nusing continuous water curing methods to maintain\nadequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14\ndays for brickwork and plaster twice a day",
+          "source_label": "Curing"
+        }
+      }
+    },
+    {
+      "id": "structure.waterproofing",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Waterproofing",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Sika",
+        "Dr. Fixit LW+ (Pidilite)"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Sika/Dr. Fixit LW+ (pidilite)\nConcrete used anywhere is infused with waterproofing crystalline compound\nWaterproofing coat is done in wet areas like balcony, bathrooms, underground sump\nGola is created on terrace on joint of slab and parapat wall\nWaterproofing compound is is added to third-party plaster",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Sika/Dr. Fixit LW+ (pidilite)",
+          "spec": "Concrete used anywhere is infused with\nwaterproofing crystalline compound\nWaterproofing coat is done in wet areas like balcony,\nbathrooms, underground sump\nGola is created on terrace on joint of slab and parapet\nwall.\nWaterproofing compound is added to external plaster.",
+          "source_label": "Waterproofing"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Sika/Dr. Fixit LW+ (pidilite)",
+          "spec": "Concrete used anywhere is infused with\nwaterproofing crystalline compound\nWaterproofing coat is done in wet areas like balcony,\nbathrooms, underground sump\nGola is created on terrace on joint of slab and parapet\nwall.\nWaterproofing compound is added to external plaster.",
+          "source_label": "Waterproofing"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Sika/Dr. Fixit LW+ (pidilite)",
+          "spec": "Concrete used anywhere is infused with\nwaterproofing crystalline compound\nWaterproofing coat is done in wet areas like balcony,\nbathrooms, underground sump\nGola is created on terrace on joint of slab and parapet\nwall.\nWaterproofing compound is added to external plaster.",
+          "source_label": "Waterproofing"
+        }
+      }
+    },
+    {
+      "id": "structure.anti_termite_treatment",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Anti-Termite Treatment",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Bayer",
+        "Terminator (Pidilite)"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Bayer / Terminator (pidilite)\nTermite soil treatment begins pre-construction for complete building.\nTo be done at plinth level with Bayer & Terminator (Pidilite) anti-termite chemical.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Bayer / Terminator (pidilite)",
+          "spec": "Double Layer Protection System (DLPS)\nFIRST STEP : Termite soil treatment begins\npreconstruction for complete building. To be done at\nplinth level with Bayer & Terminator (Pidilite)\nantitermite chemical.\nSECOND STEP : Systematic piping network for\nuniform distribution across the area. Designed for\nefficiency, durability, and leak-proof performance.\nTEAM AT ZUILD USES DLPS, SO AS TO ENSURE\nMAXIMUM PROTECTION TOWARDS TERMITE.",
+          "source_label": "Anti-Termite Treatment"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Bayer / Terminator (pidilite)",
+          "spec": "Double Layer Protection System (DLPS)\nFIRST STEP : Termite soil treatment begins\npreconstruction for complete building. To be done at\nplinth level with Bayer & Terminator (Pidilite)\nantitermite chemical.\nSECOND STEP : Systematic piping network for\nuniform distribution across the area. Designed for\nefficiency, durability, and leak-proof performance.\nTEAM AT ZUILD USES DLPS, SO AS TO ENSURE\nMAXIMUM PROTECTION TOWARDS TERMITE.",
+          "source_label": "Anti-Termite Treatment"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Bayer / Terminator (pidilite)",
+          "spec": "Double Layer Protection System (DLPS)\nFIRST STEP : Termite soil treatment begins\npreconstruction for complete building. To be done at\nplinth level with Bayer & Terminator (Pidilite)\nantitermite chemical.\nSECOND STEP : Systematic piping network for\nuniform distribution across the area. Designed for\nefficiency, durability, and leak-proof performance.\nTEAM AT ZUILD USES DLPS, SO AS TO ENSURE\nMAXIMUM PROTECTION TOWARDS TERMITE.",
+          "source_label": "Anti-Termite Treatment"
+        }
+      }
+    },
+    {
+      "id": "structure.misc",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Misc",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Chicken mesh to be used in all joints of brickwork and columns and conduct areas to prevent crack\nCoverblock of appropriate thickness would be used",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for water purifier, dishwasher, and other\nkitchen appliances shall be provided, including\nnecessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine\nin the utility area or at a location as per the\narchitectural drawings.",
+          "source_label": "Misc"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for water purifier, dishwasher, and other\nkitchen appliances shall be provided, including\nnecessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine\nin the utility area or at a location as per the\narchitectural drawings.",
+          "source_label": "Misc"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for water purifier, dishwasher, and other\nkitchen appliances shall be provided, including\nnecessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine\nin the utility area or at a location as per the\narchitectural drawings.",
+          "source_label": "Misc"
+        }
+      }
+    },
+    {
+      "id": "structure.assumptions",
+      "category": "structure",
+      "category_label": "Structure",
+      "label": "Assumptions",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Site level should not be less than 1 ft below the road level\nFoundation is considered combination of isolated and combined footing 5 ft-6ft below the natural ground level",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Site level should not be less than 1 ft below the road\nlevel.\nFoundation is considered combination of isolated and\ncombined footing 5 ft-6ft below the natural ground\nlevel",
+          "source_label": "Assumptions"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Site level should not be less than 1 ft below the road\nlevel.\nFoundation is considered combination of isolated and\ncombined footing 5 ft-6ft below the natural ground\nlevel",
+          "source_label": "Assumptions"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Site level should not be less than 1 ft below the road\nlevel.\nFoundation is considered combination of isolated and\ncombined footing 5 ft-6ft below the natural ground\nlevel",
+          "source_label": "Assumptions"
+        }
+      }
+    },
+    {
+      "id": "bathroom.sanitary_ware_and_cp_fitting",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Sanitary Ware and CP Fitting",
+      "rate": 0,
+      "rate_text": "Rs 20,000 per Bathroom",
+      "unit": "descriptive",
+      "brands": [
+        "Parryware",
+        "Hindware"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Parryware or Hindware\nDurable and good quality sanitary ware including floor EWC, wash basin, shower head, and Mixer from Parryware / Hindware will be provided upto the specified value.",
+      "tiers": {
+        "basic": {
+          "rate": 25000.0,
+          "rate_text": "₹25,000 per Bathroom",
+          "unit": "per_bathroom",
+          "brand": "Hindware Italian Collection",
+          "spec": "Premium quality sanitary ware including wall-\nmounted EWC, wash basin, shower head, and\ndiverter from Hindware (Italian Collection) will be\nprovided upto the specified value.",
+          "source_label": "Sanitary Ware and CP Fitting"
+        },
+        "mid_luxury": {
+          "rate": 45000.0,
+          "rate_text": "₹45,000 per Bathroom",
+          "unit": "per_bathroom",
+          "brand": "Jaquar/Hindware Italian",
+          "spec": "Premium quality sanitary ware including wall-\nmounted EWC, wash basin, shower head, and\ndiverter from Jaquar / Hindware (Italian Collection)\nwill be provided upto the specified value.",
+          "source_label": "Sanitary Ware and CP Fitting"
+        },
+        "luxury": {
+          "rate": 100000.0,
+          "rate_text": "₹1,00,000 per Bathroom",
+          "unit": "per_bathroom",
+          "brand": "Kohler / Grohe",
+          "spec": "Premium quality sanitary ware including wall-\nmounted EWC, wash basin, shower head, and\ndiverter from Kohler/Grohe will be provided upto the\nspecified value.",
+          "source_label": "Sanitary Ware and CP Fitting"
+        }
+      }
+    },
+    {
+      "id": "bathroom.shower_partition_cubicles",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Shower Partition/Cubicles",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Elegant shower partition made of 6–8 mm toughened glass, ensuring durability and modern aesthetics.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Elegant shower partition made of 6–8 mm toughened\nglass, ensuring durability and modern aesthetics.",
+          "source_label": "Shower Partition/Cubicles"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Elegant shower partition made of 6–8 mm toughened\nglass, ensuring durability and modern aesthetics.",
+          "source_label": "Shower Partition/Cubicles"
+        }
+      }
+    },
+    {
+      "id": "bathroom.bathroom_accessories",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Bathroom Accessories",
+      "rate": 0,
+      "rate_text": "Rs 3,000 per bathroom",
+      "unit": "descriptive",
+      "brands": [
+        "ISI Marked"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "ISI Marked\nStandard accessories including mirror, towel rod/ring, soap dish, etc., up to the specified value.",
+      "tiers": {
+        "basic": {
+          "rate": 3000.0,
+          "rate_text": "₹3,000 per bathroom",
+          "unit": "per_bathroom",
+          "brand": "",
+          "spec": "Premium accessories including mirror, towel rod/ring,\nsoap dish, etc., up to the specified value.",
+          "source_label": "Bathroom Accessories"
+        },
+        "mid_luxury": {
+          "rate": 10000.0,
+          "rate_text": "₹10,000 per bathroom",
+          "unit": "per_bathroom",
+          "brand": "Jaquar",
+          "spec": "Premium accessories including mirror, towel rod/ring,\nsoap dish, etc., up to the specified value.",
+          "source_label": "Bathroom Accessories"
+        },
+        "luxury": {
+          "rate": 15000.0,
+          "rate_text": "₹15,000 per bathroom",
+          "unit": "per_bathroom",
+          "brand": "Kohler/Grohe",
+          "spec": "Premium accessories including mirror, towel rod/ring,\nsoap dish, etc., up to the specified value.",
+          "source_label": "Bathroom Accessories"
+        }
+      }
+    },
+    {
+      "id": "bathroom.bathroom_geyser",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Bathroom Geyser",
+      "rate": 0,
+      "rate_text": "Rs 5,000 per bathroom",
+      "unit": "descriptive",
+      "brands": [
+        "Crompton",
+        "Bajaj"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Crompton / Bajaj\nOne geyser per bathroom from reputed brands like Crompton / Bajaj, within the defined budget.",
+      "tiers": {
+        "basic": {
+          "rate": 5000.0,
+          "rate_text": "₹5,000 per bathroom",
+          "unit": "per_bathroom",
+          "brand": "Crompton/Bajaj",
+          "spec": "One geyser per bathroom from reputed brands like\nCrompton / Bajaj, within the defined budget.",
+          "source_label": "Bathroom Geyser"
+        },
+        "mid_luxury": {
+          "rate": 5000.0,
+          "rate_text": "₹5,000 per bathroom",
+          "unit": "per_bathroom",
+          "brand": "Crompton/Bajaj",
+          "spec": "One geyser per bathroom from reputed brands like\nCrompton / Bajaj, within the defined budget.",
+          "source_label": "Bathroom Geyser"
+        },
+        "luxury": {
+          "rate": 7500.0,
+          "rate_text": "₹7,500 per bathroom",
+          "unit": "per_bathroom",
+          "brand": "Crompton",
+          "spec": "One geyser per bathroom from reputed brands like\nCrompton / Bajaj, within the defined budget.",
+          "source_label": "Bathroom Geyser"
+        }
+      }
+    },
+    {
+      "id": "bathroom.exhaust_fan",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Exhaust Fan",
+      "rate": 0,
+      "rate_text": "Rs 1200 per bathroom",
+      "unit": "descriptive",
+      "brands": [
+        "Havells"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Havells\nProvision and installation of a wall-mounted exhaust fan for proper ventilation.",
+      "tiers": {
+        "basic": {
+          "rate": 1250.0,
+          "rate_text": "₹1,250 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Havells",
+          "spec": "Provision and installation of a wall-mounted exhaust\nfan for proper ventilation.",
+          "source_label": "Exhaust Fan"
+        },
+        "mid_luxury": {
+          "rate": 1500.0,
+          "rate_text": "₹1,500 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Havells",
+          "spec": "Provision and installation of a wall-mounted exhaust\nfan for proper ventilation.",
+          "source_label": "Exhaust Fan"
+        },
+        "luxury": {
+          "rate": 3500.0,
+          "rate_text": "₹3,500 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Havells",
+          "spec": "Provision and installation of a wall-mounted exhaust\nfan for proper ventilation.",
+          "source_label": "Exhaust Fan"
+        }
+      }
+    },
+    {
+      "id": "bathroom.bathroom_flooring",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Bathroom Flooring",
+      "rate": 0,
+      "rate_text": "Rs 40 per sq ft",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Anti-skid floor tiles (sizes: 1’×1’ or 2’×2’) to ensure safety and durability.",
+      "tiers": {
+        "basic": {
+          "rate": 50.0,
+          "rate_text": "₹50 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Anti-skid floor tiles (sizes: 1’×1’ or 2’×2’) to ensure\nsafety and durability.",
+          "source_label": "Bathroom Flooring"
+        },
+        "mid_luxury": {
+          "rate": 80.0,
+          "rate_text": "₹80 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Anti-skid floor tiles (sizes: 1’×1’ or 2’×2’) to ensure\nsafety and durability.",
+          "source_label": "Bathroom Flooring"
+        },
+        "luxury": {
+          "rate": 150.0,
+          "rate_text": "₹150 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Anti-skid floor tiles (sizes: 1’×1’ or 2’×2’) to ensure\nsafety and durability.",
+          "source_label": "Bathroom Flooring"
+        }
+      }
+    },
+    {
+      "id": "bathroom.bathroom_wall_cladding",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Bathroom Wall Cladding",
+      "rate": 0,
+      "rate_text": "Rs 40 per sq ft",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Wall tiling up to ceiling height (sizes: 1’×1.5’ or 2’×2’)providing a clean and moisture-resistant finish.",
+      "tiers": {
+        "basic": {
+          "rate": 50.0,
+          "rate_text": "₹50 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Wall tiling up to ceiling height (sizes: 1’×1.5’ or\n2’×2’)providing a clean and moisture-resistant finish.",
+          "source_label": "Bathroom Wall Tile"
+        },
+        "mid_luxury": {
+          "rate": 80.0,
+          "rate_text": "₹80 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Wall tiling up to ceiling height (sizes: 1’×1.5’ or\n2’×2’)providing a clean and moisture-resistant finish.",
+          "source_label": "Bathroom Wall Tile"
+        },
+        "luxury": {
+          "rate": 200.0,
+          "rate_text": "₹200 per sq ft",
+          "unit": "per_sqft",
+          "brand": "Italian Marble",
+          "spec": "Italian Marble wall cladding up to ceiling height\nproviding a clean and moisture-resistant finish.",
+          "source_label": "Bathroom Wall Tile"
+        }
+      }
+    },
+    {
+      "id": "bathroom.cpvc_fittings",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "CPVC Fittings",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Astral"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Astral\nComplete plumbing system using high-quality CPVC pipes and fittings from trusted brands to ensure longevity and leak-proof performance.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Astral",
+          "spec": "Complete plumbing system using high-quality CPVC\npipes and fittings from trusted brands to ensure\nlongevity and leak-proof performance.",
+          "source_label": "CPVC Fittings"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Astral",
+          "spec": "Complete plumbing system using high-quality CPVC\npipes and fittings from trusted brands to ensure\nlongevity and leak-proof performance.",
+          "source_label": "CPVC Fittings"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Astral",
+          "spec": "Complete plumbing system using high-quality CPVC\npipes and fittings from trusted brands to ensure\nlongevity and leak-proof performance.",
+          "source_label": "CPVC Fittings"
+        }
+      }
+    },
+    {
+      "id": "bathroom.granite_work",
+      "category": "bathroom",
+      "category_label": "Bathroom & Toilet",
+      "label": "Granite work",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Granite finishing will be provided on top of the concealed wall-mounted flush tank (EWC) and as a counter slab for the wash basin.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "kitchen.kitchen_wall_cladding_visible_areas",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Kitchen Wall Cladding (Visible Areas)",
+      "rate": 0,
+      "rate_text": "Rs 40 per sq ft",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Ceramic wall tiles shall be provided in all visible areas up to a height of 5 ft above the kitchen countertop.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "kitchen.kitchen_wall_cladding_non_visible_areas",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Kitchen Wall Cladding (Non Visible Areas)",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Commercial / Waste tiles shall be provided behind kitchen cabinets (non-visible areas) to protect the cabinets from moisture.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "kitchen.kitchen_counter_granite",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Kitchen Counter Granite",
+      "rate": 0,
+      "rate_text": "Rs 120 per sq ft",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "White/ light color polished granite (16–18 mm thick) shall be provided for the kitchen counter with double-layered nosing, mounted on a 4-inch RCC slab.",
+      "tiers": {
+        "basic": {
+          "rate": 120.0,
+          "rate_text": "₹120 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Polished granite (16–18 mm thick) shall be provided\nfor the kitchen counter with double-layered nosing,\nmounted on a 4-inch RCC slab.",
+          "source_label": "Kitchen Counter Granite"
+        },
+        "mid_luxury": {
+          "rate": 120.0,
+          "rate_text": "₹120 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Polished granite (16–18 mm thick) shall be provided\nfor the kitchen counter with double-layered nosing,\nmounted on a 4-inch RCC slab.",
+          "source_label": "Kitchen Counter Granite"
+        },
+        "luxury": {
+          "rate": 200.0,
+          "rate_text": "₹200 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Polished granite (16–18 mm thick) shall be provided\nfor the kitchen counter with double-layered nosing,\nmounted on a 4-inch RCC slab.",
+          "source_label": "Kitchen Counter Granite"
+        }
+      }
+    },
+    {
+      "id": "kitchen.sink_and_faucet",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Sink and Faucet",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Double-bowl stainless steel sink with faucet shall be provided, ISI Brand SS304 Grade double bowl sink to be provided.",
+      "tiers": {
+        "basic": {
+          "rate": 8000.0,
+          "rate_text": "₹8,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "",
+          "spec": "Double-bowl stainless steel sink with faucet shall be\nprovided, ISI Brand SS304 Grade double bowl sink to\nbe provided.",
+          "source_label": "Sink and Faucet"
+        },
+        "mid_luxury": {
+          "rate": 8000.0,
+          "rate_text": "₹8,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "",
+          "spec": "Double-bowl stainless steel sink with faucet shall be\nprovided, ISI Brand SS304 Grade double bowl sink to\nbe provided.",
+          "source_label": "Sink and Faucet"
+        },
+        "luxury": {
+          "rate": 20000.0,
+          "rate_text": "₹20,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "",
+          "spec": "Double-bowl stainless steel sink with faucet shall be\nprovided, ISI Brand SS304 Grade double bowl sink to\nbe provided.",
+          "source_label": "Sink and Faucet"
+        }
+      }
+    },
+    {
+      "id": "kitchen.kitchen_geyser",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Kitchen Geyser",
+      "rate": 0,
+      "rate_text": "Rs 3,000 per kitchen",
+      "unit": "descriptive",
+      "brands": [
+        "Crompton",
+        "Bajaj"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Crompton / Bajaj\nOne geyser per bathroom from reputed ISI mark brands like Crompton / Bajaj, within the defined budget.",
+      "tiers": {
+        "basic": {
+          "rate": 2500.0,
+          "rate_text": "₹2,500 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Crompton/Bajaj",
+          "spec": "One geyser per bathroom from reputed ISI mark\nbrands like Crompton / Bajaj, within the defined\nbudget.",
+          "source_label": "Kitchen Geyser"
+        },
+        "mid_luxury": {
+          "rate": 2500.0,
+          "rate_text": "₹2,500 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Crompton/Bajaj",
+          "spec": "One geyser per bathroom from reputed ISI mark\nbrands like Crompton / Bajaj, within the defined\nbudget.",
+          "source_label": "Kitchen Geyser"
+        },
+        "luxury": {
+          "rate": 4000.0,
+          "rate_text": "₹4,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Crompton/Bajaj",
+          "spec": "One geyser per bathroom from reputed ISI mark\nbrands like Crompton / Bajaj, within the defined\nbudget.",
+          "source_label": "Kitchen Geyser"
+        }
+      }
+    },
+    {
+      "id": "kitchen.exhaust_fan",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Exhaust Fan",
+      "rate": 0,
+      "rate_text": "Rs 1200 per kitchen",
+      "unit": "descriptive",
+      "brands": [
+        "Havells"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Havells\nProvision and installation of a wall-mounted exhaust fan for proper ventilation.",
+      "tiers": {
+        "basic": {
+          "rate": 1250.0,
+          "rate_text": "₹1,250 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Havells",
+          "spec": "Provision and installation of a wall-mounted exhaust\nfan for proper ventilation.",
+          "source_label": "Exhaust Fan"
+        },
+        "mid_luxury": {
+          "rate": 1500.0,
+          "rate_text": "₹1,500 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Havells",
+          "spec": "Provision and installation of a wall-mounted exhaust\nfan for proper ventilation.",
+          "source_label": "Exhaust Fan"
+        },
+        "luxury": {
+          "rate": 3500.0,
+          "rate_text": "₹3,500 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Havells",
+          "spec": "Provision and installation of a wall-mounted exhaust\nfan for proper ventilation.",
+          "source_label": "Exhaust Fan"
+        }
+      }
+    },
+    {
+      "id": "kitchen.cpvc_fittings",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "CPVC Fittings",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Astral"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Astral\nComplete plumbing system using high-quality CPVC pipes and fittings from trusted brands to ensure longevity and leak-proof performance.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Astral",
+          "spec": "Complete plumbing system using high-quality CPVC\npipes and fittings from trusted brands to ensure\nlongevity and leak-proof performance.",
+          "source_label": "CPVC Fittings"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Astral",
+          "spec": "Complete plumbing system using high-quality CPVC\npipes and fittings from trusted brands to ensure\nlongevity and leak-proof performance.",
+          "source_label": "CPVC Fittings"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Astral",
+          "spec": "Complete plumbing system using high-quality CPVC\npipes and fittings from trusted brands to ensure\nlongevity and leak-proof performance.",
+          "source_label": "CPVC Fittings"
+        }
+      }
+    },
+    {
+      "id": "kitchen.modular_kitchen",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Modular Kitchen",
+      "rate": 0,
+      "rate_text": "Rs 1,75,000 per floor",
+      "unit": "descriptive",
+      "brands": [
+        "Ozone"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Modular kitchen made of HDHMR with premium laminates, including soft close channels from ozone brand, with well-designed drawers and corner solutions.",
+      "tiers": {
+        "basic": {
+          "rate": 100000.0,
+          "rate_text": "₹1,00,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "",
+          "spec": "Modular kitchen made of Plyboard with laminates,\nincluding soft close channels from Ozone/Godrej,\nwith well-designed drawers and corner solutions.",
+          "source_label": "Modular Kitchen"
+        },
+        "mid_luxury": {
+          "rate": 175000.0,
+          "rate_text": "₹1,75,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "",
+          "spec": "Modular kitchen made of HDHMR with premium\nlaminates, including soft close channels from Hettich,\nwith well-designed drawers and corner solutions.",
+          "source_label": "Modular Kitchen"
+        },
+        "luxury": {
+          "rate": 375000.0,
+          "rate_text": "₹3,75,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "",
+          "spec": "Modular kitchen made of HDHMR with premium\nlaminates, fluted glass, PU finish including soft close\nchannels from Hettich/Haffle, with well-designed\ndrawers and corner solutions.",
+          "source_label": "Modular Kitchen"
+        }
+      }
+    },
+    {
+      "id": "kitchen.hob_and_chimney",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Hob and Chimney",
+      "rate": 0,
+      "rate_text": "Rs 20,000 per kitchen",
+      "unit": "descriptive",
+      "brands": [
+        "Faber",
+        "KAFF"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Faber/ Kaff\nBuilt-in hob and chimney from Faber / KAFF shall be provided within the specified budget range.",
+      "tiers": {
+        "basic": {
+          "rate": 20000.0,
+          "rate_text": "₹20,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Faber/Kaff",
+          "spec": "Built-in hob and chimney from Faber / KAFF shall be\nprovided within the specified budget range.",
+          "source_label": "Hob and Chimney"
+        },
+        "mid_luxury": {
+          "rate": 25000.0,
+          "rate_text": "₹25,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Faber/Kaff",
+          "spec": "Built-in hob and chimney from Faber / KAFF shall be\nprovided within the specified budget range.",
+          "source_label": "Hob and Chimney"
+        },
+        "luxury": {
+          "rate": 25000.0,
+          "rate_text": "₹25,000 per kitchen",
+          "unit": "per_kitchen",
+          "brand": "Faber/Kaff",
+          "spec": "Built-in hob and chimney from Faber / KAFF shall be\nprovided within the specified budget range.",
+          "source_label": "Hob and Chimney"
+        }
+      }
+    },
+    {
+      "id": "kitchen.misc",
+      "category": "kitchen",
+      "category_label": "Kitchen",
+      "label": "Misc",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Provision for water purifier, dishwasher, and other kitchen appliances shall be provided, including necessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine in the utility area or at a location as per the architectural drawings.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for water purifier, dishwasher, and other\nkitchen appliances shall be provided, including\nnecessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine\nin the utility area or at a location as per the\narchitectural drawings.",
+          "source_label": "Misc"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for water purifier, dishwasher, and other\nkitchen appliances shall be provided, including\nnecessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine\nin the utility area or at a location as per the\narchitectural drawings.",
+          "source_label": "Misc"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for water purifier, dishwasher, and other\nkitchen appliances shall be provided, including\nnecessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine\nin the utility area or at a location as per the\narchitectural drawings.",
+          "source_label": "Misc"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.main_entry_door",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Main Entry Door",
+      "rate": 0,
+      "rate_text": "Rs 20,000 per door",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "32/44 mm thick premium flush door shutter with polished/laminated finish, fixed on a seasoned hardwood frame (marandi/sal wood), complete with SS 304 hinges, SS tower bolts, door stopper, handle, and all necessary fittings and hardware.",
+      "tiers": {
+        "basic": {
+          "rate": 20000.0,
+          "rate_text": "₹20,000 per door",
+          "unit": "per_door",
+          "brand": "",
+          "spec": "32 mm thick premium flush door shutter with\npolished/laminated finish, fixed on a seasoned\nhardwood frame (marandi/sal wood), complete with\nSS 304 hinges, SS tower bolts, door stopper, handle,\nand all necessary fittings and hardware.",
+          "source_label": "Main Entry Door"
+        },
+        "mid_luxury": {
+          "rate": 35000.0,
+          "rate_text": "₹35,000 per door",
+          "unit": "per_door",
+          "brand": "",
+          "spec": "44 mm thick premium flush / Teak door shutter with\npolished/laminated finish, fixed on a seasoned\nhardwood frame (marandi/sal wood), complete with\nSS 304 hinges, SS tower bolts, door stopper, handle,\nand all necessary fittings and hardware.",
+          "source_label": "Main Entry Door"
+        },
+        "luxury": {
+          "rate": 60000.0,
+          "rate_text": "₹60,000 per door",
+          "unit": "per_door",
+          "brand": "TATA Pravesh",
+          "spec": "44/62 mm thick premium flush door/Teak door\nshutter with polished/laminated finish, fixed on a\nseasoned hardwood frame (teak/sal wood), complete\nwith SS 304 hinges, SS tower bolts, door stopper,\nhandle, and all necessary fittings and hardware.",
+          "source_label": "Main Entry Door"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.main_door_lock",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Main Door Lock",
+      "rate": 0,
+      "rate_text": "Rs 3,000 per door",
+      "unit": "descriptive",
+      "brands": [
+        "Godrej",
+        "Ozone"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Godrej/ Ozone\nPremium quality door locks from Godrej / Ozone make shall be provided, suitable for the main door ensuring durability, safety, and smooth operation.",
+      "tiers": {
+        "basic": {
+          "rate": 3000.0,
+          "rate_text": "₹3,000 per door",
+          "unit": "per_door",
+          "brand": "Godrej / Yale",
+          "spec": "Premium quality digital door locks from Godrej Yale\nmake shall be provided, suitable for the main door\nensuring durability, safety, and smooth operation.",
+          "source_label": "Main Door Lock"
+        },
+        "mid_luxury": {
+          "rate": 8000.0,
+          "rate_text": "₹8,000 per door",
+          "unit": "per_door",
+          "brand": "Godrej / Yale",
+          "spec": "Premium quality digital door locks from Godrej Yale\nmake shall be provided, suitable for the main door\nensuring durability, safety, and smooth operation.",
+          "source_label": "Main Door Lock"
+        },
+        "luxury": {
+          "rate": 12000.0,
+          "rate_text": "₹12,000 per door",
+          "unit": "per_door",
+          "brand": "Godrej / Yale",
+          "spec": "Premium quality digital door locks from Godrej Yale\nmake shall be provided, suitable for the main door\nensuring durability, safety, and smooth operation.",
+          "source_label": "Main Door Lock"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.internal_and_bathroom_doors",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Internal and Bathroom Doors",
+      "rate": 0,
+      "rate_text": "Rs 12,000 per door",
+      "unit": "descriptive",
+      "brands": [
+        "Sumai"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Flush door shutters with laminate/paint finish, installed on hardwood frames, complete with SS 304 hinges, SS tower bolts (where applicable), door stopper, handle, and all required fittings and hardware.",
+      "tiers": {
+        "basic": {
+          "rate": 12000.0,
+          "rate_text": "₹12,000 per door",
+          "unit": "per_door",
+          "brand": "",
+          "spec": "Flush door shutters with laminate/paint finish,\ninstalled on hardwood frames, complete with SS 304\nhinges, SS tower bolts (where applicable), door\nstopper, handle, and all required fittings and\nhardware.\nInternal and Bathroom Door",
+          "source_label": "Internal and Bathroom Doors"
+        },
+        "mid_luxury": {
+          "rate": 15000.0,
+          "rate_text": "₹15,000 per door",
+          "unit": "per_door",
+          "brand": "",
+          "spec": "Flush door shutters with laminate/paint finish,\ninstalled on hardwood frames, complete with SS 304\nhinges, SS tower bolts (where applicable), door\nstopper, handle, and all required fittings and\nhardware.\nInternal and Bathroom Door",
+          "source_label": "Internal and Bathroom Doors"
+        },
+        "luxury": {
+          "rate": 25000.0,
+          "rate_text": "₹25,000 per door",
+          "unit": "per_door",
+          "brand": "",
+          "spec": "Flush door shutters with laminate/paint finish,\ninstalled on hardwood frames, complete with SS 304\nhinges, SS tower bolts (where applicable), door\nstopper, handle, and all required fittings and\nhardware.\nInternal and Bathroom Door",
+          "source_label": "Internal and Bathroom Doors"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.internal_and_bathroom_door_lock",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Internal and Bathroom Door Lock",
+      "rate": 0,
+      "rate_text": "Rs 1,500 per door",
+      "unit": "descriptive",
+      "brands": [
+        "Godrej",
+        "Ozone"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Godrej / Ozone\nPremium quality door locks from Godrej / Ozone or equivalent make shall be provided, suitable for internal and bathroom doors, ensuring durability, safety, and smooth operation.",
+      "tiers": {
+        "basic": {
+          "rate": 12000.0,
+          "rate_text": "₹12,000 per door",
+          "unit": "per_door",
+          "brand": "",
+          "spec": "Flush door shutters with laminate/paint finish,\ninstalled on hardwood frames, complete with SS 304\nhinges, SS tower bolts (where applicable), door\nstopper, handle, and all required fittings and\nhardware.\nInternal and Bathroom Door",
+          "source_label": "Internal and Bathroom Doors"
+        },
+        "mid_luxury": {
+          "rate": 15000.0,
+          "rate_text": "₹15,000 per door",
+          "unit": "per_door",
+          "brand": "",
+          "spec": "Flush door shutters with laminate/paint finish,\ninstalled on hardwood frames, complete with SS 304\nhinges, SS tower bolts (where applicable), door\nstopper, handle, and all required fittings and\nhardware.\nInternal and Bathroom Door",
+          "source_label": "Internal and Bathroom Doors"
+        },
+        "luxury": {
+          "rate": 25000.0,
+          "rate_text": "₹25,000 per door",
+          "unit": "per_door",
+          "brand": "",
+          "spec": "Flush door shutters with laminate/paint finish,\ninstalled on hardwood frames, complete with SS 304\nhinges, SS tower bolts (where applicable), door\nstopper, handle, and all required fittings and\nhardware.\nInternal and Bathroom Door",
+          "source_label": "Internal and Bathroom Doors"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.terrace_door",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Terrace and Stilt/Staircase Entry Door",
+      "rate": 0,
+      "rate_text": "Rs 8,000 per door",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Mild steel (MS) door with primer and paint finish, including necessary fittings and locking arrangement.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft on first\nand second floors.\nStilt height as per the government norms",
+          "source_label": "Plinth, Floor and Stilt Level"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft on first\nand second floors.\nStilt height as per the government norms",
+          "source_label": "Plinth, Floor and Stilt Level"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10.5 ft or as\nper actuals.\nStilt height as per the government norms",
+          "source_label": "Plinth, Floor and Stilt Level"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.sliding_door_windows",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Sliding Door/ Windows",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Prominence",
+        "EITI"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Prominence · EITI\nUPVC sliding doors/windows with 3-track system (2 glass panels and 1 mosquito mesh track) from Prominence / EITI or equivalent make, complete with all necessary fittings and hardware.",
+      "tiers": {
+        "basic": {
+          "rate": 600.0,
+          "rate_text": "₹600 per sq ft",
+          "unit": "per_sqft",
+          "brand": "Prominence · EITI",
+          "spec": "UPVC sliding doors/windows with 3-track system (2\nglass panels and 1 mosquito mesh track) from\nProminence / EITI or equivalent make, complete with\nall necessary fittings and hardware.",
+          "source_label": "Sliding Door/ Windows"
+        },
+        "mid_luxury": {
+          "rate": 600.0,
+          "rate_text": "₹600- ₹650 per sq ft",
+          "unit": "per_-_650_per_sq_ft",
+          "brand": "Prominence · EITI",
+          "spec": "UPVC sliding doors/windows with 3-track system (2\nglass panels and 1 mosquito mesh track) from\nProminence / EITI or equivalent make, complete with\nall necessary fittings and hardware.",
+          "source_label": "Sliding Door/ Windows"
+        },
+        "luxury": {
+          "rate": 900.0,
+          "rate_text": "₹900- ₹100 per sq ft",
+          "unit": "per_-_100_per_sq_ft",
+          "brand": "Fenesta",
+          "spec": "UPVC sliding doors/windows with 3-track system (2\nglass panels and 1 mosquito mesh track) from\nFenesta or equivalent make, complete with all\nnecessary fittings and hardware.",
+          "source_label": "Sliding Door/ Windows"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.door_hinges_stopper",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Door Hinges & Stopper",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "4 Stainless Steel 304 hinges for each door",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "4 Stainless Steel 304 hinges for each door",
+          "source_label": "Door Hinges & Stopper"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "4 Stainless Steel 304 hinges for each door",
+          "source_label": "Door Hinges & Stopper"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "4 Stainless Steel 304 hinges for each door",
+          "source_label": "Door Hinges & Stopper"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.door_height",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Door Height",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "7'6\" to 8' as per approved plan",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "7'6\" to 8' as per approved plan",
+          "source_label": "Door Height"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "7'6\" to 8' as per approved plan",
+          "source_label": "Door Height"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "7'6\" to 8' as per approved plan",
+          "source_label": "Door Height"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.tower_bolt",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Tower Bolt",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "18-24 inch, Stainless Steel Finish",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "18-24 inch, Stainless Steel Finish",
+          "source_label": "Tower Bolt"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "18-24 inch, Stainless Steel Finish",
+          "source_label": "Tower Bolt"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "18-24 inch, Stainless Steel Finish",
+          "source_label": "Tower Bolt"
+        }
+      }
+    },
+    {
+      "id": "doors_windows.modular_walkin_wardrobe",
+      "category": "doors_windows",
+      "category_label": "Doors, Windows & Wardrobe",
+      "label": "Modular/ WalkIn Wardrobe",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Godrej",
+        "Ozone"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Laminated finished modular / walk-in wardrobe constructed using Ply board for carcass and shutters. All panels shall be edge-banded with PVC edge band for durability and moisture resistance.\nExternal finish shall be in laminate finish only. Internal surfaces shall be finished in laminate / pre-laminated boards.\nHardware shall include soft-close hinges and telescopic drawer channels from reputed brands such as Godrej/Ozone or equivalent. Handles shall be standard SS / aluminium.\nThe wardrobe shall include basic internal layout comprising shelves, hanging rods, and 2 drawer units, designed for functional storage.\nLofts, fluted glass, acrylic/PU finish, premium accessories, and specialized fittings shall not be part of this scope.",
+      "tiers": {
+        "basic": {
+          "rate": 800.0,
+          "rate_text": "₹800 per sqft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Laminated finished wardrobe / walk-in wardrobe\nconstructed using Ply board for carcass and shutters.\nAll panels shall be edge-banded with PVC edge band\nfor durability and moisture resistance.\nExternal finish shall be in laminate finish only. Internal\nsurfaces shall be finished in laminate / pre-laminated\nboards. Hardware shall include soft-close hinges and\ntelescopic drawer channels from reputed brands\nsuch as Godrej/Ozone or equivalent. Handles shall be\nstandard SS / aluminium.\nThe wardrobe shall include basic internal layout\ncomprising shelves, hanging rods, and 2 drawer\nunits, designed for functional storage.\nLofts, fluted glass, acrylic/PU finish, premium\naccessories, and specialized fittings shall not be part\nof this scope.",
+          "source_label": "Modular/ WalkIn Wardrobe"
+        },
+        "mid_luxury": {
+          "rate": 1250.0,
+          "rate_text": "₹1250 per sqft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Laminated finished modular / walk-in wardrobe\nconstructed using Ply board for carcass and shutters.\nAll panels shall be edge-banded with PVC edge band\nfor durability and moisture resistance.\nExternal finish shall be in laminate finish only. Internal\nsurfaces shall be finished in laminate / pre-laminated\nboards. Hardware shall include soft-close hinges and\ntelescopic drawer channels from reputed brands\nsuch as Godrej/Ozone or equivalent. Handles shall be\nstandard SS / aluminium.\nThe wardrobe shall include basic internal layout\ncomprising shelves, hanging rods, and 2 drawer\nunits, designed for functional storage.\nLofts, fluted glass, acrylic/PU finish, premium\naccessories, and specialized fittings shall not be part\nof this scope.",
+          "source_label": "Modular/ WalkIn Wardrobe"
+        },
+        "luxury": {
+          "rate": 1750.0,
+          "rate_text": "₹1750 per sqft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Fluted glass, acrylic/PU finished modular / walk-in\nwardrobe constructed using HDHMR for carcass and\nshutters. All panels shall be edge-banded with PVC\nedge band for durability and moisture resistance.\nHardware shall include soft-close hinges and\ntelescopic drawer channels from reputed brands\nsuch as Hettich/Haffle or equivalent with premium\nprofile handles.\nThe wardrobe shall include basic internal layout\ncomprising shelves, hanging rods, and 2 drawer\nunits, designed for functional storage.",
+          "source_label": "Modular/ WalkIn Wardrobe"
+        }
+      }
+    },
+    {
+      "id": "flooring.floor_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Floor Flooring",
+      "rate": 0,
+      "rate_text": "Rs 40 per sq ft",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Large-format vitrified tiles (2’×4’) in living, dining, kitchen and all bedrooms, with cementitious grouting.",
+      "tiers": {
+        "basic": {
+          "rate": 50.0,
+          "rate_text": "₹50 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Vitrified tiles in living, dining, kitchen and all\nbedrooms, with polishing",
+          "source_label": "Floor Flooring"
+        },
+        "mid_luxury": {
+          "rate": 200.0,
+          "rate_text": "₹200 per sq ft",
+          "unit": "per_sqft",
+          "brand": "Italian Marble",
+          "spec": "Italian Marble in living, dining, kitchen and all\nbedrooms, with polishing",
+          "source_label": "Floor Flooring"
+        },
+        "luxury": {
+          "rate": 350.0,
+          "rate_text": "₹350 per sq ft",
+          "unit": "per_sqft",
+          "brand": "Italian Marble",
+          "spec": "Italian Marble in living, dining, kitchen and all\nbedrooms, with polishing",
+          "source_label": "Floor Flooring"
+        }
+      }
+    },
+    {
+      "id": "flooring.balcony_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Balcony Flooring",
+      "rate": 0,
+      "rate_text": "Rs 40 per sq ft",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Anti-skid tiles (2’×2’) for balconies, with cementitious grouting.",
+      "tiers": {
+        "basic": {
+          "rate": 50.0,
+          "rate_text": "₹50 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Anti-skid tiles (2’×2’) for balconies, with cementitious\ngrouting.",
+          "source_label": "Balcony Flooring"
+        },
+        "mid_luxury": {
+          "rate": 80.0,
+          "rate_text": "₹80 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Anti-skid tiles (2’×2’) for balconies, with cementitious\ngrouting.",
+          "source_label": "Balcony Flooring"
+        },
+        "luxury": {
+          "rate": 120.0,
+          "rate_text": "₹120 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Anti-skid tiles / Granite (2’×2’) for balconies, with\ncementitious grouting.",
+          "source_label": "Balcony Flooring"
+        }
+      }
+    },
+    {
+      "id": "flooring.staircase_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Staircase Flooring",
+      "rate": 0,
+      "rate_text": "Rs 70 per sq ft",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "18mm Granite shall be provided on treads and risers, with proper edge nosing and chamfering\nHeight of the raiser would be confirmable, will be planned at the floor plan stage.",
+      "tiers": {
+        "basic": {
+          "rate": 70.0,
+          "rate_text": "₹70 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "18mm Granite shall be provided on treads and risers,\nwith proper edge nosing and chamfering Height of\nthe raiser would be confirmable, will be planned at\nthe floor plan stage.",
+          "source_label": "Staircase Flooring"
+        },
+        "mid_luxury": {
+          "rate": 90.0,
+          "rate_text": "₹90 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "18mm Granite shall be provided on treads and risers,\nwith proper edge nosing and chamfering Height of\nthe raiser would be confirmable, will be planned at\nthe floor plan stage.",
+          "source_label": "Staircase Flooring"
+        },
+        "luxury": {
+          "rate": 120.0,
+          "rate_text": "₹120 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "18mm Granite shall be provided on treads and risers,\nwith proper edge nosing and chamfering Height of\nthe raiser would be confirmable, will be planned at\nthe floor plan stage.",
+          "source_label": "Staircase Flooring"
+        }
+      }
+    },
+    {
+      "id": "flooring.terrace_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Terrace Flooring",
+      "rate": 0,
+      "rate_text": "Rs 30 per sq ft",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Anti-skid cool roof top tiles (2’×2’) for terrace, with cementitious grouting.",
+      "tiers": {
+        "basic": {
+          "rate": 40.0,
+          "rate_text": "₹40 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Anti-skid cool roof top tiles (2’×2’) for terrace, with\ncementitious grouting.",
+          "source_label": "Terrace Flooring"
+        },
+        "mid_luxury": {
+          "rate": 40.0,
+          "rate_text": "₹40 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Anti-skid cool roof top tiles (2’×2’) for terrace, with\ncementitious grouting.",
+          "source_label": "Terrace Flooring"
+        },
+        "luxury": {
+          "rate": 50.0,
+          "rate_text": "₹50 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "Anti-skid cool roof top tiles (2’×2’) for terrace, with\ncementitious grouting.",
+          "source_label": "Terrace Flooring"
+        }
+      }
+    },
+    {
+      "id": "flooring.stilt_flooring",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Stilt Flooring",
+      "rate": 0,
+      "rate_text": "Rs 70 per sq ft",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "18mm Granite on treads and risers, with proper nosing and chamfering",
+      "tiers": {
+        "basic": {
+          "rate": 70.0,
+          "rate_text": "₹70 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "18mm Granite on treads and risers, with proper\nnosing and chamfering",
+          "source_label": "Stilt Flooring"
+        },
+        "mid_luxury": {
+          "rate": 90.0,
+          "rate_text": "₹90 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "18mm Granite on treads and risers, with proper\nnosing and chamfering",
+          "source_label": "Stilt Flooring"
+        },
+        "luxury": {
+          "rate": 120.0,
+          "rate_text": "₹120 per sq ft",
+          "unit": "per_sqft",
+          "brand": "",
+          "spec": "18mm Granite on treads and risers, with proper\nnosing and chamfering",
+          "source_label": "Stilt Flooring"
+        }
+      }
+    },
+    {
+      "id": "flooring.lift_fa_ade",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Lift Façade",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Tiles/Granite\nLift façade cladding shall be finished with tiles or granite, as per design.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "flooring.skirting",
+      "category": "flooring",
+      "category_label": "Flooring",
+      "label": "Skirting",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "100 mm (4”) high skirting shall be provided along all wall edges in respective areas, matching the flooring material (vitrified tiles / granite). Skirting shall also be provided along staircase walls using matching granite, with proper edge finishing",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "100 mm (4”) high skirting shall be provided along all\nwall edges in respective areas, matching the flooring\nmaterial (vitrified tiles / granite). Skirting shall also be\nprovided along staircase walls using matching\ngranite, with proper edge finishing",
+          "source_label": "Skirting"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "100 mm (4”) high skirting shall be provided along all\nwall edges in respective areas, matching the flooring\nmaterial (vitrified tiles / granite). Skirting shall also be\nprovided along staircase walls using matching\ngranite, with proper edge finishing",
+          "source_label": "Skirting"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "100 mm (4”) high skirting shall be provided along all\nwall edges in respective areas, matching the flooring\nmaterial (vitrified tiles / granite). Skirting shall also be\nprovided along staircase walls using matching\ngranite, with proper edge finishing",
+          "source_label": "Skirting"
+        }
+      }
+    },
+    {
+      "id": "electrical.electrical_wire",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Electrical Wire",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Finolex",
+        "Polycab",
+        "Havells"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "FR grade Finolex/Polycab/Havells Wires\nFR grade copper wiring shall be provided with appropriate sizing for light, power, and AC circuits to ensure safe load handling.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "FR grade Finolex/Polycab/Havells Wires",
+          "spec": "FR grade copper wiring shall be provided with\nappropriate sizing for light, power, and AC circuits to\nensure safe load handling.",
+          "source_label": "Electrical Wire"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "FR grade Finolex/Polycab/Havells Wires",
+          "spec": "FR grade copper wiring shall be provided with\nappropriate sizing for light, power, and AC circuits to\nensure safe load handling.",
+          "source_label": "Electrical Wire"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "FR grade Finolex/Polycab/Havells Wires",
+          "spec": "FR grade copper wiring shall be provided with\nappropriate sizing for light, power, and AC circuits to\nensure safe load handling.",
+          "source_label": "Electrical Wire"
+        }
+      }
+    },
+    {
+      "id": "electrical.electrical_wire_specification",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Electrical Wire Specification",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "10 sq. mm for main panels, 4 sq. mm for power and AC circuits, and 1.5 sq. mm for lighting circuits, ensuring safe load distribution without overloading.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "10 sq. mm for main panels, 4 sq. mm for power and\nAC circuits, and 1.5 sq. mm for lighting circuits,\nensuring safe load distribution without overloading.",
+          "source_label": "Electrical Wire Specification"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "10 sq. mm for main panels, 4 sq. mm for power and\nAC circuits, and 1.5 sq. mm for lighting circuits,\nensuring safe load distribution without overloading.",
+          "source_label": "Electrical Wire Specification"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "10 sq. mm for main panels, 4 sq. mm for power and\nAC circuits, and 1.5 sq. mm for lighting circuits,\nensuring safe load distribution without overloading.",
+          "source_label": "Electrical Wire Specification"
+        }
+      }
+    },
+    {
+      "id": "electrical.conduit_pipes_boxes",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Conduit Pipes & Boxes",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Astral",
+        "AKG"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Astral · AKG\nISI marked PVC conduits shall be provided, with heavy-duty conduits in slabs and medium-duty conduits in walls, with separate routing for light and power circuits.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Astral · AKG",
+          "spec": "ISI marked PVC conduits shall be provided, with\nheavy-duty conduits in slabs and medium-duty\nconduits in walls, with separate routing for light and\npower circuits.",
+          "source_label": "Conduit Pipes & Boxes"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Astral · AKG",
+          "spec": "ISI marked PVC conduits shall be provided, with\nheavy-duty conduits in slabs and medium-duty\nconduits in walls, with separate routing for light and\npower circuits.",
+          "source_label": "Conduit Pipes & Boxes"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Astral · AKG",
+          "spec": "ISI marked PVC conduits shall be provided, with\nheavy-duty conduits in slabs and medium-duty\nconduits in walls, with separate routing for light and\npower circuits.",
+          "source_label": "Conduit Pipes & Boxes"
+        }
+      }
+    },
+    {
+      "id": "electrical.switch_sockets",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Switch & Sockets",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Anchor"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Anchor\nModular switches and sockets in white finish from Anchor equivalent make shall be provided. No. of switches and sockets will not be a constrain",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Anchor/Havells",
+          "spec": "Modular switches and sockets in white finish from\nAnchor/Havells equivalent make shall be provided.\nNo. of switches and sockets will not be a constrain\nCeiling Fans (Second and Third",
+          "source_label": "Switch & Sockets"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Legrand",
+          "spec": "Modular switches and sockets in white finish from\nLegrand equivalent make shall be provided. No. of\nswitches and sockets will not be a constrain\nCeiling Fans (Second and Third",
+          "source_label": "Switch & Sockets"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Legrand",
+          "spec": "Modular switches and sockets in white finish from\nLegrand equivalent make shall be provided. No. of\nswitches and sockets will not be a constrain",
+          "source_label": "Switch & Sockets"
+        }
+      }
+    },
+    {
+      "id": "electrical.ceiling_fans",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Ceiling Fans",
+      "rate": 0,
+      "rate_text": "Rs 1500 per fan",
+      "unit": "descriptive",
+      "brands": [
+        "Crompton",
+        "Havells"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Crompton / Havells\nCeiling fans from Havells or equivalent make shall be provided.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": {
+          "rate": 3500.0,
+          "rate_text": "₹3500 per fan",
+          "unit": "per_fan",
+          "brand": "",
+          "spec": "Ceiling fans from Havells / Crompton or equivalent\nmake shall be provided.",
+          "source_label": "Ceiling Fans"
+        }
+      }
+    },
+    {
+      "id": "electrical.split_ac_provision",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Split AC Provision",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "One provision each in all bedrooms, drawing room, and living/kitchen area. Copper piping (average up to 10 m per AC) along with necessary electrical wiring shall be provided. Outdoor units shall be placed on the respective floor.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "One provision each in all bedrooms, drawing room,\nand living/kitchen area. Copper piping (average up to\n10 m per AC) along with necessary electrical wiring\nshall be provided. Outdoor units shall be placed on\nthe respective floor.",
+          "source_label": "Split AC Provision"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "One provision each in all bedrooms, drawing room,\nand living/kitchen area. Copper piping (average up to\n10 m per AC) along with necessary electrical wiring\nshall be provided. Outdoor units shall be placed on\nthe respective floor.",
+          "source_label": "Split AC Provision"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "One provision each in all bedrooms, drawing room,\nand living/kitchen area. Copper piping (average up to\n10 m per AC) along with necessary electrical wiring\nshall be provided. Outdoor units shall be placed on\nthe respective floor.",
+          "source_label": "Split AC Provision"
+        }
+      }
+    },
+    {
+      "id": "electrical.downlighters",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Downlighters",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Philips",
+        "Osram"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Philips · Osram\nDownlighters from Philips / Osram or equivalent make shall be provided.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Philips · Osram",
+          "spec": "Downlighters from Philips / Osram or equivalent make\nshall be provided.",
+          "source_label": "Downlighters"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Philips · Osram",
+          "spec": "Downlighters from Philips / Osram or equivalent make\nshall be provided.",
+          "source_label": "Downlighters"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Philips · Osram",
+          "spec": "Downlighters from Philips / Osram or equivalent make\nshall be provided.",
+          "source_label": "Downlighters"
+        }
+      }
+    },
+    {
+      "id": "electrical.cove_strip_lights",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Cove Strip Lights",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Philips",
+        "Osram"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Philips · Osram\nLED strip lights from Philips / Osram or equivalent make shall be provided in cove areas",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Philips · Osram",
+          "spec": "LED strip lights from Philips / Osram or equivalent\nmake shall be provided in cove areas",
+          "source_label": "Cove Strip Lights"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Philips · Osram",
+          "spec": "LED strip lights from Philips / Osram or equivalent\nmake shall be provided in cove areas",
+          "source_label": "Cove Strip Lights"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Philips · Osram",
+          "spec": "LED strip lights from Philips / Osram or equivalent\nmake shall be provided in cove areas",
+          "source_label": "Cove Strip Lights"
+        }
+      }
+    },
+    {
+      "id": "electrical.pillar_fancy_light",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Pillar Fancy Light",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Decorative pillar lights for third-party areas. Maximum 4 pillars.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Decorative pillar lights for third-party areas. Maximum\n4 pillars.",
+          "source_label": "Pillar Fancy Light"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Decorative pillar lights as per customer choice for stilt\nfront Pillars",
+          "source_label": "Pillar Fancy Light"
+        }
+      }
+    },
+    {
+      "id": "electrical.ups_wiring",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "UPS Wiring",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for UPS wiring shall be provided for each\nfloor.",
+          "source_label": "UPS Wiring"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for UPS wiring shall be provided for each\nfloor.",
+          "source_label": "UPS Wiring"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for UPS wiring shall be provided for each\nfloor.",
+          "source_label": "UPS Wiring"
+        }
+      }
+    },
+    {
+      "id": "electrical.ev_charging_point",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "EV Charging Point",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for one electric vehicle charging point shall\nbe provided per floor.",
+          "source_label": "EV Charging Point"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for one electric vehicle charging point shall\nbe provided per floor.",
+          "source_label": "EV Charging Point"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for one electric vehicle charging point shall\nbe provided per floor.",
+          "source_label": "EV Charging Point"
+        }
+      }
+    },
+    {
+      "id": "electrical.solar_electrical_provision",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Solar Electrical Provision",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for solar electrical system shall be included.",
+          "source_label": "Solar Electrical Provision"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for solar electrical system shall be included.",
+          "source_label": "Solar Electrical Provision"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Provision for solar electrical system shall be included.",
+          "source_label": "Solar Electrical Provision"
+        }
+      }
+    },
+    {
+      "id": "electrical.mcb_elcb",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "MCB/ELCB",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Havells"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Havells\nMCB and ELCB protection shall be provided for each floor.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Havells",
+          "spec": "MCB and ELCB protection shall be provided for each\nfloor.",
+          "source_label": "MCB/ELCB"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Havells",
+          "spec": "MCB and ELCB protection shall be provided for each\nfloor.",
+          "source_label": "MCB/ELCB"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Havells",
+          "spec": "MCB and ELCB protection shall be provided for each\nfloor.",
+          "source_label": "MCB/ELCB"
+        }
+      }
+    },
+    {
+      "id": "electrical.earthing",
+      "category": "electrical",
+      "category_label": "Electrical Work",
+      "label": "Earthing",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Earthing shall be done using copper strip / Chemical earthing for effective grounding and safety.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Earthing shall be done using copper strip / Chemical\nearthing for effective grounding and safety.",
+          "source_label": "Earthing"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Earthing shall be done using copper strip / Chemical\nearthing for effective grounding and safety.",
+          "source_label": "Earthing"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Earthing shall be done using copper strip / Chemical\nearthing for effective grounding and safety.",
+          "source_label": "Earthing"
+        }
+      }
+    },
+    {
+      "id": "water.underground_water_tank",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Underground Water Tank",
+      "rate": 0,
+      "rate_text": "2000 liters per floor",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Brickwork underground sump shall be constructed for each floor as a separate unit, finished internally with commercial tiles. Waterproofing shall be carried out using approved systems from Dr. Fixit / Sika or equivalent.",
+      "tiers": {
+        "basic": {
+          "rate": 2000.0,
+          "rate_text": "2000 liters per floor",
+          "unit": "per_liters_per_floor",
+          "brand": "",
+          "spec": "2000 liters per floor\nBrickwork underground sump shall be constructed for\neach floor as a separate unit, finished internally with\ncommercial tiles. Waterproofing shall be carried out\nusing approved systems from Dr. Fixit / Sika or\nequivalent.\nOverhead Water Tank\n1000 liters per floor\n1000 liters per floor\nTriple-layer overhead water tanks of 1,000 litres\ncapacity shall be provided for each floor, Tanks shall\nbe from Astral or equivalent make.",
+          "source_label": "Underground Water Tank"
+        },
+        "mid_luxury": {
+          "rate": 2000.0,
+          "rate_text": "2000 liters per floor",
+          "unit": "per_liters_per_floor",
+          "brand": "",
+          "spec": "2000 liters per floor\nRCC underground sump shall be constructed for each\nfloor as a separate unit, finished internally with\ncommercial tiles. Waterproofing shall be carried out\nusing approved systems from Dr. Fixit / Sika or\nequivalent.\nOverhead Water Tank\n1000 liters per floor\n1000 liters per floor\nTriple-layer overhead water tanks of 1,000 litres\ncapacity shall be provided for each floor, Tanks shall\nbe from Astral or equivalent make.",
+          "source_label": "Underground Water Tank"
+        },
+        "luxury": {
+          "rate": 2000.0,
+          "rate_text": "2000 liters per floor",
+          "unit": "per_liters_per_floor",
+          "brand": "",
+          "spec": "2000 liters per floor\nRCC underground sump shall be constructed for each\nfloor as a separate unit, finished internally with\ncommercial tiles. Waterproofing shall be carried out\nusing approved systems from Dr. Fixit / Sika or\nequivalent.\nOverhead Water Tank\n1000 liters per floor\n1000 liters per floor\nTriple-layer overhead water tanks of 1,000 litres\ncapacity shall be provided for each floor, Tanks shall\nbe from Astral or equivalent make.",
+          "source_label": "Underground Water Tank"
+        }
+      }
+    },
+    {
+      "id": "water.overhead_water_tank",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Overhead Water Tank",
+      "rate": 0,
+      "rate_text": "1000 liters per floor",
+      "unit": "descriptive",
+      "brands": [
+        "Astral"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Astral\nTriple-layer overhead water tanks of 1,000 litres capacity shall be provided for each floor. Tanks shall be from Astral or equivalent make.",
+      "tiers": {
+        "basic": {
+          "rate": 2000.0,
+          "rate_text": "2000 liters per floor",
+          "unit": "per_liters_per_floor",
+          "brand": "",
+          "spec": "2000 liters per floor\nBrickwork underground sump shall be constructed for\neach floor as a separate unit, finished internally with\ncommercial tiles. Waterproofing shall be carried out\nusing approved systems from Dr. Fixit / Sika or\nequivalent.\nOverhead Water Tank\n1000 liters per floor\n1000 liters per floor\nTriple-layer overhead water tanks of 1,000 litres\ncapacity shall be provided for each floor, Tanks shall\nbe from Astral or equivalent make.",
+          "source_label": "Underground Water Tank"
+        },
+        "mid_luxury": {
+          "rate": 2000.0,
+          "rate_text": "2000 liters per floor",
+          "unit": "per_liters_per_floor",
+          "brand": "",
+          "spec": "2000 liters per floor\nRCC underground sump shall be constructed for each\nfloor as a separate unit, finished internally with\ncommercial tiles. Waterproofing shall be carried out\nusing approved systems from Dr. Fixit / Sika or\nequivalent.\nOverhead Water Tank\n1000 liters per floor\n1000 liters per floor\nTriple-layer overhead water tanks of 1,000 litres\ncapacity shall be provided for each floor, Tanks shall\nbe from Astral or equivalent make.",
+          "source_label": "Underground Water Tank"
+        },
+        "luxury": {
+          "rate": 2000.0,
+          "rate_text": "2000 liters per floor",
+          "unit": "per_liters_per_floor",
+          "brand": "",
+          "spec": "2000 liters per floor\nRCC underground sump shall be constructed for each\nfloor as a separate unit, finished internally with\ncommercial tiles. Waterproofing shall be carried out\nusing approved systems from Dr. Fixit / Sika or\nequivalent.\nOverhead Water Tank\n1000 liters per floor\n1000 liters per floor\nTriple-layer overhead water tanks of 1,000 litres\ncapacity shall be provided for each floor, Tanks shall\nbe from Astral or equivalent make.",
+          "source_label": "Underground Water Tank"
+        }
+      }
+    },
+    {
+      "id": "water.water_motor",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Water Motor",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Crompton Greaves"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "2 Crompton Greaves motor for each floor\n1.5 HP water pump shall be provided for each floor, connecting individual underground sump to corresponding overhead tank. Pumps shall be from Crompton Greaves or equivalent make.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "2 Crompton Greaves motor for each floor\n1 HP water pump shall be provided for each floor,\nconnecting individual underground sump to\ncorresponding overhead tank. Pumps shall be from\nCrompton Greaves or equivalent make.",
+          "source_label": "Water Motor"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "2 Crompton Greaves motor for each floor\n1 HP water pump shall be provided for each floor,\nconnecting individual underground sump to\ncorresponding overhead tank. Pumps shall be from\nCrompton Greaves or equivalent make.",
+          "source_label": "Water Motor"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "2 Crompton Greaves motor for each floor\n1 HP water pump shall be provided for each floor,\nconnecting individual underground sump to\ncorresponding overhead tank. Pumps shall be from\nCrompton Greaves or equivalent make.",
+          "source_label": "Water Motor"
+        }
+      }
+    },
+    {
+      "id": "water.rainwater_harvesting",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Rainwater Harvesting",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Rainwater harvesting pit shall be constructed as per applicable government norms",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Rainwater harvesting pit shall be constructed as per\napplicable government norms",
+          "source_label": "Rainwater Harvesting"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Rainwater harvesting pit shall be constructed as per\napplicable government norms",
+          "source_label": "Rainwater Harvesting"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Rainwater harvesting pit shall be constructed as per\napplicable government norms",
+          "source_label": "Rainwater Harvesting"
+        }
+      }
+    },
+    {
+      "id": "water.discharge_pvc_pipe",
+      "category": "water",
+      "category_label": "Water Management",
+      "label": "Discharge PVC Pipe",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "All necessary PVC discharge pipes and connections shall be provided for proper water flow, drainage, and system integration. High-grade PVC pipes of 4-inch or 6-inch diameter, as per site conditions and design requirements, shall be used.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "All necessary PVC discharge pipes and connections\nshall be provided for proper water flow, drainage, and\nsystem integration. High-grade PVC pipes of 4-inch\nor 6-inch diameter, as per site conditions and design\nrequirements, shall be used.\nCeiling & Elevation",
+          "source_label": "Discharge PVC Pipe"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "All necessary PVC discharge pipes and connections\nshall be provided for proper water flow, drainage, and\nsystem integration. High-grade PVC pipes of 4-inch\nor 6-inch diameter, as per site conditions and design\nrequirements, shall be used.\nCeiling & Elevation",
+          "source_label": "Discharge PVC Pipe"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "All necessary PVC discharge pipes and connections\nshall be provided for proper water flow, drainage, and\nsystem integration. High-grade PVC pipes of 4-inch\nor 6-inch diameter, as per site conditions and design\nrequirements, shall be used.\nCeiling & Elevation",
+          "source_label": "Discharge PVC Pipe"
+        }
+      }
+    },
+    {
+      "id": "ceiling.false_ceiling",
+      "category": "ceiling",
+      "category_label": "Ceiling & Elevation",
+      "label": "False Ceiling",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Sakarni POP"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "POP cove false ceiling shall be provided in living, dining, and all bedrooms using Sakarni POP or equivalent make, including base level ceiling. Any additional design elements or premium features shall be as per design.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "POP cove false ceiling shall be provided in living,\ndining, and all bedrooms using Sakarni POP or\nequivalent make, including base level ceiling. Any\nadditional design elements or premium features shall\nbe as per design.",
+          "source_label": "False Ceiling"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "POP cove false ceiling shall be provided in living,\ndining, and all bedrooms using Sakarni POP or\nequivalent make, including base level ceiling. Any\nadditional design elements or premium features shall\nbe as per design.",
+          "source_label": "False Ceiling"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "POP false ceiling shall be provided in living, dining,\nand all bedrooms using Sakarni POP with\nWooden/Glass finish.",
+          "source_label": "Luxury False Ceiling"
+        }
+      }
+    },
+    {
+      "id": "ceiling.elevation",
+      "category": "ceiling",
+      "category_label": "Ceiling & Elevation",
+      "label": "Elevation",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Basic elevation in front side with slight esthetical look\nBack side of the building shall be finished with chapai dana and roller finish.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Front side no HPL panels, basic esthetical look is\ntaken.\nBack side of the building shall be finished with chapai\ndana and roller finish.\nSafety & Security",
+          "source_label": "Elevation"
+        },
+        "mid_luxury": {
+          "rate": 500000.0,
+          "rate_text": "₹5,00,000",
+          "unit": "lump_sum",
+          "brand": "",
+          "spec": "Wallet of 5 lakh taken for elevation\nBack side of the building shall be finished with chapai\ndana and roller finish.\nSafety & Security",
+          "source_label": "Elevation"
+        },
+        "luxury": {
+          "rate": 1000000.0,
+          "rate_text": "₹10,00,000",
+          "unit": "lump_sum",
+          "brand": "",
+          "spec": "Wallet of 10 lakh taken for elevation\nBack side of the building shall be finished with chapai\ndana and roller finish.\nSafety & Security",
+          "source_label": "Elevation"
+        }
+      }
+    },
+    {
+      "id": "safety.cctv_camera",
+      "category": "safety",
+      "category_label": "Safety & Security",
+      "label": "CCTV Camera",
+      "rate": 0,
+      "rate_text": "Rs 30,000 for entire house",
+      "unit": "descriptive",
+      "brands": [
+        "CP Plus"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "CP Plus\nCCTV camera system with cameras and basic wiring as per layout.",
+      "tiers": {
+        "basic": {
+          "rate": 40000.0,
+          "rate_text": "₹40,000 lumpsum",
+          "unit": "per_lumpsum",
+          "brand": "",
+          "spec": "CCTV camera system with cameras worth ₹40,000\nand basic wiring as per layout.",
+          "source_label": "CCTV Camera"
+        },
+        "mid_luxury": {
+          "rate": 40000.0,
+          "rate_text": "₹40,000 lumpsum",
+          "unit": "per_lumpsum",
+          "brand": "",
+          "spec": "CCTV camera system with cameras worth ₹40,000\nand basic wiring as per layout.",
+          "source_label": "CCTV Camera"
+        },
+        "luxury": {
+          "rate": 100000.0,
+          "rate_text": "₹1,00,000 lumpsum",
+          "unit": "per_lumpsum",
+          "brand": "",
+          "spec": "CCTV camera system with cameras worth ₹1,00,000\nand basic wiring as per layout.",
+          "source_label": "CCTV Camera"
+        }
+      }
+    },
+    {
+      "id": "safety.video_door_phone",
+      "category": "safety",
+      "category_label": "Safety & Security",
+      "label": "Video Door Phone",
+      "rate": 0,
+      "rate_text": "Rs 30,000 for entire house",
+      "unit": "descriptive",
+      "brands": [
+        "CP Plus",
+        "Alba"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "CP Plus · Alba\nVideo door phone system with indoor monitor for each floor and main outdoor unit at gate.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": {
+          "rate": 50000.0,
+          "rate_text": "₹50,000 lumpsum",
+          "unit": "per_lumpsum",
+          "brand": "",
+          "spec": "Video door phone system upto ₹50,000 with indoor\nmonitor for each floor and main outdoor unit at gate.",
+          "source_label": "Video Door Phone"
+        },
+        "luxury": {
+          "rate": 100000.0,
+          "rate_text": "₹1,00,000 lumpsum",
+          "unit": "per_lumpsum",
+          "brand": "",
+          "spec": "Video door phone system upto ₹1,00,000 with indoor\nmonitor for each floor and main outdoor unit at gate.",
+          "source_label": "Video Door Phone"
+        }
+      }
+    },
+    {
+      "id": "paint.internal_wall_paint",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Internal Wall Paint",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Asian Paints (Tractor Shyne Emulsion)"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Asian Paints (Tractor Shyne Emulsion)\nTractor Shyne Emulsion by Asian Paints, 2 coats will be provided over 1 layer of primer and 2 layer of putty",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Asian Paints (Tractor Shyne Emulsion)",
+          "spec": "2 coats will be provided over 1 layer of primer and 2\nlayer of putty",
+          "source_label": "Internal Wall Paint"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Asian Paints (Apcolite Premium Emulsion)",
+          "spec": "2 coats will be provided over 1 layer of primer and 2\nlayer of putty",
+          "source_label": "Internal Wall Paint"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Asian Paints (Apcolite Royal Emulsion)",
+          "spec": "2 coats will be provided over 1 layer of primer and\nPOP Punning.",
+          "source_label": "Internal Wall Paint"
+        }
+      }
+    },
+    {
+      "id": "paint.exterior_wall_paint",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Exterior Wall Paint",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Berger (Weathercoat Glow)"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Berger (Weathercoat Glow)\nWeathercoat glow Berger will be provided on the exterior side.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Berger (Weathercoat Glow)",
+          "spec": "Weathercoat glow Berger will be provided on the\nexterior side.",
+          "source_label": "Exterior Wall Paint"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Berger (Weathercoat Glow)",
+          "spec": "Weathercoat glow Berger will be provided on the\nexterior side.",
+          "source_label": "Exterior Wall Paint"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "Berger (Weathercoat Glow)",
+          "spec": "Weathercoat glow Berger will be provided on the\nexterior side.",
+          "source_label": "Exterior Wall Paint"
+        }
+      }
+    },
+    {
+      "id": "paint.ceiling_paint",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Ceiling Paint",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Asian Paints (Apcolite Premium Emulsion)"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Asian Paints (Apcolite Premium Emulsion)\nApcolite Premium Emulsion by Asian Paints on ceiling to give brighter look.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "paint.putty",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Putty",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "JK Birla Putty"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "JK Birla Putty\n2 coats of putty to be provided",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "JK Birla Putty",
+          "spec": "2 coats of putty to be provided",
+          "source_label": "Putty"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "JK Birla Putty",
+          "spec": "2 coats of putty to be provided",
+          "source_label": "Putty"
+        },
+        "luxury": null
+      }
+    },
+    {
+      "id": "paint.polish",
+      "category": "paint",
+      "category_label": "Paint & Polish",
+      "label": "Polish",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Melamine Polish in Matte/Glossy Finish as per owner's choice",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Melamine Polish in Matte/Glossy Finish as per\nowner's choice\nGeneral Aspects",
+          "source_label": "Polish"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Melamine Polish in Matte/Glossy Finish as per\nowner's choice\nGeneral Aspects",
+          "source_label": "Polish"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Melamine Polish in Matte/Glossy Finish as per\nowner's choice\nGeneral Aspects",
+          "source_label": "Polish"
+        }
+      }
+    },
+    {
+      "id": "general.main_gate",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Main Gate",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Bifold MS Main Gate at front as per design",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Bifold MS Main Gate at front as per design",
+          "source_label": "Main Gate"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Bifold MS Main Gate at front as per design",
+          "source_label": "Main Gate"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Bifold MS Main Gate at front as per design",
+          "source_label": "Main Gate"
+        }
+      }
+    },
+    {
+      "id": "general.staircase_balcony_railing",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Staircase & Balcony Railing",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Staircase Railing - MS Steel designer railing\nBalcony Railing - MS Railing with CNC Cut",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Staircase Railing - MS Steel designer railing\nBalcony Railing as per design MS CNC cut",
+          "source_label": "Staircase & Balcony Railing"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Staircase Railing - MS Steel designer railing\nBalcony Railing as per design MS CNC cut",
+          "source_label": "Staircase & Balcony Railing"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Staircase Railing - SS Steel designer railing\nBalcony Railing as per design, SS with toughened\nglass",
+          "source_label": "Staircase & Balcony Railing"
+        }
+      }
+    },
+    {
+      "id": "general.concrete_mixing",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Concrete Mixing",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Done with concrete mixers. On Site mixing for Columns (M-25) i.e. (1:1:2)",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "general.vibrators",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Vibrators",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Used to consolidate layers in footings, columns, beams & roof slabs",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Used to consolidate layers in footings, columns,\nbeams & roof slabs",
+          "source_label": "Vibrators"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Used to consolidate layers in footings, columns,\nbeams & roof slabs",
+          "source_label": "Vibrators"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Used to consolidate layers in footings, columns,\nbeams & roof slabs",
+          "source_label": "Vibrators"
+        }
+      }
+    },
+    {
+      "id": "general.brickwork_mortar",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Brickwork Mortar",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "9\" brickwork not leaner than 1:6; 4½\" brickwork not leaner than 1:4",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "9\" brickwork not leaner than 1:6; 4½\" brickwork not\nleaner than 1:4",
+          "source_label": "Brickwork Mortar"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "9\" brickwork not leaner than 1:6; 4½\" brickwork not\nleaner than 1:4",
+          "source_label": "Brickwork Mortar"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "9\" brickwork not leaner than 1:6; 4½\" brickwork not\nleaner than 1:4",
+          "source_label": "Brickwork Mortar"
+        }
+      }
+    },
+    {
+      "id": "general.soil_test",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Soil Test",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Soil Test to be done before construction. Costing is included.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Soil Test to be done before construction. Costing is\nincluded.",
+          "source_label": "Soil Test"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Soil Test to be done before construction. Costing is\nincluded.",
+          "source_label": "Soil Test"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "Soil Test to be done before construction. Costing is\nincluded.",
+          "source_label": "Soil Test"
+        }
+      }
+    },
+    {
+      "id": "general.lift_machine",
+      "category": "general",
+      "category_label": "General Aspects",
+      "label": "Lift Machine",
+      "rate": 0,
+      "rate_text": "Rs 10,00,000",
+      "unit": "descriptive",
+      "brands": [
+        "Otis"
+      ],
+      "scope": [
+        "full",
+        "structure_only"
+      ],
+      "description": "Otis\nIncludes all civil, electrical, paint, polish, exhaust, and earthing work. Entry on all floors.",
+      "tiers": {
+        "basic": {
+          "rate": 1000.0,
+          "rate_text": "₹10,00.000 taken as wallet",
+          "unit": "per_taken_as_wallet",
+          "brand": "",
+          "spec": "Includes all civil, electrical, paint, polish, exhaust, and\nearthing work. Entry on all floors.\nS P E C I F I CAT I O N S",
+          "source_label": "Lift Machine"
+        },
+        "mid_luxury": {
+          "rate": 1000.0,
+          "rate_text": "₹10,00.000 taken as wallet",
+          "unit": "per_taken_as_wallet",
+          "brand": "",
+          "spec": "Includes all civil, electrical, paint, polish, exhaust, and\nearthing work. Entry on all floors.\nS P E C I F I CAT I O N S",
+          "source_label": "Lift Machine"
+        },
+        "luxury": {
+          "rate": 1350.0,
+          "rate_text": "₹13,50.000 taken as wallet",
+          "unit": "per_taken_as_wallet",
+          "brand": "",
+          "spec": "Includes all civil, electrical, paint, polish, exhaust, and\nearthing work. Entry on all floors.\nS P E C I F I CAT I O N S",
+          "source_label": "Lift Machine"
+        }
+      }
+    },
+    {
+      "id": "basement.raft_foundation",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Raft Foundation",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "RCC raft foundation shall be constructed as per structural design using M25 grade concrete with proper reinforcement, vibration, and compaction. Concrete shall be mixed with integral crystalline waterproofing compound.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "basement.retaining_walls",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Retaining Walls",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "RCC retaining walls of 6 inch thickness shall be constructed to resist lateral earth pressure. After 6 inch of RCC wall 4.5 inch of brick work to be provided. Proper shuttering, vibration, and curing shall be ensured.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "basement.waterproofing_system",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Waterproofing System",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Sika",
+        "Dr. Fixit",
+        "Fosroc"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "Three-layer waterproofing system shall be provided: Integral crystalline waterproofing compound in concrete; PVC water bars at all construction and expansion joints; Plaster with waterproofing compound mixed.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "basement.sump_pit_dewatering",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Sump Pit & Dewatering System",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [
+        "Crompton",
+        "Bajaj"
+      ],
+      "scope": [
+        "full"
+      ],
+      "description": "RCC sump pit shall be constructed at lowest level. Dual pump system (1 working + 1 standby) with automatic float switch shall be installed for water discharge.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    },
+    {
+      "id": "basement.height",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Height",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "descriptive",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "Clear height (Floor to ceiling) of 11 ft to be provided.",
+      "tiers": {
+        "basic": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "7'6\" to 8' as per approved plan",
+          "source_label": "Door Height"
+        },
+        "mid_luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "7'6\" to 8' as per approved plan",
+          "source_label": "Door Height"
+        },
+        "luxury": {
+          "rate": null,
+          "rate_text": "—",
+          "unit": "descriptive",
+          "brand": "",
+          "spec": "7'6\" to 8' as per approved plan",
+          "source_label": "Door Height"
+        }
+      }
+    },
+    {
+      "id": "basement.flooring",
+      "category": "basement",
+      "category_label": "Basement",
+      "label": "Basement Flooring",
+      "rate": 0,
+      "rate_text": "",
+      "unit": "sqft",
+      "brands": [],
+      "scope": [
+        "full"
+      ],
+      "description": "18mm Granite on treads and risers, with proper nosing and chamfering.",
+      "tiers": {
+        "basic": null,
+        "mid_luxury": null,
+        "luxury": null
+      }
+    }
+  ]
+}
