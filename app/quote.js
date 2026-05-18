@@ -2198,11 +2198,37 @@ async function bootForm() {
   });
 
   // ---- Load Quote button + modal ----
+  // Phase 8B: client-side search filter across customer_name + name + author + id
+  function _matchesSearch(entry, q) {
+    if (!q) return true;
+    const hay = [
+      entry.name || '',
+      entry.customer_name || '',
+      entry.author || '',
+      entry.last_edited_by || '',
+      entry.id || '',
+      (entry.modified_at || '').slice(0,10),
+    ].join(' ').toLowerCase();
+    // Multi-token AND match
+    const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+    return tokens.every(t => hay.indexOf(t) !== -1);
+  }
   function renderLoadList() {
     const body = document.getElementById('load-modal-body');
-    const list = QuoteStorage.list();
-    if (!list.length) {
+    const searchInput = document.getElementById('load-search');
+    const countLabel  = document.getElementById('load-search-count');
+    const q = searchInput ? searchInput.value.trim() : '';
+    const all = QuoteStorage.list();
+    const list = q ? all.filter(e => _matchesSearch(e, q)) : all;
+    if (countLabel) {
+      countLabel.textContent = q ? (list.length + ' / ' + all.length) : (all.length + ' total');
+    }
+    if (!all.length) {
       body.innerHTML = '<div class="qm-empty">No saved quotes yet. Click <b>Save</b> to create one.</div>';
+      return;
+    }
+    if (!list.length) {
+      body.innerHTML = '<div class="qm-empty">No matches for <b>' + escapeHtml(q) + '</b>. Try a different search.</div>';
       return;
     }
     const ul = document.createElement('ul');
@@ -2254,8 +2280,11 @@ async function bootForm() {
   const loadBtn = document.getElementById('load-quote');
   if (loadBtn) loadBtn.onclick = async () => {
     // Phase 4: force a fresh cloud pull so the rep sees teammates' latest quotes.
+    const searchInput = document.getElementById('load-search');
+    if (searchInput) searchInput.value = ''; // reset search each open
     renderLoadList();
     openModal(loadModal);
+    if (searchInput) { try { searchInput.focus(); } catch(_){} }
     try {
       await Promise.race([
         QuoteStorage.syncFromCloud(),
@@ -2265,6 +2294,24 @@ async function bootForm() {
     renderLoadList();
   };
   document.getElementById('load-close').onclick = () => closeModal(loadModal);
+  // Phase 8B: wire the search input — re-render list on every keystroke (debounced 120ms)
+  (function wireLoadSearch(){
+    const searchInput = document.getElementById('load-search');
+    if (!searchInput) return;
+    let t = null;
+    searchInput.addEventListener('input', () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(renderLoadList, 120);
+    });
+    // Escape clears the field (handy after a search)
+    searchInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && searchInput.value) {
+        ev.stopPropagation();
+        searchInput.value = '';
+        renderLoadList();
+      }
+    });
+  })();
 
   // ---- Export JSON ----
   function sanitizeFilename(s) {

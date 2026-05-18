@@ -501,6 +501,10 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
 <div class="qb-modal" id="load-modal" role="dialog" aria-label="Load quote">
   <div class="panel">
     <header><h3>Load quote</h3></header>
+    <div class="load-search-bar" style="padding:10px 14px 0 14px;display:flex;gap:8px;align-items:center">
+      <input type="text" id="load-search" placeholder="Search by customer name, quote name, author…" autocomplete="off" style="flex:1;padding:8px 10px;border:1px solid #d0d4dc;border-radius:6px;font-size:14px">
+      <span id="load-search-count" style="font-size:12px;color:#6b7280;min-width:60px;text-align:right"></span>
+    </div>
     <div class="body" id="load-modal-body"></div>
     <footer><button id="load-close">Close</button></footer>
   </div>
