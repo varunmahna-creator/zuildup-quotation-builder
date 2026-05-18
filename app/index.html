@@ -448,6 +448,7 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
     </label>
     <button class="secondary" id="new-quote" title="Clear current quote and start fresh">New Quote</button>
     <button class="secondary" id="wizard-open" title="Quick Build wizard — prefill from a tier template" style="background:linear-gradient(135deg,#C9A24D,#b8923e);color:white;border-color:#b8923e">✨ Quick Build</button>
+    <button class="secondary" id="ai-chat-open" title="AI edit assistant — natural-language edits" style="background:linear-gradient(135deg,#0A1F44,#1e3a6f);color:white;border-color:#1e3a6f">🤖 AI Edit</button>
     <button class="secondary" id="save-quote" title="Save quote (Ctrl/Cmd+S)">Save</button>
     <button class="secondary" id="load-quote" title="Open a saved quote">Load</button>
     <button class="secondary" id="export-quote" title="Download quote as JSON">Export</button>
@@ -614,6 +615,26 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
       <button id="wiz-apply" type="button" class="btn-primary" style="display:none">Generate Quote</button>
       <button id="wiz-close" type="button">Cancel</button>
     </footer>
+  </div>
+</div>
+
+<!-- Phase 8D: AI edit chat drawer -->
+<div id="ai-chat-drawer" style="display:none;position:fixed;top:0;right:0;width:420px;max-width:90vw;height:100vh;background:#fff;border-left:1px solid #d0d4dc;box-shadow:-4px 0 16px rgba(0,0,0,0.08);z-index:9000;display:none;flex-direction:column;font-size:14px">
+  <header style="padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;background:#0A1F44;color:white">
+    <div>
+      <div style="font-weight:600">🤖 AI Edit Assistant</div>
+      <div style="font-size:11px;color:#cbd5e1;margin-top:2px">Type natural language — I propose, you approve.</div>
+    </div>
+    <button id="ai-chat-close" style="background:transparent;border:none;color:white;font-size:22px;cursor:pointer;padding:0 4px">×</button>
+  </header>
+  <div id="ai-chat-history" style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;background:#fafbfc"></div>
+  <div id="ai-chat-pending-patches" style="border-top:1px solid #e5e7eb;background:#fffbeb;padding:0;max-height:50vh;overflow-y:auto"></div>
+  <div style="border-top:1px solid #e5e7eb;padding:12px;background:white">
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <textarea id="ai-chat-input" placeholder="e.g. Change all bathroom fittings to Kohler. Bump Zone A to ₹3,100. Add a study room…" rows="2" style="flex:1;padding:8px 10px;border:1px solid #d0d4dc;border-radius:6px;font:inherit;resize:none"></textarea>
+      <button id="ai-chat-send" class="btn-primary" style="padding:8px 14px;align-self:stretch">Send</button>
+    </div>
+    <div style="font-size:11px;color:#6b7280;margin-top:6px">Examples: "rename customer to X", "set Zone B to 1500", "change kitchen brand to Hettich" · <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> newline</div>
   </div>
 </div>
 

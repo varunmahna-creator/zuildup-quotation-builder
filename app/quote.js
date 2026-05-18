@@ -5153,4 +5153,327 @@ function renderNotesPage(state) {
   });
 })();
 
+// ============================================================================
+// Phase 8D — AI Edit Assistant (chat drawer + patch validator + Apply/Reject)
+// ============================================================================
+(function initAIChat() {
+  const openBtn = document.getElementById('ai-chat-open');
+  const drawer  = document.getElementById('ai-chat-drawer');
+  const closeBtn= document.getElementById('ai-chat-close');
+  const input   = document.getElementById('ai-chat-input');
+  const sendBtn = document.getElementById('ai-chat-send');
+  const histEl  = document.getElementById('ai-chat-history');
+  const pendEl  = document.getElementById('ai-chat-pending-patches');
+  if (!openBtn || !drawer) return;
+
+  function getChatState() {
+    if (!state._aiChat) state._aiChat = { history: [], log: [] };
+    return state._aiChat;
+  }
+  function persistChatState() {
+    try {
+      const aid = QuoteStorage.activeId();
+      if (aid) localStorage.setItem('zuildup.quotes.' + aid, JSON.stringify(state));
+      else localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    } catch (_) {}
+  }
+
+  function renderHistory() {
+    const chat = getChatState();
+    histEl.innerHTML = '';
+    if (!chat.history.length) {
+      histEl.innerHTML = '<div style="color:#6b7280;text-align:center;padding:20px;font-size:13px">No edits yet. Tell me what to change.</div>';
+      return;
+    }
+    for (const msg of chat.history) {
+      const isUser = msg.role === 'user';
+      const bubble = document.createElement('div');
+      bubble.style.cssText = 'align-self:' + (isUser ? 'flex-end' : 'flex-start') +
+        ';max-width:85%;padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.4;' +
+        (isUser ? 'background:#0A1F44;color:white' : 'background:#fff;border:1px solid #e5e7eb;color:#0A1F44');
+      bubble.textContent = msg.text;
+      histEl.appendChild(bubble);
+    }
+    histEl.scrollTop = histEl.scrollHeight;
+  }
+
+  function validatePatch(p) {
+    if (!p || typeof p !== 'object') throw new Error('patch must be an object');
+    if (!p.op) throw new Error('patch.op is required');
+    const ALLOWED = new Set(['set', 'add_row', 'delete_row']);
+    if (!ALLOWED.has(p.op)) throw new Error('unknown op: ' + p.op);
+    if (p.op === 'set') {
+      if (!p.path || typeof p.path !== 'string') throw new Error('set requires string path');
+      const PATH_OK =
+        /^customer\.(salutation|name|address)$/.test(p.path) ||
+        /^build\.(plotSqYards|breadth|coverage|buildType|floors|hasBasement|hasLift|hasWaterTank)$/.test(p.path) ||
+        /^pricing\.(costPerSqft|zoneARate|zoneBRate|zoneCRate|zoneDRate|basementRate|liftCost)$/.test(p.path) ||
+        /^rows\[[A-Za-z0-9_.-]+\]\.override\.(label|rate|rate_text|brands|description|location|category_label)$/.test(p.path) ||
+        /^notes$/.test(p.path) || /^scope$/.test(p.path);
+      if (!PATH_OK) throw new Error('path not allowed: ' + p.path);
+      if (p.value === undefined) throw new Error('set requires value');
+      if (/Rate|Cost|costPerSqft|liftCost|plotSqYards|breadth|coverage|floors/.test(p.path)) {
+        const n = parseFloat(p.value);
+        if (isNaN(n)) throw new Error('numeric value required for ' + p.path);
+        p.value = n;
+      }
+      if (/hasBasement|hasLift|hasWaterTank/.test(p.path)) p.value = !!p.value;
+      return p;
+    }
+    if (p.op === 'add_row') {
+      if (!p.item_id || typeof p.item_id !== 'string') throw new Error('add_row requires item_id');
+      return p;
+    }
+    if (p.op === 'delete_row') {
+      if (!p.row_id || typeof p.row_id !== 'string') throw new Error('delete_row requires row_id');
+      return p;
+    }
+    return p;
+  }
+
+  function applyPatchToState(p) {
+    validatePatch(p);
+    if (p.op === 'set') {
+      const mRow = p.path.match(/^rows\[([A-Za-z0-9_.-]+)\]\.override\.([a-zA-Z_]+)$/);
+      if (mRow) {
+        const rowId = mRow[1], field = mRow[2];
+        const row = state.rows.find(r => r.id === rowId);
+        if (!row) throw new Error('row not found: ' + rowId);
+        if (!row.override) row.override = {};
+        row.override[field] = p.value;
+        return;
+      }
+      const parts = p.path.split('.');
+      let obj = state;
+      for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
+      obj[parts[parts.length - 1]] = p.value;
+      return;
+    }
+    if (p.op === 'add_row') {
+      state.rows.push({ id: p.item_id, override: {}, _isFresh: true });
+      return;
+    }
+    if (p.op === 'delete_row') {
+      const idx = state.rows.findIndex(r => r.id === p.row_id);
+      if (idx >= 0) state.rows.splice(idx, 1);
+      return;
+    }
+  }
+
+  function describePatch(p) {
+    if (p.op === 'set') {
+      let cur;
+      const mRow = p.path.match(/^rows\[([A-Za-z0-9_.-]+)\]\.override\.([a-zA-Z_]+)$/);
+      if (mRow) {
+        const row = state.rows.find(r => r.id === mRow[1]);
+        cur = row && row.override ? row.override[mRow[2]] : '(catalog default)';
+      } else {
+        const parts = p.path.split('.');
+        let obj = state;
+        for (const x of parts) { obj = obj && obj[x]; }
+        cur = obj;
+      }
+      return { label: p.path, before: cur, after: p.value };
+    }
+    if (p.op === 'add_row') return { label: 'Add row', before: '(none)', after: p.item_id };
+    if (p.op === 'delete_row') return { label: 'Delete row', before: p.row_id, after: '(removed)' };
+    return { label: p.op, before: '?', after: '?' };
+  }
+
+  let pendingPatches = [];
+  function renderPending() {
+    pendEl.innerHTML = '';
+    if (!pendingPatches.length) return;
+    const header = document.createElement('div');
+    header.style.cssText = 'padding:8px 14px;background:#fef3c7;border-bottom:1px solid #fbbf24;font-size:12px;font-weight:600;color:#92400e;display:flex;justify-content:space-between;align-items:center';
+    header.innerHTML = '<span>📝 Proposed changes (' + pendingPatches.length + ')</span>' +
+      '<span><button id="ai-apply-all" style="margin-right:6px;padding:3px 8px;font-size:11px;background:#059669;color:white;border:none;border-radius:4px;cursor:pointer">Apply all</button>' +
+      '<button id="ai-reject-all" style="padding:3px 8px;font-size:11px;background:#dc2626;color:white;border:none;border-radius:4px;cursor:pointer">Reject all</button></span>';
+    pendEl.appendChild(header);
+    pendingPatches.forEach((pp, i) => {
+      const desc = describePatch(pp.patch);
+      const card = document.createElement('div');
+      card.style.cssText = 'padding:10px 14px;border-bottom:1px solid #fde68a;font-size:12px';
+      card.innerHTML =
+        '<div style="font-weight:600;color:#0A1F44;margin-bottom:4px">' + escapeHtml(desc.label) + '</div>' +
+        '<div style="color:#6b7280;margin-bottom:6px">' +
+        '<span style="text-decoration:line-through">' + escapeHtml(String(desc.before == null ? '∅' : desc.before)) + '</span> → ' +
+        '<b style="color:#0A1F44">' + escapeHtml(String(desc.after == null ? '∅' : desc.after)) + '</b>' +
+        '</div>' +
+        (pp.explanation ? '<div style="color:#6b7280;font-style:italic;font-size:11px;margin-bottom:6px">' + escapeHtml(pp.explanation) + '</div>' : '') +
+        '<div style="display:flex;gap:6px">' +
+        '<button data-i="' + i + '" data-act="apply" style="padding:4px 10px;font-size:11px;background:#059669;color:white;border:none;border-radius:4px;cursor:pointer">✓ Apply</button>' +
+        '<button data-i="' + i + '" data-act="reject" style="padding:4px 10px;font-size:11px;background:transparent;color:#dc2626;border:1px solid #dc2626;border-radius:4px;cursor:pointer">✗ Reject</button>' +
+        '</div>';
+      pendEl.appendChild(card);
+    });
+    pendEl.querySelectorAll('button[data-act="apply"]').forEach(b => {
+      b.onclick = () => doApply([parseInt(b.dataset.i, 10)]);
+    });
+    pendEl.querySelectorAll('button[data-act="reject"]').forEach(b => {
+      b.onclick = () => doReject([parseInt(b.dataset.i, 10)]);
+    });
+    const allApply = document.getElementById('ai-apply-all');
+    const allReject = document.getElementById('ai-reject-all');
+    if (allApply) allApply.onclick = () => doApply(pendingPatches.map((_, i) => i));
+    if (allReject) allReject.onclick = () => doReject(pendingPatches.map((_, i) => i));
+  }
+
+  function doApply(indices) {
+    const toApply = indices.map(i => pendingPatches[i]).filter(Boolean);
+    let applied = 0, failed = 0;
+    const chat = getChatState();
+    for (const pp of toApply) {
+      try {
+        applyPatchToState(pp.patch);
+        applied++;
+        chat.log.push({ ts: new Date().toISOString(), action: 'apply', patch: pp.patch, explanation: pp.explanation });
+      } catch (e) {
+        failed++;
+        chat.log.push({ ts: new Date().toISOString(), action: 'apply_fail', patch: pp.patch, error: e.message });
+        console.warn('[ai-edit] patch apply failed:', e.message, pp.patch);
+      }
+    }
+    pendingPatches = pendingPatches.filter((_, i) => !indices.includes(i));
+    persistChatState();
+    renderPending();
+    if (applied) {
+      chat.history.push({ role: 'system', text: '✓ Applied ' + applied + ' change' + (applied===1?'':'s') + (failed?' ('+failed+' failed)':'') + '. Reloading…' });
+      renderHistory();
+      toast('Applied ' + applied + ' change' + (applied===1?'':'s'));
+      setTimeout(() => location.reload(), 600);
+    } else if (failed) {
+      toast(failed + ' patch(es) failed validation', 'err');
+    }
+  }
+
+  function doReject(indices) {
+    const chat = getChatState();
+    for (const i of indices) {
+      const pp = pendingPatches[i];
+      if (!pp) continue;
+      chat.log.push({ ts: new Date().toISOString(), action: 'reject', patch: pp.patch });
+    }
+    pendingPatches = pendingPatches.filter((_, i) => !indices.includes(i));
+    persistChatState();
+    renderPending();
+    chat.history.push({ role: 'system', text: '✗ Rejected ' + indices.length + ' proposed change' + (indices.length===1?'':'s') + '.' });
+    renderHistory();
+  }
+
+  function localIntentParse(userText) {
+    const t = userText.trim();
+    const patches = [];
+    let m = t.match(/(?:rename\s+(?:the\s+)?customer\s+to|customer\s+(?:name\s+)?(?:is|to)\s+)(.+?)$/i);
+    if (m) patches.push({ op: 'set', path: 'customer.name', value: m[1].trim().replace(/[."]+$/, ''), explanation: 'Set customer name' });
+    m = t.match(/(?:address\s+(?:is|to)\s+)(.+?)$/i);
+    if (m) patches.push({ op: 'set', path: 'customer.address', value: m[1].trim().replace(/[."]+$/, ''), explanation: 'Set address' });
+    const zoneRe = /(?:set|bump|change|make)?\s*zone\s+([abcd])\s*(?:to|=|at)?\s*(?:₹|rs\.?)?\s*([\d,]+)/gi;
+    let zm;
+    while ((zm = zoneRe.exec(t)) !== null) {
+      const z = zm[1].toUpperCase();
+      const v = parseFloat(zm[2].replace(/,/g,''));
+      if (!isNaN(v)) patches.push({ op: 'set', path: 'pricing.zone' + z + 'Rate', value: v, explanation: 'Set Zone ' + z + ' rate to ₹' + v.toLocaleString('en-IN') });
+    }
+    m = t.match(/(?:set|change|make)\s+floors?\s+(?:to\s+)?(\d+)/i);
+    if (m) patches.push({ op: 'set', path: 'build.floors', value: parseInt(m[1],10), explanation: 'Set floors to ' + m[1] });
+    m = t.match(/(?:plot|plot\s+size|plot\s+area)\s+(?:to\s+)?(\d+)\s*(?:sq\s*\.?\s*yd|sqyd|yd)/i);
+    if (m) patches.push({ op: 'set', path: 'build.plotSqYards', value: parseInt(m[1],10), explanation: 'Set plot to ' + m[1] + ' sq.yd' });
+    if (/(?:add|enable|turn\s+on|include)\s+(?:a\s+)?lift/i.test(t)) patches.push({ op: 'set', path: 'build.hasLift', value: true, explanation: 'Enable lift' });
+    if (/(?:remove|disable|turn\s+off|no)\s+lift/i.test(t)) patches.push({ op: 'set', path: 'build.hasLift', value: false, explanation: 'Disable lift' });
+    if (/(?:add|enable|include)\s+(?:a\s+)?basement/i.test(t)) patches.push({ op: 'set', path: 'build.hasBasement', value: true, explanation: 'Enable basement' });
+    if (/(?:remove|no)\s+basement/i.test(t)) patches.push({ op: 'set', path: 'build.hasBasement', value: false, explanation: 'Disable basement' });
+    m = t.match(/change\s+(.+?)\s+(?:to|brand\s+to)\s+(.+?)$/i);
+    if (m) {
+      const target = m[1].trim().toLowerCase().replace(/^(the|a)\s+/,'');
+      const newBrand = m[2].trim().replace(/[."]+$/, '');
+      const targetTokens = target.split(/\s+/).filter(x => x.length > 2);
+      const matches = state.rows.filter(r => {
+        const ov = r.override || {};
+        const lab = (ov.label || r.id).toLowerCase();
+        return targetTokens.every(tok => lab.indexOf(tok) >= 0 || r.id.toLowerCase().indexOf(tok) >= 0);
+      });
+      if (matches.length === 0) {
+        return { patches: [], note: 'No row matched "' + target + '". Try the exact line-item label.' };
+      }
+      for (const row of matches.slice(0, 5)) {
+        patches.push({ op: 'set', path: 'rows[' + row.id + '].override.brands', value: newBrand, explanation: 'Set brand on "' + (row.override?.label || row.id) + '" → ' + newBrand });
+      }
+    }
+    return { patches };
+  }
+
+  async function callBackendOrLocal(userText) {
+    try {
+      const r = await fetch('/api/quote-edit', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userText, state }),
+      });
+      if (r.ok) {
+        const j = await r.json();
+        return { patches: j.patches || [], note: j.note, source: 'llm' };
+      }
+    } catch (_) { /* fall through */ }
+    const res = localIntentParse(userText);
+    return { patches: res.patches || [], note: res.note, source: 'local' };
+  }
+
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    const chat = getChatState();
+    chat.history.push({ role: 'user', text });
+    renderHistory();
+    input.value = '';
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Thinking…';
+    try {
+      const res = await callBackendOrLocal(text);
+      if (!res.patches.length) {
+        const note = res.note || "I couldn't figure out a concrete change. Try being more specific (e.g. \"set Zone A to 3000\", \"change sanitary ware to Kohler\", \"plot size 240 sqyd\").";
+        chat.history.push({ role: 'assistant', text: note });
+        renderHistory();
+        persistChatState();
+        return;
+      }
+      for (const p of res.patches) {
+        try {
+          validatePatch(p);
+          pendingPatches.push({ patch: p, explanation: p.explanation || '' });
+        } catch (e) {
+          chat.history.push({ role: 'assistant', text: '⚠️ Skipping invalid patch: ' + e.message });
+        }
+      }
+      chat.history.push({ role: 'assistant', text: 'Proposed ' + res.patches.length + ' change' + (res.patches.length===1?'':'s') + ' (' + res.source + '). Review and Apply/Reject below.' });
+      renderHistory();
+      renderPending();
+      persistChatState();
+    } catch (e) {
+      chat.history.push({ role: 'assistant', text: '❌ Error: ' + e.message });
+      renderHistory();
+    } finally {
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send';
+    }
+  }
+
+  openBtn.onclick = () => {
+    drawer.style.display = 'flex';
+    renderHistory();
+    renderPending();
+    setTimeout(() => input.focus(), 50);
+  };
+  closeBtn.onclick = () => { drawer.style.display = 'none'; };
+  sendBtn.onclick = sendMessage;
+  input.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' && !ev.shiftKey) {
+      ev.preventDefault();
+      sendMessage();
+    }
+  });
+})();
+
+
 })();
