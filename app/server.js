@@ -770,6 +770,261 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ==========================================================================
+  // Phase 8D-2: POST /api/quote-edit — LLM-driven natural language quote edits
+  // ==========================================================================
+  // Body: { userText: string, state: object, history?: [{role,text}] }
+  // Returns: { patches: [...], note?: string, source: 'llm' | 'error' }
+  //
+  // Patch shape (must be applicable by client's applyPatchToState):
+  //   { op: "set",        path: "customer.name" | "build.floors" | "pricing.zoneARate" | "rows[<id>].override.brands" | ..., value: any, explanation?: string }
+  //   { op: "add_row",    item_id: "bathroom.sanitary_ware_and_cp_fitting", explanation?: string }
+  //   { op: "delete_row", row_id:  "<existing row id>", explanation?: string }
+  //
+  // Path whitelist (client also enforces — defense in depth):
+  //   customer.{salutation,name,address}
+  //   build.{plotSqYards,breadth,coverage,buildType,floors,hasBasement,hasLift,hasWaterTank}
+  //   pricing.{costPerSqft,zoneARate,zoneBRate,zoneCRate,zoneDRate,basementRate,liftCost}
+  //   rows[<id>].override.{label,rate,rate_text,brands,description,location,category_label}
+  //   notes, scope
+  //
+  // Logging: every request/response appended to /tmp/quote-edit-log.jsonl AND
+  // (when Firestore present) to the `quote_edit_logs` collection for Phase 9.
+  if (req.method === 'POST' && pathname === '/api/quote-edit') {
+    (async () => {
+      const reqStartedAt = new Date().toISOString();
+      const reqId = 'qedit_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+      let body;
+      try { body = await readJsonBody(req); } catch (e) {
+        return send(res, 400, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+      }
+      if (!body || !body.userText || typeof body.userText !== 'string') {
+        return send(res, 400, JSON.stringify({ error: 'userText required' }), { 'Content-Type': 'application/json' });
+      }
+      const userText = body.userText.trim().slice(0, 4000);
+      const clientState = body.state || {};
+      const history = Array.isArray(body.history) ? body.history.slice(-6) : [];
+
+      // Build compact state snapshot for the LLM context window.
+      // Don't send full row catalog data — just IDs + labels + any overrides.
+      const snapshot = {
+        customer: clientState.customer || {},
+        build: clientState.build || {},
+        pricing: {
+          costPerSqft: clientState.pricing?.costPerSqft,
+          zoneARate:   clientState.pricing?.zoneARate,
+          zoneBRate:   clientState.pricing?.zoneBRate,
+          zoneCRate:   clientState.pricing?.zoneCRate,
+          zoneDRate:   clientState.pricing?.zoneDRate,
+          basementRate:clientState.pricing?.basementRate,
+          liftCost:    clientState.pricing?.liftCost,
+        },
+        scope: clientState.scope,
+        notes: clientState.notes,
+        row_count: Array.isArray(clientState.rows) ? clientState.rows.length : 0,
+        rows: Array.isArray(clientState.rows) ? clientState.rows.slice(0, 200).map(r => ({
+          id: r.id,
+          label: r.override?.label || null,
+          brands: r.override?.brands || null,
+          rate: r.override?.rate ?? null,
+          rate_text: r.override?.rate_text || null,
+          location: r.override?.location || null,
+        })) : [],
+      };
+
+      const apiKey  = process.env.ANTHROPIC_API_KEY || '';
+      const baseUrl = (process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/+$/, '');
+      const model   = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
+
+      if (!apiKey) {
+        const logRec = { reqId, ts: reqStartedAt, userText, error: 'no_api_key' };
+        try { fs.appendFileSync('/tmp/quote-edit-log.jsonl', JSON.stringify(logRec) + '\n'); } catch (_) {}
+        return send(res, 503, JSON.stringify({
+          error: 'LLM backend not configured (no ANTHROPIC_API_KEY). Client will fall back to local parser.',
+          patches: [],
+        }), { 'Content-Type': 'application/json' });
+      }
+
+      const systemPrompt =
+        "You are Iraaj, an AI assistant embedded in ZuildUp's construction-quotation builder. " +
+        "Your job: turn a sales rep's natural-language edit request into ONE OR MORE JSON patches. " +
+        "ZuildUp is a premium home-construction brand (Basic / Mid-Luxury / Luxury tiers, NCR India). " +
+        "\n\n" +
+        "OUTPUT FORMAT — return ONLY a JSON object, no prose, no markdown fence:\n" +
+        '  { "patches": [ {patch...}, ... ], "note": "optional 1-line explanation" }\n' +
+        "\n" +
+        "ALLOWED PATCH SHAPES:\n" +
+        '  { "op": "set",        "path": "<allowed>", "value": <any>, "explanation": "human-readable" }\n' +
+        '  { "op": "add_row",    "item_id": "<catalog id>",            "explanation": "..." }\n' +
+        '  { "op": "delete_row", "row_id":  "<existing row id>",       "explanation": "..." }\n' +
+        "\n" +
+        "ALLOWED `set` PATHS (anything else will be rejected by the validator):\n" +
+        "  customer.salutation | customer.name | customer.address\n" +
+        "  build.plotSqYards (number) | build.breadth (number) | build.coverage (number 0..1)\n" +
+        "  build.buildType (string) | build.floors (int 1..6)\n" +
+        "  build.hasBasement | build.hasLift | build.hasWaterTank (bool)\n" +
+        "  pricing.costPerSqft | pricing.zoneARate | pricing.zoneBRate | pricing.zoneCRate | pricing.zoneDRate\n" +
+        "  pricing.basementRate | pricing.liftCost (all numbers, INR)\n" +
+        "  rows[<row.id>].override.label  | .brands | .rate | .rate_text | .description | .location | .category_label\n" +
+        "  notes | scope\n" +
+        "\n" +
+        "RULES:\n" +
+        "1. Match rows by their `id` (the snapshot below lists every row.id + label + overrides). Be precise — use the EXACT id.\n" +
+        "2. Numeric values: send as JSON numbers, NOT strings. INR amounts are plain numbers (1500 not '₹1,500').\n" +
+        "3. For brand/spec swaps, set `rows[<id>].override.brands`. To also change the description text, also set `.description`.\n" +
+        "4. If the rep asks something you can't safely translate to patches (vague, ambiguous, or out of scope), return `{ patches: [], note: '<ask a 1-sentence clarification>' }`.\n" +
+        "5. NEVER invent row ids. NEVER write to paths outside the whitelist. NEVER include _meta, _internal, or fields not listed.\n" +
+        "6. Multi-edit is fine — emit multiple patches in one response.\n" +
+        "7. Each patch MUST include a short `explanation` string the rep will see on the diff card.\n" +
+        "\n" +
+        "CURRENT QUOTE SNAPSHOT (read-only context):\n" +
+        JSON.stringify(snapshot, null, 0);
+
+      const messages = [];
+      for (const h of history) {
+        if (!h || !h.text) continue;
+        if (h.role === 'user')      messages.push({ role: 'user',      content: String(h.text).slice(0, 2000) });
+        if (h.role === 'assistant') messages.push({ role: 'assistant', content: String(h.text).slice(0, 2000) });
+      }
+      messages.push({ role: 'user', content: userText });
+
+      // Call Anthropic Messages API.
+      const llmPayload = {
+        model,
+        max_tokens: 1500,
+        system: systemPrompt,
+        messages,
+      };
+      const llmReqBody = Buffer.from(JSON.stringify(llmPayload));
+      const apiUrlObj = url.parse(baseUrl + '/v1/messages');
+      const isHttps = apiUrlObj.protocol === 'https:';
+      const lib = isHttps ? require('https') : require('http');
+
+      const httpReq = lib.request({
+        method: 'POST',
+        hostname: apiUrlObj.hostname,
+        port: apiUrlObj.port || (isHttps ? 443 : 80),
+        path: apiUrlObj.path,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Length': llmReqBody.length,
+        },
+        timeout: 45000,
+      }, (apiRes) => {
+        let chunks = [];
+        apiRes.on('data', c => chunks.push(c));
+        apiRes.on('end', () => {
+          const raw = Buffer.concat(chunks).toString('utf8');
+          let parsed;
+          try { parsed = JSON.parse(raw); } catch (e) {
+            console.error('[quote-edit] non-JSON from Anthropic:', raw.slice(0, 400));
+            const logRec = { reqId, ts: reqStartedAt, userText, error: 'llm_non_json', raw: raw.slice(0, 800) };
+            try { fs.appendFileSync('/tmp/quote-edit-log.jsonl', JSON.stringify(logRec) + '\n'); } catch (_) {}
+            return send(res, 502, JSON.stringify({ error: 'LLM returned non-JSON', patches: [] }), { 'Content-Type': 'application/json' });
+          }
+          if (apiRes.statusCode !== 200) {
+            console.error('[quote-edit] LLM HTTP', apiRes.statusCode, raw.slice(0, 400));
+            const logRec = { reqId, ts: reqStartedAt, userText, error: 'llm_http_' + apiRes.statusCode, body: parsed };
+            try { fs.appendFileSync('/tmp/quote-edit-log.jsonl', JSON.stringify(logRec) + '\n'); } catch (_) {}
+            return send(res, 502, JSON.stringify({ error: 'LLM error (' + apiRes.statusCode + ')', patches: [], detail: parsed?.error?.message || null }), { 'Content-Type': 'application/json' });
+          }
+          // Extract text from Anthropic Messages response
+          const textPieces = (parsed.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
+          // Strip code fences if Claude wrapped it
+          let jsonStr = textPieces;
+          const fence = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (fence) jsonStr = fence[1].trim();
+          // If response has prose before/after, try to find the JSON object boundary
+          if (!jsonStr.startsWith('{')) {
+            const firstBrace = jsonStr.indexOf('{');
+            const lastBrace = jsonStr.lastIndexOf('}');
+            if (firstBrace >= 0 && lastBrace > firstBrace) jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
+          }
+          let payload;
+          try { payload = JSON.parse(jsonStr); } catch (e) {
+            console.error('[quote-edit] could not parse LLM JSON:', textPieces.slice(0, 400));
+            const logRec = { reqId, ts: reqStartedAt, userText, error: 'parse_fail', llm_text: textPieces.slice(0, 1500) };
+            try { fs.appendFileSync('/tmp/quote-edit-log.jsonl', JSON.stringify(logRec) + '\n'); } catch (_) {}
+            return send(res, 502, JSON.stringify({ error: 'Could not parse LLM JSON', patches: [], note: 'LLM did not return valid JSON.', raw: textPieces.slice(0, 600) }), { 'Content-Type': 'application/json' });
+          }
+          const patches = Array.isArray(payload.patches) ? payload.patches : [];
+          const note    = typeof payload.note === 'string' ? payload.note : undefined;
+          // JSONL log + Firestore log (best effort, fire-and-forget)
+          const logRec = {
+            reqId, ts: reqStartedAt, userText, source: 'llm', model,
+            usage: parsed.usage || null,
+            patches, note,
+            stop_reason: parsed.stop_reason,
+          };
+          try { fs.appendFileSync('/tmp/quote-edit-log.jsonl', JSON.stringify(logRec) + '\n'); } catch (_) {}
+          if (firestore) {
+            firestore.collection('quote_edit_logs').doc(reqId).set(logRec).catch(e => {
+              console.warn('[quote-edit] firestore log fail:', e.message);
+            });
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ patches, note, source: 'llm', reqId }));
+        });
+      });
+      httpReq.on('timeout', () => {
+        console.error('[quote-edit] LLM timeout');
+        httpReq.destroy(new Error('timeout'));
+      });
+      httpReq.on('error', (e) => {
+        console.error('[quote-edit] LLM request error:', e.message);
+        const logRec = { reqId, ts: reqStartedAt, userText, error: 'llm_request_error', detail: e.message };
+        try { fs.appendFileSync('/tmp/quote-edit-log.jsonl', JSON.stringify(logRec) + '\n'); } catch (_) {}
+        if (!res.headersSent) {
+          send(res, 502, JSON.stringify({ error: 'LLM request failed: ' + e.message, patches: [] }), { 'Content-Type': 'application/json' });
+        }
+      });
+      httpReq.write(llmReqBody);
+      httpReq.end();
+    })();
+    return;
+  }
+
+  // ==========================================================================
+  // Phase 8E: POST /api/quote-edit-feedback — log apply/reject outcomes
+  // ==========================================================================
+  // Body: { reqId?, action: 'apply'|'reject'|'apply_fail', patch, explanation?, error?, userText? }
+  // Returns: { ok: true }
+  // Purpose: server-side learning loop log for Phase 9 (mining accepted vs
+  // rejected patches to refine prompts / patch ops over time).
+  if (req.method === 'POST' && pathname === '/api/quote-edit-feedback') {
+    (async () => {
+      let body;
+      try { body = await readJsonBody(req); } catch (e) {
+        return send(res, 400, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+      }
+      if (!body || !body.action) {
+        return send(res, 400, JSON.stringify({ error: 'action required' }), { 'Content-Type': 'application/json' });
+      }
+      const rec = {
+        ts: new Date().toISOString(),
+        kind: 'feedback',
+        reqId: body.reqId || null,
+        action: String(body.action).slice(0, 32),
+        userText: body.userText ? String(body.userText).slice(0, 2000) : null,
+        patch: body.patch || null,
+        explanation: body.explanation ? String(body.explanation).slice(0, 500) : null,
+        error: body.error ? String(body.error).slice(0, 500) : null,
+      };
+      try { fs.appendFileSync('/tmp/quote-edit-log.jsonl', JSON.stringify(rec) + '\n'); } catch (_) {}
+      if (firestore) {
+        firestore.collection('quote_edit_logs').add(rec).catch(e => {
+          console.warn('[quote-edit-feedback] firestore log fail:', e.message);
+        });
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true }));
+    })();
+    return;
+  }
+
+
   // GET /  ->  index.html
   if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
     return serveStatic(req, res, '/app/index.html');

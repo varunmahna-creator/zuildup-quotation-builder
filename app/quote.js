@@ -5328,10 +5328,12 @@ function renderNotesPage(state) {
         applyPatchToState(pp.patch);
         applied++;
         chat.log.push({ ts: new Date().toISOString(), action: 'apply', patch: pp.patch, explanation: pp.explanation });
+        postFeedback('apply', pp);
       } catch (e) {
         failed++;
         chat.log.push({ ts: new Date().toISOString(), action: 'apply_fail', patch: pp.patch, error: e.message });
         console.warn('[ai-edit] patch apply failed:', e.message, pp.patch);
+        postFeedback('apply_fail', pp, { error: e.message });
       }
     }
     pendingPatches = pendingPatches.filter((_, i) => !indices.includes(i));
@@ -5353,6 +5355,7 @@ function renderNotesPage(state) {
       const pp = pendingPatches[i];
       if (!pp) continue;
       chat.log.push({ ts: new Date().toISOString(), action: 'reject', patch: pp.patch });
+      postFeedback('reject', pp);
     }
     pendingPatches = pendingPatches.filter((_, i) => !indices.includes(i));
     persistChatState();
@@ -5405,19 +5408,43 @@ function renderNotesPage(state) {
 
   async function callBackendOrLocal(userText) {
     try {
+      const chat = getChatState();
+      const history = (chat.history || []).slice(-6).filter(h => h.role === 'user' || h.role === 'assistant');
       const r = await fetch('/api/quote-edit', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userText, state }),
+        body: JSON.stringify({ userText, state, history }),
       });
       if (r.ok) {
         const j = await r.json();
-        return { patches: j.patches || [], note: j.note, source: 'llm' };
+        return { patches: j.patches || [], note: j.note, source: 'llm', reqId: j.reqId };
       }
-    } catch (_) { /* fall through */ }
+      // 503 = backend not configured. Don't spam — fall back silently.
+      if (r.status !== 503) {
+        try { const j = await r.json(); console.warn('[ai-edit] backend', r.status, j); } catch(_){}
+      }
+    } catch (e) { console.warn('[ai-edit] backend unreachable, falling back local:', e.message); }
     const res = localIntentParse(userText);
     return { patches: res.patches || [], note: res.note, source: 'local' };
+  }
+
+  async function postFeedback(action, pp, extra) {
+    try {
+      await fetch('/api/quote-edit-feedback', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reqId: pp.reqId || null,
+          action,
+          patch: pp.patch,
+          explanation: pp.explanation || null,
+          userText: pp.userText || null,
+          ...(extra || {}),
+        }),
+      });
+    } catch (_) {}
   }
 
   async function sendMessage() {
@@ -5441,9 +5468,10 @@ function renderNotesPage(state) {
       for (const p of res.patches) {
         try {
           validatePatch(p);
-          pendingPatches.push({ patch: p, explanation: p.explanation || '' });
+          pendingPatches.push({ patch: p, explanation: p.explanation || '', reqId: res.reqId || null, userText: text });
         } catch (e) {
           chat.history.push({ role: 'assistant', text: '⚠️ Skipping invalid patch: ' + e.message });
+          postFeedback('validation_fail', { patch: p, explanation: p.explanation, reqId: res.reqId, userText: text }, { error: e.message });
         }
       }
       chat.history.push({ role: 'assistant', text: 'Proposed ' + res.patches.length + ' change' + (res.patches.length===1?'':'s') + ' (' + res.source + '). Review and Apply/Reject below.' });
