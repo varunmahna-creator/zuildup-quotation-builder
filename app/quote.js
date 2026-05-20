@@ -1586,6 +1586,14 @@ async function bootForm() {
     }
   } catch (e) { console.warn('[QuoteStorage] boot sync failed', e); }
   let state = loadState();
+  // Phase 8 fix (2026-05-20): expose state + helpers to Phase 8 IIFEs
+  // (initWizard, initAIChat) which live outside bootForm and otherwise
+  // can't see these bindings. `toast` / `openModal` / `closeModal` are
+  // hoisted FunctionDeclarations so they're already in scope at this point.
+  window.__qbState = state;
+  window.__qbToast = toast;
+  window.__qbOpenModal = openModal;
+  window.__qbCloseModal = closeModal;
 
   // P3 #2: ensure a server-assigned quote id (ZUI-YYYY-NNNN)
   if (!state.quoteId || !state.quoteId.startsWith('ZUI-')) {
@@ -5003,14 +5011,14 @@ function renderNotesPage(state) {
   function validateStep(n) {
     if (n === 1) {
       const name = document.getElementById('wiz-name').value.trim();
-      if (!name) { toast('Customer name is required', 'warn'); return false; }
+      if (!name) { window.__qbToast('Customer name is required', 'warn'); return false; }
       return true;
     }
     if (n === 2) {
       const plot = parseFloat(document.getElementById('wiz-plot-sqyd').value);
-      if (!plot || plot <= 0) { toast('Plot size (sq.yd) is required', 'warn'); return false; }
+      if (!plot || plot <= 0) { window.__qbToast('Plot size (sq.yd) is required', 'warn'); return false; }
       const breadth = parseFloat(document.getElementById('wiz-breadth').value);
-      if (!breadth || breadth <= 0) { toast('Front (breadth, ft) is required', 'warn'); return false; }
+      if (!breadth || breadth <= 0) { window.__qbToast('Front (breadth, ft) is required', 'warn'); return false; }
       return true;
     }
     return true;
@@ -5021,7 +5029,7 @@ function renderNotesPage(state) {
     loadTieredCatalog().then(cat => {
       // Build the new state object that the live calc engine will consume.
       // We pre-load existing state then surgically overwrite customer + build + pricing.
-      const newState = JSON.parse(JSON.stringify(state)); // deep clone current
+      const newState = JSON.parse(JSON.stringify(window.__qbState)); // deep clone current
       newState.customer = {
         salutation: v.salutation,
         name: v.name,
@@ -5071,13 +5079,13 @@ function renderNotesPage(state) {
       try {
         localStorage.setItem(STORE_KEY, JSON.stringify(newState));
       } catch (e) {
-        toast('Wizard apply failed: ' + e.message, 'err');
+        window.__qbToast('Wizard apply failed: ' + e.message, 'err');
         return;
       }
-      toast('Quote generated from ' + v.tier.replace('_',' ') + ' template');
+      window.__qbToast('Quote generated from ' + v.tier.replace('_',' ') + ' template');
       setTimeout(() => location.reload(), 400);
     }).catch(err => {
-      toast('Wizard apply failed (catalog): ' + (err.message || err), 'err');
+      window.__qbToast('Wizard apply failed (catalog): ' + (err.message || err), 'err');
     });
   }
 
@@ -5086,23 +5094,23 @@ function renderNotesPage(state) {
     // Pre-warm catalog fetch
     loadTieredCatalog().catch(()=>{});
     // Pre-fill from current state if any
-    document.getElementById('wiz-salutation').value = state.customer.salutation || 'Mr.';
-    document.getElementById('wiz-name').value       = state.customer.name || '';
-    document.getElementById('wiz-address').value    = state.customer.address || '';
-    document.getElementById('wiz-plot-sqyd').value  = state.build.plotSqYards || '';
-    document.getElementById('wiz-breadth').value    = state.build.breadth || '';
-    document.getElementById('wiz-coverage').value   = state.build.coverage || 75;
-    document.getElementById('wiz-build-type').value = state.build.buildType || 'stilt';
-    document.getElementById('wiz-floors').value     = state.build.floors || 4;
-    document.getElementById('wiz-has-lift').checked     = !!state.build.hasLift;
-    document.getElementById('wiz-has-basement').checked = !!state.build.hasBasement;
-    document.getElementById('wiz-has-watertank').checked= state.build.hasWaterTank !== false;
+    document.getElementById('wiz-salutation').value = window.__qbState.customer.salutation || 'Mr.';
+    document.getElementById('wiz-name').value       = window.__qbState.customer.name || '';
+    document.getElementById('wiz-address').value    = window.__qbState.customer.address || '';
+    document.getElementById('wiz-plot-sqyd').value  = window.__qbState.build.plotSqYards || '';
+    document.getElementById('wiz-breadth').value    = window.__qbState.build.breadth || '';
+    document.getElementById('wiz-coverage').value   = window.__qbState.build.coverage || 75;
+    document.getElementById('wiz-build-type').value = window.__qbState.build.buildType || 'stilt';
+    document.getElementById('wiz-floors').value     = window.__qbState.build.floors || 4;
+    document.getElementById('wiz-has-lift').checked     = !!window.__qbState.build.hasLift;
+    document.getElementById('wiz-has-basement').checked = !!window.__qbState.build.hasBasement;
+    document.getElementById('wiz-has-watertank').checked= window.__qbState.build.hasWaterTank !== false;
     document.getElementById('wiz-custom-A').value = '';
     document.getElementById('wiz-custom-B').value = '';
     document.getElementById('wiz-custom-C').value = '';
     document.getElementById('wiz-custom-D').value = '';
     showStep(1);
-    openModal(modal);
+    window.__qbOpenModal(modal);
     setTimeout(() => { try { document.getElementById('wiz-name').focus(); } catch(_){} }, 50);
   };
 
@@ -5112,11 +5120,11 @@ function renderNotesPage(state) {
     showStep(Math.min(currentStep + 1, 3));
   };
   document.getElementById('wiz-prev').onclick = () => showStep(Math.max(currentStep - 1, 1));
-  document.getElementById('wiz-close').onclick = () => closeModal(modal);
+  document.getElementById('wiz-close').onclick = () => window.__qbCloseModal(modal);
   document.getElementById('wiz-apply').onclick = () => {
     if (!validateStep(1) || !validateStep(2)) { showStep(1); return; }
     if (!confirm('Generate quote from "' + getWizValues().tier.replace('_',' ') + '" template? Current quote will be replaced.')) return;
-    closeModal(modal);
+    window.__qbCloseModal(modal);
     applyWizard();
   };
   // Tab clicks jump (with validation)
@@ -5167,14 +5175,14 @@ function renderNotesPage(state) {
   if (!openBtn || !drawer) return;
 
   function getChatState() {
-    if (!state._aiChat) state._aiChat = { history: [], log: [] };
-    return state._aiChat;
+    if (!window.__qbState._aiChat) window.__qbState._aiChat = { history: [], log: [] };
+    return window.__qbState._aiChat;
   }
   function persistChatState() {
     try {
       const aid = QuoteStorage.activeId();
-      if (aid) localStorage.setItem('zuildup.quotes.' + aid, JSON.stringify(state));
-      else localStorage.setItem(STORE_KEY, JSON.stringify(state));
+      if (aid) localStorage.setItem('zuildup.quotes.' + aid, JSON.stringify(window.__qbState));
+      else localStorage.setItem(STORE_KEY, JSON.stringify(window.__qbState));
     } catch (_) {}
   }
 
@@ -5237,25 +5245,25 @@ function renderNotesPage(state) {
       const mRow = p.path.match(/^rows\[([A-Za-z0-9_.-]+)\]\.override\.([a-zA-Z_]+)$/);
       if (mRow) {
         const rowId = mRow[1], field = mRow[2];
-        const row = state.rows.find(r => r.id === rowId);
+        const row = window.__qbState.rows.find(r => r.id === rowId);
         if (!row) throw new Error('row not found: ' + rowId);
         if (!row.override) row.override = {};
         row.override[field] = p.value;
         return;
       }
       const parts = p.path.split('.');
-      let obj = state;
+      let obj = window.__qbState;
       for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
       obj[parts[parts.length - 1]] = p.value;
       return;
     }
     if (p.op === 'add_row') {
-      state.rows.push({ id: p.item_id, override: {}, _isFresh: true });
+      window.__qbState.rows.push({ id: p.item_id, override: {}, _isFresh: true });
       return;
     }
     if (p.op === 'delete_row') {
-      const idx = state.rows.findIndex(r => r.id === p.row_id);
-      if (idx >= 0) state.rows.splice(idx, 1);
+      const idx = window.__qbState.rows.findIndex(r => r.id === p.row_id);
+      if (idx >= 0) window.__qbState.rows.splice(idx, 1);
       return;
     }
   }
@@ -5265,11 +5273,11 @@ function renderNotesPage(state) {
       let cur;
       const mRow = p.path.match(/^rows\[([A-Za-z0-9_.-]+)\]\.override\.([a-zA-Z_]+)$/);
       if (mRow) {
-        const row = state.rows.find(r => r.id === mRow[1]);
+        const row = window.__qbState.rows.find(r => r.id === mRow[1]);
         cur = row && row.override ? row.override[mRow[2]] : '(catalog default)';
       } else {
         const parts = p.path.split('.');
-        let obj = state;
+        let obj = window.__qbState;
         for (const x of parts) { obj = obj && obj[x]; }
         cur = obj;
       }
@@ -5342,10 +5350,10 @@ function renderNotesPage(state) {
     if (applied) {
       chat.history.push({ role: 'system', text: '✓ Applied ' + applied + ' change' + (applied===1?'':'s') + (failed?' ('+failed+' failed)':'') + '. Reloading…' });
       renderHistory();
-      toast('Applied ' + applied + ' change' + (applied===1?'':'s'));
+      window.__qbToast('Applied ' + applied + ' change' + (applied===1?'':'s'));
       setTimeout(() => location.reload(), 600);
     } else if (failed) {
-      toast(failed + ' patch(es) failed validation', 'err');
+      window.__qbToast(failed + ' patch(es) failed validation', 'err');
     }
   }
 
@@ -5391,7 +5399,7 @@ function renderNotesPage(state) {
       const target = m[1].trim().toLowerCase().replace(/^(the|a)\s+/,'');
       const newBrand = m[2].trim().replace(/[."]+$/, '');
       const targetTokens = target.split(/\s+/).filter(x => x.length > 2);
-      const matches = state.rows.filter(r => {
+      const matches = window.__qbState.rows.filter(r => {
         const ov = r.override || {};
         const lab = (ov.label || r.id).toLowerCase();
         return targetTokens.every(tok => lab.indexOf(tok) >= 0 || r.id.toLowerCase().indexOf(tok) >= 0);
@@ -5414,7 +5422,7 @@ function renderNotesPage(state) {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userText, state, history }),
+        body: JSON.stringify({ userText, state: window.__qbState, history }),
       });
       if (r.ok) {
         const j = await r.json();
