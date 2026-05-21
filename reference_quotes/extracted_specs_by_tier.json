@@ -1,0 +1,1028 @@
+{
+  "basic": {
+    "Architectural Layout": {
+      "rate_text": "\u2014",
+      "description": "2D Architectural DesignModern 3D Elevation\nStructural Design\nMEP Drawings\nAll construction work to be carried out as per\napproved plan\nNo. of 2D floor plan iteration is not a constrain. The\nnumber of changes will be done till the floor plan is\nfinalized."
+    },
+    "Structure": {
+      "rate_text": "1 6  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION\nColumns will be covered with jute bag during curing\nto retain water"
+    },
+    "Compliance": {
+      "rate_text": "\u2014",
+      "description": "Structure shall be designed as per IS 456, IS 1893,\nand IS 13920 for seismic Zone IV, with ductile\ndetailing for safety."
+    },
+    "Steel": {
+      "rate_text": "\u2014",
+      "description": "Rathi Fe500/ Fe550\n4.5Kg per sqft\nAny variation above and below 4.5kg is charged and\nrefunded on pro rata basis."
+    },
+    "Cement": {
+      "rate_text": "\u2014",
+      "description": "Shree/Dalmia/Ambuja\nSame brand shall be used for all RCC, brickwork, and\nplastering works."
+    },
+    "Bricks": {
+      "rate_text": "\u2014",
+      "description": "Baghpat (U.P)\nA Class Red Brick\nExternal walls shall be constructed using 9-inch (4.5\ninch in case of common wall) thick brickwork and\ninternal partition walls shall be 4.5-inch thick"
+    },
+    "Concrete": {
+      "rate_text": "\u2014",
+      "description": "M25\nRCC work in Slab, Beam, Column, and Foundation to\nbe carried out.\nM25 ratio is 1:1:2 (Cement : Sand : Coarse\nAggregates).\nProper use of Vibrators and Cover Blocks in Slabs,\nbeams, columns and foundation."
+    },
+    "Plinth, Floor and Stilt Level": {
+      "rate_text": "\u2014",
+      "description": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft on first\nand second floors.\nStilt height as per the government norms"
+    },
+    "Aggregates (Rodi)": {
+      "rate_text": "\u2014",
+      "description": "20mm & 10mm\nMost superior bluish color aggregates to be used in\nall concrete work.\nPCC in Foundation / Stilt and"
+    },
+    "Terrace": {
+      "rate_text": "\u2014",
+      "description": "100mm (4 inch) thick PCC in ratio of 1:3:6\n(Cement:Sand:Aggregate)\nPCC to be done below the foundation jal, in stilt area\nbelow the granite work and also in terrace below the\nterrace tile flooring"
+    },
+    "Plaster Work": {
+      "rate_text": "\u2014",
+      "description": "Interior Plaster : 8-10mm thick with ratio of 1:2:3\n(Cement:Coarse Sand:Fine Sand). Single coat plaster\nof 8-10mm thick would be provided.\nExterior Plaster : 12-15mm thick with ratio of 1:2:2\n(Cement:Coarse sand:Fine Sand). Double coat\nplaster totaling to 12-15 mm would be provided for\ndurability and strength"
+    },
+    "Compound Wall": {
+      "rate_text": "\u2014",
+      "description": "4.5 Inch thick compound wall will be provided with 6\nft height from the plinth level on open areas perimeter"
+    },
+    "Parapet Wall": {
+      "rate_text": "\u2014",
+      "description": "9 inch thick wall with 3.3 ft will be provided on terrace\non entire terrace perimeter."
+    },
+    "Curing": {
+      "rate_text": "\u2014",
+      "description": "Sika Antisol\nAll RCC and masonry works shall be properly cured\nusing continuous water curing methods to maintain\nadequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14\ndays for brickwork and plaster twice a day"
+    },
+    "Waterproofing": {
+      "rate_text": "\u2014",
+      "description": "Sika/Dr. Fixit LW+ (pidilite)\nConcrete used anywhere is infused with\nwaterproofing crystalline compound\nWaterproofing coat is done in wet areas like balcony,\nbathrooms, underground sump\nGola is created on terrace on joint of slab and parapet\nwall.\nWaterproofing compound is added to external plaster."
+    },
+    "Anti-Termite Treatment": {
+      "rate_text": "\u2014",
+      "description": "Bayer / Terminator (pidilite)\nDouble Layer Protection System (DLPS)\nFIRST STEP : Termite soil treatment begins\npreconstruction for complete building. To be done at\nplinth level with Bayer & Terminator (Pidilite)\nantitermite chemical.\nSECOND STEP : Systematic piping network for\nuniform distribution across the area. Designed for\nefficiency, durability, and leak-proof performance.\nTEAM AT ZUILD USES DLPS, SO AS TO ENSURE\nMAXIMUM PROTECTION TOWARDS TERMITE."
+    },
+    "Misc": {
+      "rate_text": "\u2014",
+      "description": "Provision for water purifier, dishwasher, and other\nkitchen appliances shall be provided, including\nnecessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine\nin the utility area or at a location as per the\narchitectural drawings."
+    },
+    "Assumptions": {
+      "rate_text": "\u2014",
+      "description": "Site level should not be less than 1 ft below the road\nlevel.\nFoundation is considered combination of isolated and\ncombined footing 5 ft-6ft below the natural ground\nlevel"
+    },
+    "Sanitary Ware and CP Fitting": {
+      "rate_text": "\u20b925,000 per Bathroom",
+      "description": "Hindware Italian Collection\nPremium quality sanitary ware including wall-\nmounted EWC, wash basin, shower head, and\ndiverter from Hindware (Italian Collection) will be\nprovided upto the specified value."
+    },
+    "Bathroom Accessories": {
+      "rate_text": "\u20b93,000 per bathroom",
+      "description": "Premium accessories including mirror, towel rod/ring,\nsoap dish, etc., up to the specified value."
+    },
+    "Bathroom Geyser": {
+      "rate_text": "\u20b95,000 per bathroom",
+      "description": "Crompton/Bajaj\nOne geyser per bathroom from reputed brands like\nCrompton / Bajaj, within the defined budget."
+    },
+    "Exhaust Fan": {
+      "rate_text": "\u20b91,250 per kitchen",
+      "description": "Havells\nProvision and installation of a wall-mounted exhaust\nfan for proper ventilation."
+    },
+    "Bathroom Flooring": {
+      "rate_text": "\u20b950 per sq ft",
+      "description": "Anti-skid floor tiles (sizes: 1\u2019\u00d71\u2019 or 2\u2019\u00d72\u2019) to ensure\nsafety and durability."
+    },
+    "Bathroom Wall Tile": {
+      "rate_text": "\u20b950 per sq ft",
+      "description": "Wall tiling up to ceiling height (sizes: 1\u2019\u00d71.5\u2019 or\n2\u2019\u00d72\u2019)providing a clean and moisture-resistant finish."
+    },
+    "CPVC Fittings": {
+      "rate_text": "\u2014",
+      "description": "Astral\nComplete plumbing system using high-quality CPVC\npipes and fittings from trusted brands to ensure\nlongevity and leak-proof performance."
+    },
+    "Kitchen": {
+      "rate_text": "1 0  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION\nKitchen Wall Cladding Visible"
+    },
+    "Areas": {
+      "rate_text": "\u20b950 per sq ft",
+      "description": "Ceramic / Vitrified wall tiles shall be provided in all\nvisible areas up to a height of 5 ft above the kitchen\ncountertop.\nKitchen Wall Cladding (Non"
+    },
+    "Visible Areas)": {
+      "rate_text": "\u20b910-15 per sq ft",
+      "description": "Commercial / Waste tiles shall be provided behind\nkitchen cabinets (non-visible areas) to protect the\ncabinets from moisture."
+    },
+    "Kitchen Counter Granite": {
+      "rate_text": "\u20b9120 per sq ft",
+      "description": "Polished granite (16\u201318 mm thick) shall be provided\nfor the kitchen counter with double-layered nosing,\nmounted on a 4-inch RCC slab."
+    },
+    "Sink and Faucet": {
+      "rate_text": "\u20b98,000 per kitchen",
+      "description": "Double-bowl stainless steel sink with faucet shall be\nprovided, ISI Brand SS304 Grade double bowl sink to\nbe provided."
+    },
+    "Kitchen Geyser": {
+      "rate_text": "\u20b92,500 per kitchen",
+      "description": "Crompton/Bajaj\nOne geyser per bathroom from reputed ISI mark\nbrands like Crompton / Bajaj, within the defined\nbudget."
+    },
+    "Modular Kitchen": {
+      "rate_text": "\u20b91,00,000 per kitchen",
+      "description": "Modular kitchen made of Plyboard with laminates,\nincluding soft close channels from Ozone/Godrej,\nwith well-designed drawers and corner solutions."
+    },
+    "Hob and Chimney": {
+      "rate_text": "\u20b920,000 per kitchen",
+      "description": "Faber/Kaff\nBuilt-in hob and chimney from Faber / KAFF shall be\nprovided within the specified budget range."
+    },
+    "Doors, Windows & Wardrobe": {
+      "rate_text": "1 0  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION"
+    },
+    "Main Entry Door": {
+      "rate_text": "\u20b920,000 per door",
+      "description": "32 mm thick premium flush door shutter with\npolished/laminated finish, fixed on a seasoned\nhardwood frame (marandi/sal wood), complete with\nSS 304 hinges, SS tower bolts, door stopper, handle,\nand all necessary fittings and hardware."
+    },
+    "Main Door Lock": {
+      "rate_text": "\u20b93,000 per door",
+      "description": "Godrej / Yale\nPremium quality digital door locks from Godrej Yale\nmake shall be provided, suitable for the main door\nensuring durability, safety, and smooth operation."
+    },
+    "Internal and Bathroom Doors": {
+      "rate_text": "\u20b912,000 per door",
+      "description": "Flush door shutters with laminate/paint finish,\ninstalled on hardwood frames, complete with SS 304\nhinges, SS tower bolts (where applicable), door\nstopper, handle, and all required fittings and\nhardware.\nInternal and Bathroom Door"
+    },
+    "Lock": {
+      "rate_text": "\u20b91,500 per door",
+      "description": "Godrej / Ozone / Yale\nPremium quality door locks from Godrej / Ozone /\nYale or equivalent make shall be provided, suitable for\ninternal and bathroom doors, ensuring durability,\nsafety, and smooth operation.\nTerrace and Stilt/Staircase Entry"
+    },
+    "Door": {
+      "rate_text": "\u20b96,000 per door",
+      "description": "Mild steel (MS) door with primer and paint finish,\nincluding necessary fittings and locking arrangement."
+    },
+    "Sliding Door/ Windows": {
+      "rate_text": "\u20b9600 per sq ft",
+      "description": "Prominence \u00b7 EITI\nUPVC sliding doors/windows with 3-track system (2\nglass panels and 1 mosquito mesh track) from\nProminence / EITI or equivalent make, complete with\nall necessary fittings and hardware."
+    },
+    "Door Hinges & Stopper": {
+      "rate_text": "\u2014",
+      "description": "4 Stainless Steel 304 hinges for each door"
+    },
+    "Door Height": {
+      "rate_text": "\u2014",
+      "description": "7'6\" to 8' as per approved plan"
+    },
+    "Tower Bolt": {
+      "rate_text": "\u2014",
+      "description": "18-24 inch, Stainless Steel Finish"
+    },
+    "Modular/ WalkIn Wardrobe": {
+      "rate_text": "\u20b9800 per sqft",
+      "description": "Laminated finished wardrobe / walk-in wardrobe\nconstructed using Ply board for carcass and shutters.\nAll panels shall be edge-banded with PVC edge band\nfor durability and moisture resistance.\nExternal finish shall be in laminate finish only. Internal\nsurfaces shall be finished in laminate / pre-laminated\nboards. Hardware shall include soft-close hinges and\ntelescopic drawer channels from reputed brands\nsuch as Godrej/Ozone or equivalent. Handles shall be\nstandard SS / aluminium.\nThe wardrobe shall include basic internal layout\ncomprising shelves, hanging rods, and 2 drawer\nunits, designed for functional storage.\nLofts, fluted glass, acrylic/PU finish, premium\naccessories, and specialized fittings shall not be part\nof this scope."
+    },
+    "Floor Flooring": {
+      "rate_text": "\u20b950 per sq ft",
+      "description": "Vitrified tiles in living, dining, kitchen and all\nbedrooms, with polishing"
+    },
+    "Balcony Flooring": {
+      "rate_text": "\u20b950 per sq ft",
+      "description": "Anti-skid tiles (2\u2019\u00d72\u2019) for balconies, with cementitious\ngrouting."
+    },
+    "Staircase Flooring": {
+      "rate_text": "\u20b970 per sq ft",
+      "description": "18mm Granite shall be provided on treads and risers,\nwith proper edge nosing and chamfering Height of\nthe raiser would be confirmable, will be planned at\nthe floor plan stage."
+    },
+    "Terrace Flooring": {
+      "rate_text": "\u20b940 per sq ft",
+      "description": "Anti-skid cool roof top tiles (2\u2019\u00d72\u2019) for terrace, with\ncementitious grouting."
+    },
+    "Stilt Flooring": {
+      "rate_text": "\u20b970 per sq ft",
+      "description": "18mm Granite on treads and risers, with proper\nnosing and chamfering"
+    },
+    "Skirting": {
+      "rate_text": "\u2014",
+      "description": "100 mm (4\u201d) high skirting shall be provided along all\nwall edges in respective areas, matching the flooring\nmaterial (vitrified tiles / granite). Skirting shall also be\nprovided along staircase walls using matching\ngranite, with proper edge finishing"
+    },
+    "Electrical Work": {
+      "rate_text": "1 3  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION"
+    },
+    "Electrical Wire": {
+      "rate_text": "\u2014",
+      "description": "FR grade Finolex/Polycab/Havells Wires\nFR grade copper wiring shall be provided with\nappropriate sizing for light, power, and AC circuits to\nensure safe load handling."
+    },
+    "Electrical Wire Specification": {
+      "rate_text": "\u2014",
+      "description": "10 sq. mm for main panels, 4 sq. mm for power and\nAC circuits, and 1.5 sq. mm for lighting circuits,\nensuring safe load distribution without overloading."
+    },
+    "Conduit Pipes & Boxes": {
+      "rate_text": "\u2014",
+      "description": "Astral \u00b7 AKG\nISI marked PVC conduits shall be provided, with\nheavy-duty conduits in slabs and medium-duty\nconduits in walls, with separate routing for light and\npower circuits."
+    },
+    "Switch & Sockets": {
+      "rate_text": "\u2014",
+      "description": "Anchor/Havells\nModular switches and sockets in white finish from\nAnchor/Havells equivalent make shall be provided.\nNo. of switches and sockets will not be a constrain\nCeiling Fans (Second and Third"
+    },
+    "Floor)": {
+      "rate_text": "\u20b91500 per fan",
+      "description": "Ceiling fans from Havells / Crompton or equivalent\nmake shall be provided."
+    },
+    "Split AC Provision": {
+      "rate_text": "\u2014",
+      "description": "One provision each in all bedrooms, drawing room,\nand living/kitchen area. Copper piping (average up to\n10 m per AC) along with necessary electrical wiring\nshall be provided. Outdoor units shall be placed on\nthe respective floor."
+    },
+    "Downlighters": {
+      "rate_text": "\u2014",
+      "description": "Philips \u00b7 Osram\nDownlighters from Philips / Osram or equivalent make\nshall be provided."
+    },
+    "Cove Strip Lights": {
+      "rate_text": "\u2014",
+      "description": "Philips \u00b7 Osram\nLED strip lights from Philips / Osram or equivalent\nmake shall be provided in cove areas"
+    },
+    "UPS Wiring": {
+      "rate_text": "\u2014",
+      "description": "Provision for UPS wiring shall be provided for each\nfloor."
+    },
+    "EV Charging Point": {
+      "rate_text": "\u2014",
+      "description": "Provision for one electric vehicle charging point shall\nbe provided per floor."
+    },
+    "Solar Electrical Provision": {
+      "rate_text": "\u2014",
+      "description": "Provision for solar electrical system shall be included."
+    },
+    "MCB/ELCB": {
+      "rate_text": "\u2014",
+      "description": "Havells\nMCB and ELCB protection shall be provided for each\nfloor."
+    },
+    "Earthing": {
+      "rate_text": "\u2014",
+      "description": "Earthing shall be done using copper strip / Chemical\nearthing for effective grounding and safety."
+    },
+    "Underground Water Tank": {
+      "rate_text": "2000 liters per floor",
+      "description": "2000 liters per floor\nBrickwork underground sump shall be constructed for\neach floor as a separate unit, finished internally with\ncommercial tiles. Waterproofing shall be carried out\nusing approved systems from Dr. Fixit / Sika or\nequivalent.\nOverhead Water Tank\n1000 liters per floor\n1000 liters per floor\nTriple-layer overhead water tanks of 1,000 litres\ncapacity shall be provided for each floor, Tanks shall\nbe from Astral or equivalent make."
+    },
+    "Water Motor": {
+      "rate_text": "\u2014",
+      "description": "2 Crompton Greaves motor for each floor\n1 HP water pump shall be provided for each floor,\nconnecting individual underground sump to\ncorresponding overhead tank. Pumps shall be from\nCrompton Greaves or equivalent make."
+    },
+    "Rainwater Harvesting": {
+      "rate_text": "\u2014",
+      "description": "Rainwater harvesting pit shall be constructed as per\napplicable government norms"
+    },
+    "Discharge PVC Pipe": {
+      "rate_text": "\u2014",
+      "description": "All necessary PVC discharge pipes and connections\nshall be provided for proper water flow, drainage, and\nsystem integration. High-grade PVC pipes of 4-inch\nor 6-inch diameter, as per site conditions and design\nrequirements, shall be used.\nCeiling & Elevation"
+    },
+    "2  I T E M S": {
+      "rate_text": "ITEM",
+      "description": "RATE\nDESCRIPTION"
+    },
+    "False Ceiling": {
+      "rate_text": "\u2014",
+      "description": "POP cove false ceiling shall be provided in living,\ndining, and all bedrooms using Sakarni POP or\nequivalent make, including base level ceiling. Any\nadditional design elements or premium features shall\nbe as per design."
+    },
+    "Elevation": {
+      "rate_text": "\u2014",
+      "description": "Front side no HPL panels, basic esthetical look is\ntaken.\nBack side of the building shall be finished with chapai\ndana and roller finish.\nSafety & Security"
+    },
+    "1  I T E M S": {
+      "rate_text": "ITEM",
+      "description": "RATE\nDESCRIPTION"
+    },
+    "CCTV Camera": {
+      "rate_text": "\u20b940,000 lumpsum",
+      "description": "CCTV camera system with cameras worth \u20b940,000\nand basic wiring as per layout."
+    },
+    "Internal Wall Paint": {
+      "rate_text": "\u2014",
+      "description": "Asian Paints (Tractor Shyne Emulsion)\n2 coats will be provided over 1 layer of primer and 2\nlayer of putty"
+    },
+    "Exterior Wall Paint": {
+      "rate_text": "\u2014",
+      "description": "Berger (Weathercoat Glow)\nWeathercoat glow Berger will be provided on the\nexterior side."
+    },
+    "Putty": {
+      "rate_text": "\u2014",
+      "description": "JK Birla Putty\n2 coats of putty to be provided"
+    },
+    "Polish": {
+      "rate_text": "\u2014",
+      "description": "Melamine Polish in Matte/Glossy Finish as per\nowner's choice\nGeneral Aspects"
+    },
+    "6  I T E M S": {
+      "rate_text": "ITEM",
+      "description": "RATE\nDESCRIPTION"
+    },
+    "Main Gate": {
+      "rate_text": "\u2014",
+      "description": "Bifold MS Main Gate at front as per design"
+    },
+    "Staircase & Balcony Railing": {
+      "rate_text": "\u2014",
+      "description": "Staircase Railing - MS Steel designer railing\nBalcony Railing as per design MS CNC cut"
+    },
+    "Vibrators": {
+      "rate_text": "\u2014",
+      "description": "Used to consolidate layers in footings, columns,\nbeams & roof slabs"
+    },
+    "Brickwork Mortar": {
+      "rate_text": "\u2014",
+      "description": "9\" brickwork not leaner than 1:6; 4\u00bd\" brickwork not\nleaner than 1:4"
+    },
+    "Soil Test": {
+      "rate_text": "\u2014",
+      "description": "Soil Test to be done before construction. Costing is\nincluded."
+    },
+    "Lift Machine": {
+      "rate_text": "\u20b910,00.000 taken as wallet",
+      "description": "Includes all civil, electrical, paint, polish, exhaust, and\nearthing work. Entry on all floors.\nS P E C I F I CAT I O N S"
+    }
+  },
+  "mid_luxury": {
+    "Architectural Layout": {
+      "rate_text": "\u2014",
+      "description": "2D Architectural DesignModern 3D Elevation\nStructural Design\nMEP Drawings\nAll construction work to be carried out as per\napproved plan\nNo. of 2D floor plan iteration is not a constrain. The\nnumber of changes will be done till the floor plan is\nfinalized."
+    },
+    "Structure": {
+      "rate_text": "1 6  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION\nColumns will be covered with jute bag during curing\nto retain water"
+    },
+    "Compliance": {
+      "rate_text": "\u2014",
+      "description": "Structure shall be designed as per IS 456, IS 1893,\nand IS 13920 for seismic Zone IV, with ductile\ndetailing for safety."
+    },
+    "Steel": {
+      "rate_text": "\u2014",
+      "description": "Rathi Fe500/Fe550\n4.5Kg per sqft\nAny variation above and below 4.5kg is charged and\nrefunded on pro rata basis."
+    },
+    "Cement": {
+      "rate_text": "\u2014",
+      "description": "Ultratech / ACC\nSame brand shall be used for all RCC, brickwork, and\nplastering works."
+    },
+    "Bricks": {
+      "rate_text": "\u2014",
+      "description": "Baghpat (U.P)\nA Class Red Brick\nExternal walls shall be constructed using 9-inch (4.5\ninch in case of common wall) thick brickwork and\ninternal partition walls shall be 4.5-inch thick"
+    },
+    "Concrete": {
+      "rate_text": "\u2014",
+      "description": "M25\nRCC work in Slab, Beam, Column, and Foundation to\nbe carried out.\nM25 ratio is 1:1:2 (Cement : Sand : Coarse\nAggregates).\nProper use of Vibrators and Cover Blocks in Slabs,\nbeams, columns and foundation."
+    },
+    "Plinth, Floor and Stilt Level": {
+      "rate_text": "\u2014",
+      "description": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10 ft on first\nand second floors.\nStilt height as per the government norms"
+    },
+    "Aggregates (Rodi)": {
+      "rate_text": "\u2014",
+      "description": "20mm & 10mm\nMost superior bluish color aggregates to be used in\nall concrete work.\nPCC in Foundation / Stilt and"
+    },
+    "Terrace": {
+      "rate_text": "\u2014",
+      "description": "100mm (4 inch) thick PCC in ratio of 1:3:6\n(Cement:Sand:Aggregate)\nPCC to be done below the foundation jal, in stilt area\nbelow the granite work and also in terrace below the\nterrace tile flooring"
+    },
+    "Plaster Work": {
+      "rate_text": "\u2014",
+      "description": "Interior Plaster : 8-10mm thick with ratio of 1:2:3\n(Cement:Coarse Sand:Fine Sand). Single coat plaster\nof 8-10mm thick would be provided.\nExterior Plaster : 12-15mm thick with ratio of 1:2:2\n(Cement:Coarse sand:Fine Sand). Double coat\nplaster totaling to 12-15 mm would be provided for\ndurability and strength"
+    },
+    "Compound Wall": {
+      "rate_text": "\u2014",
+      "description": "4.5 Inch thick compound wall will be provided with 6\nft height from the plinth level on open areas perimeter"
+    },
+    "Parapet Wall": {
+      "rate_text": "\u2014",
+      "description": "9 inch thick wall with 3.3 ft will be provided on terrace\non entire terrace perimeter."
+    },
+    "Curing": {
+      "rate_text": "\u2014",
+      "description": "Sika Antisol\nAll RCC and masonry works shall be properly cured\nusing continuous water curing methods to maintain\nadequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14\ndays for brickwork and plaster twice a day"
+    },
+    "Waterproofing": {
+      "rate_text": "\u2014",
+      "description": "Sika/Dr. Fixit LW+ (pidilite)\nConcrete used anywhere is infused with\nwaterproofing crystalline compound\nWaterproofing coat is done in wet areas like balcony,\nbathrooms, underground sump\nGola is created on terrace on joint of slab and parapet\nwall.\nWaterproofing compound is added to external plaster."
+    },
+    "Anti-Termite Treatment": {
+      "rate_text": "\u2014",
+      "description": "Bayer / Terminator (pidilite)\nDouble Layer Protection System (DLPS)\nFIRST STEP : Termite soil treatment begins\npreconstruction for complete building. To be done at\nplinth level with Bayer & Terminator (Pidilite)\nantitermite chemical.\nSECOND STEP : Systematic piping network for\nuniform distribution across the area. Designed for\nefficiency, durability, and leak-proof performance.\nTEAM AT ZUILD USES DLPS, SO AS TO ENSURE\nMAXIMUM PROTECTION TOWARDS TERMITE."
+    },
+    "Misc": {
+      "rate_text": "\u2014",
+      "description": "Provision for water purifier, dishwasher, and other\nkitchen appliances shall be provided, including\nnecessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine\nin the utility area or at a location as per the\narchitectural drawings."
+    },
+    "Assumptions": {
+      "rate_text": "\u2014",
+      "description": "Site level should not be less than 1 ft below the road\nlevel.\nFoundation is considered combination of isolated and\ncombined footing 5 ft-6ft below the natural ground\nlevel"
+    },
+    "Sanitary Ware and CP Fitting": {
+      "rate_text": "\u20b945,000 per Bathroom",
+      "description": "Jaquar/Hindware Italian\nPremium quality sanitary ware including wall-\nmounted EWC, wash basin, shower head, and\ndiverter from Jaquar / Hindware (Italian Collection)\nwill be provided upto the specified value."
+    },
+    "Shower Partition/Cubicles": {
+      "rate_text": "\u2014",
+      "description": "Elegant shower partition made of 6\u20138 mm toughened\nglass, ensuring durability and modern aesthetics."
+    },
+    "Bathroom Accessories": {
+      "rate_text": "\u20b910,000 per bathroom",
+      "description": "Jaquar\nPremium accessories including mirror, towel rod/ring,\nsoap dish, etc., up to the specified value."
+    },
+    "Bathroom Geyser": {
+      "rate_text": "\u20b95,000 per bathroom",
+      "description": "Crompton/Bajaj\nOne geyser per bathroom from reputed brands like\nCrompton / Bajaj, within the defined budget."
+    },
+    "Exhaust Fan": {
+      "rate_text": "\u20b91,500 per kitchen",
+      "description": "Havells\nProvision and installation of a wall-mounted exhaust\nfan for proper ventilation."
+    },
+    "Bathroom Flooring": {
+      "rate_text": "\u20b980 per sq ft",
+      "description": "Anti-skid floor tiles (sizes: 1\u2019\u00d71\u2019 or 2\u2019\u00d72\u2019) to ensure\nsafety and durability."
+    },
+    "Bathroom Wall Tile": {
+      "rate_text": "\u20b980 per sq ft",
+      "description": "Wall tiling up to ceiling height (sizes: 1\u2019\u00d71.5\u2019 or\n2\u2019\u00d72\u2019)providing a clean and moisture-resistant finish."
+    },
+    "CPVC Fittings": {
+      "rate_text": "\u2014",
+      "description": "Astral\nComplete plumbing system using high-quality CPVC\npipes and fittings from trusted brands to ensure\nlongevity and leak-proof performance."
+    },
+    "Kitchen": {
+      "rate_text": "1 0  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION\nKitchen Wall Cladding Visible"
+    },
+    "Areas": {
+      "rate_text": "\u20b980 per sq ft",
+      "description": "Ceramic / Vitrified wall tiles shall be provided in all\nvisible areas up to a height of 5 ft above the kitchen\ncountertop.\nKitchen Wall Cladding (Non"
+    },
+    "Visible Areas)": {
+      "rate_text": "\u20b910-15 per sq ft",
+      "description": "Commercial / Waste tiles shall be provided behind\nkitchen cabinets (non-visible areas) to protect the\ncabinets from moisture."
+    },
+    "Kitchen Counter Granite": {
+      "rate_text": "\u20b9120 per sq ft",
+      "description": "Polished granite (16\u201318 mm thick) shall be provided\nfor the kitchen counter with double-layered nosing,\nmounted on a 4-inch RCC slab."
+    },
+    "Sink and Faucet": {
+      "rate_text": "\u20b98,000 per kitchen",
+      "description": "Double-bowl stainless steel sink with faucet shall be\nprovided, ISI Brand SS304 Grade double bowl sink to\nbe provided."
+    },
+    "Kitchen Geyser": {
+      "rate_text": "\u20b92,500 per kitchen",
+      "description": "Crompton/Bajaj\nOne geyser per bathroom from reputed ISI mark\nbrands like Crompton / Bajaj, within the defined\nbudget."
+    },
+    "Modular Kitchen": {
+      "rate_text": "\u20b91,75,000 per kitchen",
+      "description": "Modular kitchen made of HDHMR with premium\nlaminates, including soft close channels from Hettich,\nwith well-designed drawers and corner solutions."
+    },
+    "Hob and Chimney": {
+      "rate_text": "\u20b925,000 per kitchen",
+      "description": "Faber/Kaff\nBuilt-in hob and chimney from Faber / KAFF shall be\nprovided within the specified budget range."
+    },
+    "Doors, Windows & Wardrobe": {
+      "rate_text": "1 0  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION"
+    },
+    "Main Entry Door": {
+      "rate_text": "\u20b935,000 per door",
+      "description": "44 mm thick premium flush / Teak door shutter with\npolished/laminated finish, fixed on a seasoned\nhardwood frame (marandi/sal wood), complete with\nSS 304 hinges, SS tower bolts, door stopper, handle,\nand all necessary fittings and hardware."
+    },
+    "Main Door Lock": {
+      "rate_text": "\u20b98,000 per door",
+      "description": "Godrej / Yale\nPremium quality digital door locks from Godrej Yale\nmake shall be provided, suitable for the main door\nensuring durability, safety, and smooth operation."
+    },
+    "Internal and Bathroom Doors": {
+      "rate_text": "\u20b915,000 per door",
+      "description": "Flush door shutters with laminate/paint finish,\ninstalled on hardwood frames, complete with SS 304\nhinges, SS tower bolts (where applicable), door\nstopper, handle, and all required fittings and\nhardware.\nInternal and Bathroom Door"
+    },
+    "Lock": {
+      "rate_text": "\u20b92,500 per door",
+      "description": "Godrej / Ozone / Yale\nPremium quality door locks from Godrej / Ozone /\nYale or equivalent make shall be provided, suitable for\ninternal and bathroom doors, ensuring durability,\nsafety, and smooth operation.\nTerrace and Stilt/Staircase Entry"
+    },
+    "Door": {
+      "rate_text": "\u20b98,000 per door",
+      "description": "Mild steel (MS) door with primer and paint finish,\nincluding necessary fittings and locking arrangement."
+    },
+    "Sliding Door/ Windows": {
+      "rate_text": "\u20b9600- \u20b9650 per sq ft",
+      "description": "Prominence \u00b7 EITI\nUPVC sliding doors/windows with 3-track system (2\nglass panels and 1 mosquito mesh track) from\nProminence / EITI or equivalent make, complete with\nall necessary fittings and hardware."
+    },
+    "Door Hinges & Stopper": {
+      "rate_text": "\u2014",
+      "description": "4 Stainless Steel 304 hinges for each door"
+    },
+    "Door Height": {
+      "rate_text": "\u2014",
+      "description": "7'6\" to 8' as per approved plan"
+    },
+    "Tower Bolt": {
+      "rate_text": "\u2014",
+      "description": "18-24 inch, Stainless Steel Finish"
+    },
+    "Modular/ WalkIn Wardrobe": {
+      "rate_text": "\u20b91250 per sqft",
+      "description": "Laminated finished modular / walk-in wardrobe\nconstructed using Ply board for carcass and shutters.\nAll panels shall be edge-banded with PVC edge band\nfor durability and moisture resistance.\nExternal finish shall be in laminate finish only. Internal\nsurfaces shall be finished in laminate / pre-laminated\nboards. Hardware shall include soft-close hinges and\ntelescopic drawer channels from reputed brands\nsuch as Godrej/Ozone or equivalent. Handles shall be\nstandard SS / aluminium.\nThe wardrobe shall include basic internal layout\ncomprising shelves, hanging rods, and 2 drawer\nunits, designed for functional storage.\nLofts, fluted glass, acrylic/PU finish, premium\naccessories, and specialized fittings shall not be part\nof this scope."
+    },
+    "Floor Flooring": {
+      "rate_text": "\u20b9200 per sq ft",
+      "description": "Italian Marble\nItalian Marble in living, dining, kitchen and all\nbedrooms, with polishing"
+    },
+    "Balcony Flooring": {
+      "rate_text": "\u20b980 per sq ft",
+      "description": "Anti-skid tiles (2\u2019\u00d72\u2019) for balconies, with cementitious\ngrouting."
+    },
+    "Staircase Flooring": {
+      "rate_text": "\u20b990 per sq ft",
+      "description": "18mm Granite shall be provided on treads and risers,\nwith proper edge nosing and chamfering Height of\nthe raiser would be confirmable, will be planned at\nthe floor plan stage."
+    },
+    "Terrace Flooring": {
+      "rate_text": "\u20b940 per sq ft",
+      "description": "Anti-skid cool roof top tiles (2\u2019\u00d72\u2019) for terrace, with\ncementitious grouting."
+    },
+    "Stilt Flooring": {
+      "rate_text": "\u20b990 per sq ft",
+      "description": "18mm Granite on treads and risers, with proper\nnosing and chamfering"
+    },
+    "Skirting": {
+      "rate_text": "\u2014",
+      "description": "100 mm (4\u201d) high skirting shall be provided along all\nwall edges in respective areas, matching the flooring\nmaterial (vitrified tiles / granite). Skirting shall also be\nprovided along staircase walls using matching\ngranite, with proper edge finishing"
+    },
+    "Electrical Work": {
+      "rate_text": "1 4  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION"
+    },
+    "Electrical Wire": {
+      "rate_text": "\u2014",
+      "description": "FR grade Finolex/Polycab/Havells Wires\nFR grade copper wiring shall be provided with\nappropriate sizing for light, power, and AC circuits to\nensure safe load handling."
+    },
+    "Electrical Wire Specification": {
+      "rate_text": "\u2014",
+      "description": "10 sq. mm for main panels, 4 sq. mm for power and\nAC circuits, and 1.5 sq. mm for lighting circuits,\nensuring safe load distribution without overloading."
+    },
+    "Conduit Pipes & Boxes": {
+      "rate_text": "\u2014",
+      "description": "Astral \u00b7 AKG\nISI marked PVC conduits shall be provided, with\nheavy-duty conduits in slabs and medium-duty\nconduits in walls, with separate routing for light and\npower circuits."
+    },
+    "Switch & Sockets": {
+      "rate_text": "\u2014",
+      "description": "Legrand\nModular switches and sockets in white finish from\nLegrand equivalent make shall be provided. No. of\nswitches and sockets will not be a constrain\nCeiling Fans (Second and Third"
+    },
+    "Floor)": {
+      "rate_text": "\u20b92500 per fan",
+      "description": "Ceiling fans from Havells / Crompton or equivalent\nmake shall be provided."
+    },
+    "Split AC Provision": {
+      "rate_text": "\u2014",
+      "description": "One provision each in all bedrooms, drawing room,\nand living/kitchen area. Copper piping (average up to\n10 m per AC) along with necessary electrical wiring\nshall be provided. Outdoor units shall be placed on\nthe respective floor."
+    },
+    "Downlighters": {
+      "rate_text": "\u2014",
+      "description": "Philips \u00b7 Osram\nDownlighters from Philips / Osram or equivalent make\nshall be provided."
+    },
+    "Cove Strip Lights": {
+      "rate_text": "\u2014",
+      "description": "Philips \u00b7 Osram\nLED strip lights from Philips / Osram or equivalent\nmake shall be provided in cove areas"
+    },
+    "Pillar Fancy Light": {
+      "rate_text": "\u2014",
+      "description": "Decorative pillar lights for third-party areas. Maximum\n4 pillars."
+    },
+    "UPS Wiring": {
+      "rate_text": "\u2014",
+      "description": "Provision for UPS wiring shall be provided for each\nfloor."
+    },
+    "EV Charging Point": {
+      "rate_text": "\u2014",
+      "description": "Provision for one electric vehicle charging point shall\nbe provided per floor."
+    },
+    "Solar Electrical Provision": {
+      "rate_text": "\u2014",
+      "description": "Provision for solar electrical system shall be included."
+    },
+    "MCB/ELCB": {
+      "rate_text": "\u2014",
+      "description": "Havells\nMCB and ELCB protection shall be provided for each\nfloor."
+    },
+    "Earthing": {
+      "rate_text": "\u2014",
+      "description": "Earthing shall be done using copper strip / Chemical\nearthing for effective grounding and safety."
+    },
+    "Underground Water Tank": {
+      "rate_text": "2000 liters per floor",
+      "description": "2000 liters per floor\nRCC underground sump shall be constructed for each\nfloor as a separate unit, finished internally with\ncommercial tiles. Waterproofing shall be carried out\nusing approved systems from Dr. Fixit / Sika or\nequivalent.\nOverhead Water Tank\n1000 liters per floor\n1000 liters per floor\nTriple-layer overhead water tanks of 1,000 litres\ncapacity shall be provided for each floor, Tanks shall\nbe from Astral or equivalent make."
+    },
+    "Water Motor": {
+      "rate_text": "\u2014",
+      "description": "2 Crompton Greaves motor for each floor\n1 HP water pump shall be provided for each floor,\nconnecting individual underground sump to\ncorresponding overhead tank. Pumps shall be from\nCrompton Greaves or equivalent make."
+    },
+    "Rainwater Harvesting": {
+      "rate_text": "\u2014",
+      "description": "Rainwater harvesting pit shall be constructed as per\napplicable government norms"
+    },
+    "Discharge PVC Pipe": {
+      "rate_text": "\u2014",
+      "description": "All necessary PVC discharge pipes and connections\nshall be provided for proper water flow, drainage, and\nsystem integration. High-grade PVC pipes of 4-inch\nor 6-inch diameter, as per site conditions and design\nrequirements, shall be used.\nCeiling & Elevation"
+    },
+    "2  I T E M S": {
+      "rate_text": "ITEM",
+      "description": "RATE\nDESCRIPTION"
+    },
+    "False Ceiling": {
+      "rate_text": "\u2014",
+      "description": "POP cove false ceiling shall be provided in living,\ndining, and all bedrooms using Sakarni POP or\nequivalent make, including base level ceiling. Any\nadditional design elements or premium features shall\nbe as per design."
+    },
+    "Elevation": {
+      "rate_text": "\u20b95,00,000",
+      "description": "Wallet of 5 lakh taken for elevation\nBack side of the building shall be finished with chapai\ndana and roller finish.\nSafety & Security"
+    },
+    "CCTV Camera": {
+      "rate_text": "\u20b940,000 lumpsum",
+      "description": "CCTV camera system with cameras worth \u20b940,000\nand basic wiring as per layout."
+    },
+    "Video Door Phone": {
+      "rate_text": "\u20b950,000 lumpsum",
+      "description": "Video door phone system upto \u20b950,000 with indoor\nmonitor for each floor and main outdoor unit at gate."
+    },
+    "Internal Wall Paint": {
+      "rate_text": "\u2014",
+      "description": "Asian Paints (Apcolite Premium Emulsion)\n2 coats will be provided over 1 layer of primer and 2\nlayer of putty"
+    },
+    "Exterior Wall Paint": {
+      "rate_text": "\u2014",
+      "description": "Berger (Weathercoat Glow)\nWeathercoat glow Berger will be provided on the\nexterior side."
+    },
+    "Putty": {
+      "rate_text": "\u2014",
+      "description": "JK Birla Putty\n2 coats of putty to be provided"
+    },
+    "Polish": {
+      "rate_text": "\u2014",
+      "description": "Melamine Polish in Matte/Glossy Finish as per\nowner's choice\nGeneral Aspects"
+    },
+    "6  I T E M S": {
+      "rate_text": "ITEM",
+      "description": "RATE\nDESCRIPTION"
+    },
+    "Main Gate": {
+      "rate_text": "\u2014",
+      "description": "Bifold MS Main Gate at front as per design"
+    },
+    "Staircase & Balcony Railing": {
+      "rate_text": "\u2014",
+      "description": "Staircase Railing - MS Steel designer railing\nBalcony Railing as per design MS CNC cut"
+    },
+    "Vibrators": {
+      "rate_text": "\u2014",
+      "description": "Used to consolidate layers in footings, columns,\nbeams & roof slabs"
+    },
+    "Brickwork Mortar": {
+      "rate_text": "\u2014",
+      "description": "9\" brickwork not leaner than 1:6; 4\u00bd\" brickwork not\nleaner than 1:4"
+    },
+    "Soil Test": {
+      "rate_text": "\u2014",
+      "description": "Soil Test to be done before construction. Costing is\nincluded."
+    },
+    "Lift Machine": {
+      "rate_text": "\u20b910,00.000 taken as wallet",
+      "description": "Includes all civil, electrical, paint, polish, exhaust, and\nearthing work. Entry on all floors.\nS P E C I F I CAT I O N S"
+    }
+  },
+  "luxury": {
+    "Architectural Layout": {
+      "rate_text": "\u2014",
+      "description": "2D Architectural DesignModern 3D Elevation\nStructural Design\nMEP Drawings\nAll construction work to be carried out as per\napproved plan\nNo. of 2D floor plan iteration is not a constrain. The\nnumber of changes will be done till the floor plan is\nfinalized."
+    },
+    "Structure": {
+      "rate_text": "1 6  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION\nColumns will be covered with jute bag during curing\nto retain water"
+    },
+    "Compliance": {
+      "rate_text": "\u2014",
+      "description": "Structure shall be designed as per IS 456, IS 1893,\nand IS 13920 for seismic Zone IV, with ductile\ndetailing for safety."
+    },
+    "Steel": {
+      "rate_text": "\u2014",
+      "description": "TATA Fe500 / Fe550\n4.5Kg per sq ft\nAny variation above and below 4.5kg is charged and\nrefunded on pro rata basis."
+    },
+    "Cement": {
+      "rate_text": "\u2014",
+      "description": "Ultratech / ACC\nSame brand shall be used for all RCC, brickwork, and\nplastering works."
+    },
+    "Bricks": {
+      "rate_text": "\u2014",
+      "description": "Baghpat (U.P)\nA Class Red Brick\nExternal walls shall be constructed using 9-inch thick\nbrickwork and internal partition walls shall be 4.5-\ninch thick"
+    },
+    "Concrete": {
+      "rate_text": "\u2014",
+      "description": "M25\nRCC work in Slab, Beam, Column, and Foundation to\nbe carried out.\nM25 ratio is 1:1:2 (Cement : Sand : Coarse\nAggregates).\nProper use of Vibrators and Cover Blocks in Slabs,\nbeams, columns and foundation."
+    },
+    "Plinth, Floor and Stilt Level": {
+      "rate_text": "\u2014",
+      "description": "Plinth is considered at 2 ft height.\nFloor to Ceiling Height (Clear Height) is 10.5 ft or as\nper actuals.\nStilt height as per the government norms"
+    },
+    "Aggregates (Rodi)": {
+      "rate_text": "\u2014",
+      "description": "20mm & 10mm\nMost superior bluish color aggregates to be used in\nall concrete work.\nPCC in Foundation / Stilt and"
+    },
+    "Terrace": {
+      "rate_text": "\u2014",
+      "description": "100mm (4 inch) thick PCC in ratio of 1:3:6\n(Cement:Sand:Aggregate)\nPCC to be done below the foundation jal, in stilt area\nbelow the granite work and also in terrace below the\nterrace tile flooring"
+    },
+    "Plaster Work": {
+      "rate_text": "\u2014",
+      "description": "Interior Plaster : 8-10mm thick with ratio of 1:2:3\n(Cement:Coarse Sand:Fine Sand). Single coat plaster\nof 8-10mm thick would be provided.\nExterior Plaster : 12-15mm thick with ratio of 1:2:2\n(Cement:Coarse sand:Fine Sand). Double coat\nplaster totaling to 12-15 mm would be provided for\ndurability and strength"
+    },
+    "Compound Wall": {
+      "rate_text": "\u2014",
+      "description": "9 Inch thick compound wall will be provided with 6 ft\nheight from the plinth level on open areas perimeter"
+    },
+    "Parapet Wall": {
+      "rate_text": "\u2014",
+      "description": "9 inch thick wall with 3.3 ft will be provided on terrace\non entire terrace perimeter."
+    },
+    "Curing": {
+      "rate_text": "\u2014",
+      "description": "Sika Antisol\nAll RCC and masonry works shall be properly cured\nusing continuous water curing methods to maintain\nadequate moisture for hydration of cement.\nMinimum 12-14 days for RCC work, minimum 10-14\ndays for brickwork and plaster twice a day"
+    },
+    "Waterproofing": {
+      "rate_text": "\u2014",
+      "description": "Sika/Dr. Fixit LW+ (pidilite)\nConcrete used anywhere is infused with\nwaterproofing crystalline compound\nWaterproofing coat is done in wet areas like balcony,\nbathrooms, underground sump\nGola is created on terrace on joint of slab and parapet\nwall.\nWaterproofing compound is added to external plaster."
+    },
+    "Anti-Termite Treatment": {
+      "rate_text": "\u2014",
+      "description": "Bayer / Terminator (pidilite)\nDouble Layer Protection System (DLPS)\nFIRST STEP : Termite soil treatment begins\npreconstruction for complete building. To be done at\nplinth level with Bayer & Terminator (Pidilite)\nantitermite chemical.\nSECOND STEP : Systematic piping network for\nuniform distribution across the area. Designed for\nefficiency, durability, and leak-proof performance.\nTEAM AT ZUILD USES DLPS, SO AS TO ENSURE\nMAXIMUM PROTECTION TOWARDS TERMITE."
+    },
+    "Misc": {
+      "rate_text": "\u2014",
+      "description": "Provision for water purifier, dishwasher, and other\nkitchen appliances shall be provided, including\nnecessary inlet and outlet plumbing points.\nA bib cock shall be provided for the washing machine\nin the utility area or at a location as per the\narchitectural drawings."
+    },
+    "Assumptions": {
+      "rate_text": "\u2014",
+      "description": "Site level should not be less than 1 ft below the road\nlevel.\nFoundation is considered combination of isolated and\ncombined footing 5 ft-6ft below the natural ground\nlevel"
+    },
+    "Sanitary Ware and CP Fitting": {
+      "rate_text": "\u20b91,00,000 per Bathroom",
+      "description": "Kohler / Grohe\nPremium quality sanitary ware including wall-\nmounted EWC, wash basin, shower head, and\ndiverter from Kohler/Grohe will be provided upto the\nspecified value."
+    },
+    "Shower Partition/Cubicles": {
+      "rate_text": "\u2014",
+      "description": "Elegant shower partition made of 6\u20138 mm toughened\nglass, ensuring durability and modern aesthetics."
+    },
+    "Bathroom Accessories": {
+      "rate_text": "\u20b915,000 per bathroom",
+      "description": "Kohler/Grohe\nPremium accessories including mirror, towel rod/ring,\nsoap dish, etc., up to the specified value."
+    },
+    "Bathroom Geyser": {
+      "rate_text": "\u20b97,500 per bathroom",
+      "description": "Crompton\nOne geyser per bathroom from reputed brands like\nCrompton / Bajaj, within the defined budget."
+    },
+    "Exhaust Fan": {
+      "rate_text": "\u20b93,500 per kitchen",
+      "description": "Havells\nProvision and installation of a wall-mounted exhaust\nfan for proper ventilation."
+    },
+    "Bathroom Flooring": {
+      "rate_text": "\u20b9150 per sq ft",
+      "description": "Anti-skid floor tiles (sizes: 1\u2019\u00d71\u2019 or 2\u2019\u00d72\u2019) to ensure\nsafety and durability."
+    },
+    "Bathroom Wall Tile": {
+      "rate_text": "\u20b9200 per sq ft",
+      "description": "Italian Marble\nItalian Marble wall cladding up to ceiling height\nproviding a clean and moisture-resistant finish."
+    },
+    "CPVC Fittings": {
+      "rate_text": "\u2014",
+      "description": "Astral\nComplete plumbing system using high-quality CPVC\npipes and fittings from trusted brands to ensure\nlongevity and leak-proof performance."
+    },
+    "Kitchen": {
+      "rate_text": "1 0  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION\nKitchen Wall Cladding Visible"
+    },
+    "Areas": {
+      "rate_text": "\u20b9150 per sq ft",
+      "description": "Ceramic / Vitrified (Italian)wall tiles shall be provided\nin all visible areas up to a height of 5 ft above the\nkitchen countertop.\nKitchen Wall Cladding (Non"
+    },
+    "Visible Areas)": {
+      "rate_text": "\u20b910-15 per sq ft",
+      "description": "Commercial / Waste tiles shall be provided behind\nkitchen cabinets (non-visible areas) to protect the\ncabinets from moisture."
+    },
+    "Kitchen Counter Granite": {
+      "rate_text": "\u20b9200 per sq ft",
+      "description": "Polished granite (16\u201318 mm thick) shall be provided\nfor the kitchen counter with double-layered nosing,\nmounted on a 4-inch RCC slab."
+    },
+    "Sink and Faucet": {
+      "rate_text": "\u20b920,000 per kitchen",
+      "description": "Double-bowl stainless steel sink with faucet shall be\nprovided, ISI Brand SS304 Grade double bowl sink to\nbe provided."
+    },
+    "Kitchen Geyser": {
+      "rate_text": "\u20b94,000 per kitchen",
+      "description": "Crompton/Bajaj\nOne geyser per bathroom from reputed ISI mark\nbrands like Crompton / Bajaj, within the defined\nbudget."
+    },
+    "Modular Kitchen": {
+      "rate_text": "\u20b93,75,000 per kitchen",
+      "description": "Modular kitchen made of HDHMR with premium\nlaminates, fluted glass, PU finish including soft close\nchannels from Hettich/Haffle, with well-designed\ndrawers and corner solutions."
+    },
+    "Hob and Chimney": {
+      "rate_text": "\u20b925,000 per kitchen",
+      "description": "Faber/Kaff\nBuilt-in hob and chimney from Faber / KAFF shall be\nprovided within the specified budget range."
+    },
+    "Doors, Windows & Wardrobe": {
+      "rate_text": "1 0  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION"
+    },
+    "Main Entry Door": {
+      "rate_text": "\u20b960,000 per door",
+      "description": "TATA Pravesh\n44/62 mm thick premium flush door/Teak door\nshutter with polished/laminated finish, fixed on a\nseasoned hardwood frame (teak/sal wood), complete\nwith SS 304 hinges, SS tower bolts, door stopper,\nhandle, and all necessary fittings and hardware."
+    },
+    "Main Door Lock": {
+      "rate_text": "\u20b912,000 per door",
+      "description": "Godrej / Yale\nPremium quality digital door locks from Godrej Yale\nmake shall be provided, suitable for the main door\nensuring durability, safety, and smooth operation."
+    },
+    "Internal and Bathroom Doors": {
+      "rate_text": "\u20b925,000 per door",
+      "description": "Flush door shutters with laminate/paint finish,\ninstalled on hardwood frames, complete with SS 304\nhinges, SS tower bolts (where applicable), door\nstopper, handle, and all required fittings and\nhardware.\nInternal and Bathroom Door"
+    },
+    "Lock": {
+      "rate_text": "\u20b93,500 per door",
+      "description": "Godrej / Ozone / Yale\nPremium quality door locks from Godrej / Ozone /\nYale or equivalent make shall be provided, suitable for\ninternal and bathroom doors, ensuring durability,\nsafety, and smooth operation.\nTerrace and Stilt/Staircase Entry"
+    },
+    "Door": {
+      "rate_text": "\u20b925,000 per door",
+      "description": "TATA Pravesh\nMild steel (MS) door with primer and paint finish,\nincluding necessary fittings and locking arrangement."
+    },
+    "Sliding Door/ Windows": {
+      "rate_text": "\u20b9900- \u20b9100 per sq ft",
+      "description": "Fenesta\nUPVC sliding doors/windows with 3-track system (2\nglass panels and 1 mosquito mesh track) from\nFenesta or equivalent make, complete with all\nnecessary fittings and hardware."
+    },
+    "Door Hinges & Stopper": {
+      "rate_text": "\u2014",
+      "description": "4 Stainless Steel 304 hinges for each door"
+    },
+    "Door Height": {
+      "rate_text": "\u2014",
+      "description": "7'6\" to 8' as per approved plan"
+    },
+    "Tower Bolt": {
+      "rate_text": "\u2014",
+      "description": "18-24 inch, Stainless Steel Finish"
+    },
+    "Modular/ WalkIn Wardrobe": {
+      "rate_text": "\u20b91750 per sqft",
+      "description": "Fluted glass, acrylic/PU finished modular / walk-in\nwardrobe constructed using HDHMR for carcass and\nshutters. All panels shall be edge-banded with PVC\nedge band for durability and moisture resistance.\nHardware shall include soft-close hinges and\ntelescopic drawer channels from reputed brands\nsuch as Hettich/Haffle or equivalent with premium\nprofile handles.\nThe wardrobe shall include basic internal layout\ncomprising shelves, hanging rods, and 2 drawer\nunits, designed for functional storage."
+    },
+    "Floor Flooring": {
+      "rate_text": "\u20b9350 per sq ft",
+      "description": "Italian Marble\nItalian Marble in living, dining, kitchen and all\nbedrooms, with polishing"
+    },
+    "Balcony Flooring": {
+      "rate_text": "\u20b9120 per sq ft",
+      "description": "Anti-skid tiles / Granite (2\u2019\u00d72\u2019) for balconies, with\ncementitious grouting."
+    },
+    "Staircase Flooring": {
+      "rate_text": "\u20b9120 per sq ft",
+      "description": "18mm Granite shall be provided on treads and risers,\nwith proper edge nosing and chamfering Height of\nthe raiser would be confirmable, will be planned at\nthe floor plan stage."
+    },
+    "Terrace Flooring": {
+      "rate_text": "\u20b950 per sq ft",
+      "description": "Anti-skid cool roof top tiles (2\u2019\u00d72\u2019) for terrace, with\ncementitious grouting."
+    },
+    "Stilt Flooring": {
+      "rate_text": "\u20b9120 per sq ft",
+      "description": "18mm Granite on treads and risers, with proper\nnosing and chamfering"
+    },
+    "Skirting": {
+      "rate_text": "\u2014",
+      "description": "100 mm (4\u201d) high skirting shall be provided along all\nwall edges in respective areas, matching the flooring\nmaterial (vitrified tiles / granite). Skirting shall also be\nprovided along staircase walls using matching\ngranite, with proper edge finishing"
+    },
+    "Electrical Work": {
+      "rate_text": "1 4  I T E M S",
+      "description": "ITEM\nRATE\nDESCRIPTION"
+    },
+    "Electrical Wire": {
+      "rate_text": "\u2014",
+      "description": "FR grade Finolex/Polycab/Havells Wires\nFR grade copper wiring shall be provided with\nappropriate sizing for light, power, and AC circuits to\nensure safe load handling."
+    },
+    "Electrical Wire Specification": {
+      "rate_text": "\u2014",
+      "description": "10 sq. mm for main panels, 4 sq. mm for power and\nAC circuits, and 1.5 sq. mm for lighting circuits,\nensuring safe load distribution without overloading."
+    },
+    "Conduit Pipes & Boxes": {
+      "rate_text": "\u2014",
+      "description": "Astral \u00b7 AKG\nISI marked PVC conduits shall be provided, with\nheavy-duty conduits in slabs and medium-duty\nconduits in walls, with separate routing for light and\npower circuits."
+    },
+    "Switch & Sockets": {
+      "rate_text": "\u2014",
+      "description": "Legrand\nModular switches and sockets in white finish from\nLegrand equivalent make shall be provided. No. of\nswitches and sockets will not be a constrain"
+    },
+    "Ceiling Fans": {
+      "rate_text": "\u20b93500 per fan",
+      "description": "Ceiling fans from Havells / Crompton or equivalent\nmake shall be provided."
+    },
+    "Split AC Provision": {
+      "rate_text": "\u2014",
+      "description": "One provision each in all bedrooms, drawing room,\nand living/kitchen area. Copper piping (average up to\n10 m per AC) along with necessary electrical wiring\nshall be provided. Outdoor units shall be placed on\nthe respective floor."
+    },
+    "Downlighters": {
+      "rate_text": "\u2014",
+      "description": "Philips \u00b7 Osram\nDownlighters from Philips / Osram or equivalent make\nshall be provided."
+    },
+    "Cove Strip Lights": {
+      "rate_text": "\u2014",
+      "description": "Philips \u00b7 Osram\nLED strip lights from Philips / Osram or equivalent\nmake shall be provided in cove areas"
+    },
+    "Pillar Fancy Light": {
+      "rate_text": "\u2014",
+      "description": "Decorative pillar lights as per customer choice for stilt\nfront Pillars"
+    },
+    "UPS Wiring": {
+      "rate_text": "\u2014",
+      "description": "Provision for UPS wiring shall be provided for each\nfloor."
+    },
+    "EV Charging Point": {
+      "rate_text": "\u2014",
+      "description": "Provision for one electric vehicle charging point shall\nbe provided per floor."
+    },
+    "Solar Electrical Provision": {
+      "rate_text": "\u2014",
+      "description": "Provision for solar electrical system shall be included."
+    },
+    "MCB/ELCB": {
+      "rate_text": "\u2014",
+      "description": "Havells\nMCB and ELCB protection shall be provided for each\nfloor."
+    },
+    "Earthing": {
+      "rate_text": "\u2014",
+      "description": "Earthing shall be done using copper strip / Chemical\nearthing for effective grounding and safety."
+    },
+    "Underground Water Tank": {
+      "rate_text": "2000 liters per floor",
+      "description": "2000 liters per floor\nRCC underground sump shall be constructed for each\nfloor as a separate unit, finished internally with\ncommercial tiles. Waterproofing shall be carried out\nusing approved systems from Dr. Fixit / Sika or\nequivalent.\nOverhead Water Tank\n1000 liters per floor\n1000 liters per floor\nTriple-layer overhead water tanks of 1,000 litres\ncapacity shall be provided for each floor, Tanks shall\nbe from Astral or equivalent make."
+    },
+    "Water Motor": {
+      "rate_text": "\u2014",
+      "description": "2 Crompton Greaves motor for each floor\n1 HP water pump shall be provided for each floor,\nconnecting individual underground sump to\ncorresponding overhead tank. Pumps shall be from\nCrompton Greaves or equivalent make."
+    },
+    "Rainwater Harvesting": {
+      "rate_text": "\u2014",
+      "description": "Rainwater harvesting pit shall be constructed as per\napplicable government norms"
+    },
+    "Discharge PVC Pipe": {
+      "rate_text": "\u2014",
+      "description": "All necessary PVC discharge pipes and connections\nshall be provided for proper water flow, drainage, and\nsystem integration. High-grade PVC pipes of 4-inch\nor 6-inch diameter, as per site conditions and design\nrequirements, shall be used.\nCeiling & Elevation"
+    },
+    "2  I T E M S": {
+      "rate_text": "ITEM",
+      "description": "RATE\nDESCRIPTION"
+    },
+    "Luxury False Ceiling": {
+      "rate_text": "\u2014",
+      "description": "POP false ceiling shall be provided in living, dining,\nand all bedrooms using Sakarni POP with\nWooden/Glass finish."
+    },
+    "Elevation": {
+      "rate_text": "\u20b910,00,000",
+      "description": "Wallet of 10 lakh taken for elevation\nBack side of the building shall be finished with chapai\ndana and roller finish.\nSafety & Security"
+    },
+    "CCTV Camera": {
+      "rate_text": "\u20b91,00,000 lumpsum",
+      "description": "CCTV camera system with cameras worth \u20b91,00,000\nand basic wiring as per layout."
+    },
+    "Video Door Phone": {
+      "rate_text": "\u20b91,00,000 lumpsum",
+      "description": "Video door phone system upto \u20b91,00,000 with indoor\nmonitor for each floor and main outdoor unit at gate."
+    },
+    "Internal Wall Paint": {
+      "rate_text": "\u2014",
+      "description": "Asian Paints (Apcolite Royal Emulsion)\n2 coats will be provided over 1 layer of primer and\nPOP Punning."
+    },
+    "Exterior Wall Paint": {
+      "rate_text": "\u2014",
+      "description": "Berger (Weathercoat Glow)\nWeathercoat glow Berger will be provided on the\nexterior side."
+    },
+    "Polish": {
+      "rate_text": "\u2014",
+      "description": "Melamine Polish in Matte/Glossy Finish as per\nowner's choice\nGeneral Aspects"
+    },
+    "6  I T E M S": {
+      "rate_text": "ITEM",
+      "description": "RATE\nDESCRIPTION"
+    },
+    "Main Gate": {
+      "rate_text": "\u2014",
+      "description": "Bifold MS Main Gate at front as per design"
+    },
+    "Staircase & Balcony Railing": {
+      "rate_text": "\u2014",
+      "description": "Staircase Railing - SS Steel designer railing\nBalcony Railing as per design, SS with toughened\nglass"
+    },
+    "Vibrators": {
+      "rate_text": "\u2014",
+      "description": "Used to consolidate layers in footings, columns,\nbeams & roof slabs"
+    },
+    "Brickwork Mortar": {
+      "rate_text": "\u2014",
+      "description": "9\" brickwork not leaner than 1:6; 4\u00bd\" brickwork not\nleaner than 1:4"
+    },
+    "Soil Test": {
+      "rate_text": "\u2014",
+      "description": "Soil Test to be done before construction. Costing is\nincluded."
+    },
+    "Lift Machine": {
+      "rate_text": "\u20b913,50.000 taken as wallet",
+      "description": "Includes all civil, electrical, paint, polish, exhaust, and\nearthing work. Entry on all floors.\nS P E C I F I CAT I O N S"
+    }
+  }
+}
