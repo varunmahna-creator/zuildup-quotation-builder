@@ -5208,7 +5208,7 @@ function renderNotesPage(state) {
   function validatePatch(p) {
     if (!p || typeof p !== 'object') throw new Error('patch must be an object');
     if (!p.op) throw new Error('patch.op is required');
-    const ALLOWED = new Set(['set', 'add_row', 'delete_row']);
+    const ALLOWED = new Set(['set', 'add_row', 'delete_row', 'add_zone_line']);
     if (!ALLOWED.has(p.op)) throw new Error('unknown op: ' + p.op);
     if (p.op === 'set') {
       if (!p.path || typeof p.path !== 'string') throw new Error('set requires string path');
@@ -5234,6 +5234,25 @@ function renderNotesPage(state) {
     }
     if (p.op === 'delete_row') {
       if (!p.row_id || typeof p.row_id !== 'string') throw new Error('delete_row requires row_id');
+      return p;
+    }
+    if (p.op === 'add_zone_line') {
+      // Phase 9C Issue 7: free-form custom row, not from catalog.
+      // Shape: { op:'add_zone_line', zone:'A'|'B'|'C'|'D', name, area, rate, rate_text?, desc?, floor? }
+      const zone = (p.zone || '').toString().toUpperCase();
+      if (!/^[ABCD]$/.test(zone)) throw new Error('add_zone_line zone must be A, B, C, or D');
+      p.zone = zone;
+      if (!p.name || typeof p.name !== 'string' || !p.name.trim()) throw new Error('add_zone_line requires name');
+      p.name = p.name.trim();
+      const area = parseFloat(p.area);
+      if (isNaN(area) || area <= 0) throw new Error('add_zone_line requires positive area');
+      p.area = area;
+      const rate = parseFloat(p.rate);
+      if (isNaN(rate) || rate <= 0) throw new Error('add_zone_line requires positive rate');
+      p.rate = rate;
+      if (p.rate_text != null && typeof p.rate_text !== 'string') p.rate_text = String(p.rate_text);
+      if (p.desc != null && typeof p.desc !== 'string') p.desc = String(p.desc);
+      if (p.floor != null && typeof p.floor !== 'string') p.floor = String(p.floor);
       return p;
     }
     return p;
@@ -5266,6 +5285,26 @@ function renderNotesPage(state) {
       if (idx >= 0) window.__qbState.rows.splice(idx, 1);
       return;
     }
+    if (p.op === 'add_zone_line') {
+      // Phase 9C Issue 7: append a free-form custom row to state.pricing.zoneLineItems[zone].
+      // Mirrors the manual UI's "+ Add line item" path (see ~line 2614).
+      const s = window.__qbState;
+      s.pricing = s.pricing || {};
+      s.pricing.zoneLineItems = s.pricing.zoneLineItems || {};
+      const arr = s.pricing.zoneLineItems[p.zone] = s.pricing.zoneLineItems[p.zone] || [];
+      const id = 'li_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+      const row = {
+        id,
+        name: p.name,
+        desc: p.desc || '',
+        area: p.area,
+        rate: p.rate,
+      };
+      if (p.floor) row.floor = p.floor;
+      if (p.rate_text) row.rate_text = p.rate_text;
+      arr.push(row);
+      return;
+    }
   }
 
   function describePatch(p) {
@@ -5285,6 +5324,15 @@ function renderNotesPage(state) {
     }
     if (p.op === 'add_row') return { label: 'Add row', before: '(none)', after: p.item_id };
     if (p.op === 'delete_row') return { label: 'Delete row', before: p.row_id, after: '(removed)' };
+    if (p.op === 'add_zone_line') {
+      const cost = Math.round((p.area || 0) * (p.rate || 0));
+      const rateText = p.rate_text || ('₹' + (p.rate || 0).toLocaleString('en-IN') + '/sqft');
+      return {
+        label: 'Add custom row → Zone ' + p.zone,
+        before: '(none)',
+        after: (p.name || 'Custom Item') + ' · ' + (p.area || 0) + ' sqft × ' + rateText + ' = ₹' + cost.toLocaleString('en-IN'),
+      };
+    }
     return { label: p.op, before: '?', after: '?' };
   }
 

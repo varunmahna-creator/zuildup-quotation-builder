@@ -854,9 +854,10 @@ const server = http.createServer((req, res) => {
         '  { "patches": [ {patch...}, ... ], "note": "optional 1-line explanation" }\n' +
         "\n" +
         "ALLOWED PATCH SHAPES:\n" +
-        '  { "op": "set",        "path": "<allowed>", "value": <any>, "explanation": "human-readable" }\n' +
-        '  { "op": "add_row",    "item_id": "<catalog id>",            "explanation": "..." }\n' +
-        '  { "op": "delete_row", "row_id":  "<existing row id>",       "explanation": "..." }\n' +
+        '  { "op": "set",            "path": "<allowed>", "value": <any>, "explanation": "human-readable" }\n' +
+        '  { "op": "add_row",        "item_id": "<catalog id>",            "explanation": "..." }\n' +
+        '  { "op": "delete_row",     "row_id":  "<existing row id>",       "explanation": "..." }\n' +
+        '  { "op": "add_zone_line",  "zone": "<A|B|C|D>", "name": "<string>", "area": <number>, "rate": <number>, "rate_text": "<optional>", "explanation": "..." }\n' +
         "\n" +
         "ALLOWED `set` PATHS (anything else will be rejected by the validator):\n" +
         "  customer.salutation | customer.name | customer.address\n" +
@@ -874,8 +875,31 @@ const server = http.createServer((req, res) => {
         "3. For brand/spec swaps, set `rows[<id>].override.brands`. To also change the description text, also set `.description`.\n" +
         "4. If the rep asks something you can't safely translate to patches (vague, ambiguous, or out of scope), return `{ patches: [], note: '<ask a 1-sentence clarification>' }`.\n" +
         "5. NEVER invent row ids. NEVER write to paths outside the whitelist. NEVER include _meta, _internal, or fields not listed.\n" +
-        "6. Multi-edit is fine — emit multiple patches in one response.\n" +
+        "6. Multi-edit is EXPECTED, not optional — emit as many patches as the user's intent requires in one response.\n" +
         "7. Each patch MUST include a short `explanation` string the rep will see on the diff card.\n" +
+        "\n" +
+        "8. MULTI-PLACE EDITS (CRITICAL — do NOT stop at the first match):\n" +
+        "   A single concept often lives in MULTIPLE state paths. When that happens, emit ONE patch per location — do not pick just one.\n" +
+        "   Examples:\n" +
+        "   - 'Change lift price to 15 Lakhs' → emit BOTH:\n" +
+        "       (a) { op:'set', path:'pricing.liftCost', value: 1500000 }\n" +
+        "       (b) for EVERY row whose id/label contains 'lift', 'staircase', 'mumty', or whose current rate equals the old liftCost: also emit { op:'set', path:'rows[<id>].override.rate', value: 1500000 } (and `.rate_text` if appropriate)\n" +
+        "   - 'Change Hindware to Kohler' (brand swap) → scan EVERY row in the snapshot's `rows[]`. For each row whose `brands` or `label` mentions 'Hindware' (case-insensitive), emit { op:'set', path:'rows[<id>].override.brands', value:'Kohler' }. Do NOT stop at one — if 3 rows match, emit 3 patches. If 8 rows match, emit 8.\n" +
+        "   - 'Make all flooring Italian marble' → find every row with 'floor' in the id/label and emit one brand-set patch per row.\n" +
+        "   If you are unsure whether two locations are linked, emit BOTH as separate patches — the rep can accept or reject each card individually. Better to over-propose than to silently miss a stale field.\n" +
+        "\n" +
+        "9. FREE-FORM CUSTOM ROWS (not in catalog):\n" +
+        "   If the rep asks to add a line item that is NOT in the existing rows (e.g. 'add a room on the terrace of 150 sqft at ₹5000 per sqft', 'add a 200 sqft mumty', 'add a custom pergola'), use `add_zone_line` — do NOT refuse.\n" +
+        "   Zone allocation guide:\n" +
+        "     A = covered indoor area (rooms, halls, kitchens, indoor extensions)\n" +
+        "     B = stilt, balcony, staircase, mumty, semi-covered\n" +
+        "     C = terrace, ramp, setback (open / on top)\n" +
+        "     D = underground water tank (per-litre items only — DO NOT use for sqft items)\n" +
+        "   Example: 'Add a 150 sqft room on the terrace at ₹5000 per sqft' →\n" +
+        '     { "op":"add_zone_line", "zone":"C", "name":"Extra Room on Terrace", "area":150, "rate":5000, "explanation":"Add 150 sqft terrace room at ₹5000/sqft" }\n' +
+        "   Example: 'Add a 200 sqft mumty at 3000 per sqft' →\n" +
+        '     { "op":"add_zone_line", "zone":"B", "name":"Mumty", "area":200, "rate":3000, "explanation":"Add mumty as a stilt/staircase-zone line item" }\n' +
+        "   Pick the zone yourself — the rep usually omits it. Only ask for clarification if truly ambiguous (e.g. 'add a 100 sqft room' with no location).\n" +
         "\n" +
         "CURRENT QUOTE SNAPSHOT (read-only context):\n" +
         JSON.stringify(snapshot, null, 0);
