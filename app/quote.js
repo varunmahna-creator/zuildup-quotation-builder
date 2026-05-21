@@ -1601,24 +1601,30 @@ async function bootForm() {
     saveState(state);
   }
 
-  // First-load seed for rows when scope is set but rows empty
-  if (!state.rows.length) {
-    state.rows = defaultRowsFor(state.scope, { hasBasement: !!state.build.hasBasement });
-    saveState(state);
-  }
-  // Phase 6.4 #11a: if a saved quote has basement on but pre-dates the basement
-  // category, top up missing basement rows so the rep doesn't have to re-add.
-  if (state.build.hasBasement) {
-    const haveBasement = state.rows.some(r => {
-      const it = catalogItem(r.id); return it && it.category === 'basement';
-    });
-    if (!haveBasement) {
-      const basementItems = (CATALOG?.items || []).filter(it => it.category === 'basement'
-        && it.scope.includes(state.scope === 'structure_only' ? 'structure_only' : 'full'));
-      basementItems.forEach(it => state.rows.push({ id: it.id, override: {}, _isFresh: true }));
+  // Phase 9B-1: extracted into a helper so window.__qbRerender (AI Apply, no-reload)
+  // can re-run the same row-reconciliation logic when an AI patch flips
+  // build.hasBasement / build.floors / build.buildType.
+  function reconcileRowsForBuild() {
+    // First-load seed for rows when scope is set but rows empty
+    if (!state.rows.length) {
+      state.rows = defaultRowsFor(state.scope, { hasBasement: !!state.build.hasBasement });
       saveState(state);
     }
+    // Phase 6.4 #11a: if a saved quote has basement on but pre-dates the basement
+    // category, top up missing basement rows so the rep doesn't have to re-add.
+    if (state.build.hasBasement) {
+      const haveBasement = state.rows.some(r => {
+        const it = catalogItem(r.id); return it && it.category === 'basement';
+      });
+      if (!haveBasement) {
+        const basementItems = (CATALOG?.items || []).filter(it => it.category === 'basement'
+          && it.scope.includes(state.scope === 'structure_only' ? 'structure_only' : 'full'));
+        basementItems.forEach(it => state.rows.push({ id: it.id, override: {}, _isFresh: true }));
+        saveState(state);
+      }
+    }
   }
+  reconcileRowsForBuild();
 
   const $ = id => document.getElementById(id);
 
@@ -1723,6 +1729,70 @@ async function bootForm() {
   }
 
   function flush() { saveState(state); renderSpecList(); applyValidation(); renderAreaOverridesPanel(); renderItemRatesPanel(); renderBpfPanel(); renderFloorSummaryEditor(); }
+
+  // ---------------------------------------------------------------------------
+  // Phase 9B-1 (Issue 6) — no-reload Apply for AI patches.
+  //
+  // The original boot path hydrates every <input> / <select> / <checkbox>
+  // from state ONCE at line ~1626. flush() saves + repaints panels but does
+  // NOT re-touch raw form fields, so previously the only way to get AI-
+  // mutated state into the form inputs was a full location.reload().
+  //
+  // repaintInputsFromState() mirrors the boot hydration block. KEEP IN SYNC
+  // with the block above (lines ~1626–1665).
+  // ---------------------------------------------------------------------------
+  function repaintInputsFromState() {
+    if ($('f-salutation'))    $('f-salutation').value   = state.customer.salutation ?? '';
+    if ($('f-name'))          $('f-name').value         = state.customer.name ?? '';
+    if ($('f-address'))       $('f-address').value      = state.customer.address ?? '';
+    if ($('f-plot'))          $('f-plot').value         = state.build.plotSqYards ?? '';
+    if ($('f-breadth'))       $('f-breadth').value      = state.build.breadth ?? '';
+    if ($('f-coverage'))      $('f-coverage').value     = state.build.coverage ?? '';
+    if ($('f-floors'))        $('f-floors').value       = state.build.floors ?? '';
+    if ($('f-build-type'))    $('f-build-type').value   = state.build.buildType ?? 'stilt';
+    if ($('f-basement'))      $('f-basement').checked   = !!state.build.hasBasement;
+    if ($('f-lift'))          $('f-lift').checked       = !!state.build.hasLift;
+    if ($('f-water-tank'))    $('f-water-tank').checked = (state.build.hasWaterTank !== false);
+    if ($('f-lift-sqft'))      $('f-lift-sqft').value      = state.pricing.liftSqftPerLevel      ?? '';
+    if ($('f-staircase-sqft')) $('f-staircase-sqft').value = state.pricing.staircaseSqftPerLevel ?? '';
+    if ($('f-cost-sqft'))     $('f-cost-sqft').value    = state.pricing.costPerSqft ?? '';
+    if ($('f-struct-rate'))   $('f-struct-rate').value  = state.pricing.structureRate ?? '';
+    if ($('f-zone-a-rate'))   $('f-zone-a-rate').value   = state.pricing.zoneARate    ?? '';
+    if ($('f-zone-b-rate'))   $('f-zone-b-rate').value   = state.pricing.zoneBRate    ?? '';
+    if ($('f-zone-c-rate'))   $('f-zone-c-rate').value   = state.pricing.zoneCRate    ?? '';
+    if ($('f-zone-d-rate'))   $('f-zone-d-rate').value   = state.pricing.zoneDRate    ?? '';
+    if ($('f-basement-rate')) $('f-basement-rate').value = state.pricing.basementRate ?? '';
+    if ($('f-lift-cost'))     $('f-lift-cost').value     = state.pricing.liftCost     ?? '';
+    if ($('f-specs-layout'))  $('f-specs-layout').value  = state.specsLayout || 'table';
+    if ($('f-notes'))         $('f-notes').value         = state.notes ?? '';
+    // Scope button row.
+    const scopeRow = $('f-scope');
+    if (scopeRow) {
+      for (const btn of scopeRow.querySelectorAll('button')) {
+        btn.classList.toggle('active', btn.dataset.v === state.scope);
+      }
+    }
+    // Build-type-dependent UI affordances + lift-cost-row visibility.
+    try { reflectModeUi(state.build.buildType); } catch(_) {}
+    { const row = document.getElementById('lift-cost-row'); if (row) row.style.display = state.build.hasLift ? '' : 'none'; }
+    // Additional zones (elevation / gst / custom-list) re-hydrate via their own renderers.
+    try {
+      _bindAddlZone('elevation', false);
+      _bindAddlZone('gst', false);
+      if (typeof renderCustomList === 'function') renderCustomList();
+    } catch(_) {}
+  }
+
+  // Re-render after an in-memory state mutation (e.g. AI Apply). Mirrors what
+  // location.reload() used to do, minus the navigation: rebuild rows for build
+  // flags, re-hydrate inputs, save + repaint panels, fire quote-state-changed
+  // so the preview iframe repaints within 700 ms.
+  window.__qbRerender = function __qbRerender() {
+    try { reconcileRowsForBuild(); } catch (e) { console.warn('[qb-rerender] reconcile failed', e); }
+    try { repaintInputsFromState(); } catch (e) { console.warn('[qb-rerender] repaint failed', e); }
+    try { syncBpfRatesLength(); } catch(_) {}
+    flush();
+  };
 
   // ---- Customer field listeners ----
   $('f-salutation').oninput = e => { state.customer.salutation = e.target.value; flush(); };
@@ -5424,10 +5494,25 @@ function renderNotesPage(state) {
     persistChatState();
     renderPending();
     if (applied) {
-      chat.history.push({ role: 'system', text: '✓ Applied ' + applied + ' change' + (applied===1?'':'s') + (failed?' ('+failed+' failed)':'') + '. Reloading…' });
+      chat.history.push({ role: 'system', text: '✓ Applied ' + applied + ' change' + (applied===1?'':'s') + (failed?' ('+failed+' failed)':'') + '.' });
       renderHistory();
       window.__qbToast('Applied ' + applied + ' change' + (applied===1?'':'s'));
-      setTimeout(() => location.reload(), 600);
+      // Phase 9B-1 (Issue 6): in-place rerender — no full reload.
+      // Drawer stays open, input stays focusable, preview iframe picks up
+      // the new state via the quote-state-changed event + its 700ms poll.
+      // Defensive fallback: if __qbRerender is missing or throws, fall back
+      // to the legacy reload so users never get a wedged UI.
+      try {
+        if (typeof window.__qbRerender === 'function') {
+          window.__qbRerender();
+        } else {
+          console.warn('[ai-edit] __qbRerender missing; falling back to reload');
+          setTimeout(() => location.reload(), 600);
+        }
+      } catch (e) {
+        console.error('[ai-edit] __qbRerender threw; falling back to reload', e);
+        setTimeout(() => location.reload(), 600);
+      }
     } else if (failed) {
       window.__qbToast(failed + ' patch(es) failed validation', 'err');
     }
