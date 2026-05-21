@@ -4727,16 +4727,15 @@ function renderSpecPages(state, sortedCats, byCat) {
     } else if (!_canDefault) {
       desc = '';  // 7H-B: loaded quote, no override → render empty, NOT catalog.
     } else {
-      const baseDesc = (it ? it.description : '') || '';
-      const brands = (o.brands !== undefined && Array.isArray(o.brands))
-        ? o.brands
-        : ((it && Array.isArray(it.brands)) ? it.brands : []);
-      if (brands.length) {
-        const brandLine = 'Brands: ' + brands.join(' · ');
-        desc = baseDesc ? (brandLine + '\n' + baseDesc) : brandLine;
-      } else {
-        desc = baseDesc;
-      }
+      // Phase 9A (2026-05-21): Stopped prepending "Brands: <X>" to the
+      // description. The renderer already emits a bold <Brand> line via the
+      // separate `brand` field (see spec-brand div below), so the prepend
+      // produced duplicate (sometimes triple) brand rendering. The catalog's
+      // own `description` field still contains a leading brand-only line for
+      // ~20 legacy items (e.g. MCB/ELCB "Havells\n..."), but the dedup block
+      // at the bottom of rowFields strips that. Net: brand renders ONCE, in
+      // the brand column.
+      desc = (it ? it.description : '') || '';
     }
     const loc  = o.location || '';
     // Phase 6.4 #11c: pass through richness so renderers can emit HTML
@@ -5062,15 +5061,44 @@ function renderNotesPage(state) {
         basementRate: (v.tier === 'luxury' || v.tier === 'mid_luxury') ? 2700 : 2700,
         liftCost:     lift,
       };
-      // Reset rows so the catalog defaults regenerate for the new scope.
-      newState.rows = [];
+      // Phase 9A (2026-05-21): Build rows from catalog.tiered.json using the
+      // selected tier's per-item brand/spec/rate. Previously rows were left []
+      // and bootForm() fell through to defaultRowsFor() — which reads the FLAT
+      // catalog (Hardik Malik leak). Now each row carries an override with the
+      // tier-specific brand, description and rate, so the renderer (which
+      // honours overrides verbatim) shows the correct tier text.
+      // Items whose tiers[<tier>] === null are OMITTED (per Varun's Q1).
+      const scope = newState.scope || 'full';
+      const wantBasement = !!v.hasBasement;
+      newState.rows = (cat.items || [])
+        .filter(it => it.scope && it.scope.includes(scope === 'structure_only' ? 'structure_only' : 'full'))
+        .filter(it => !(it.category === 'basement' && !wantBasement))
+        .filter(it => it.tiers && it.tiers[v.tier] != null)
+        .map(it => {
+          const t = it.tiers[v.tier];
+          const override = {};
+          // Brand: tier's brand (string). Empty string means no brand.
+          if (typeof t.brand === 'string') override.brand = t.brand;
+          // Description: prefer tier `spec` so we get the EXACT reference-quote
+          // wording (incl. UPS/EV/Solar text). This sidesteps the flat-catalog
+          // "Brands: X" prefix bug entirely because we never go through the
+          // fresh-row default path for these rows.
+          if (typeof t.spec === 'string' && t.spec.length) override.description = t.spec;
+          // Rate: tier numeric rate (may be null for descriptive items).
+          if (t.rate != null) override.rate = t.rate;
+          // Rate text: tier-specific (e.g. "—" for descriptive items, or
+          // "₹45,000" for sanitary CP, etc.).
+          if (typeof t.rate_text === 'string' && t.rate_text.length) override.rate_text = t.rate_text;
+          return { id: it.id, override };
+        });
       // Tag the source tier so future LLM edits and analytics know origin.
       newState._wizardSource = {
         tier: v.tier,
         createdAt: new Date().toISOString(),
         catalogSchemaVersion: cat._meta && cat._meta.schema_version,
       };
-      // Mark as fresh so the catalog defaults get applied on next load.
+      // Mark as fresh quote (for any rows we did NOT populate — e.g. future
+      // basement add-ins). The wizard-set overrides will dominate regardless.
       newState._isFreshQuote = true;
 
       // Wipe the active slot pointer (so this becomes a scratch quote that the
