@@ -1,0 +1,13 @@
+2026-05-21T19:20:48+00:00 | START | visual QC subagent starting
+2026-05-21T19:22:27+00:00 | STEP1 | active revision: zuildup-quotes-00058-rx6, reading context
+2026-05-21T19:22:44+00:00 | STEP2 | attempting render via puppeteer
+2026-05-21T19:25:52+00:00 | STEP2_V2 | running render_v2.mjs with correct #wizard-open selector
+2026-05-21T19:26:22+00:00 | STEP2_V2_PROGRESS | waiting for renders...
+2026-05-21T19:26:47+00:00 | STEP2_PDF1 | live_basic.pdf rendered (1MB)
+2026-05-21T19:27:20+00:00 | STEP2_PDF2 | live_mid_luxury.pdf rendered
+2026-05-21T19:27:43+00:00 | STEP2_PDF3_DONE | all 3 live PDFs rendered, converting to PNG
+2026-05-21T19:32:18+00:00 | STEP3_DONE | all PNGs converted (87 total). Committing partial evidence.
+2026-05-21T19:37:04+00:00 | STEP4_HALFWAY | image analysis: Phase 9A largely worked, live matches reference per tier
+2026-05-21T19:39:54+00:00 | STEP5 | writing QC report
+2026-05-21T19:41:41+00:00 | STEP5_DONE | QC report written, committing+pushing
+2026-05-21T19:41:41+00:00 | STEP5_DONE | QC report written

@@ -1,0 +1,40 @@
+--- 5s wait ---
+[console:error] Failed to load resource: the server responded with a status of 404 ()
+[pageerror] state is not defined 
+ ReferenceError: state is not defined
+    at _doFarFetch (https://zuildup-quotes-zim2owjloq-el.a.run.app/app/quote.js:796:31)
+    at <anonymous> (https://zuildup-quotes-zim2owjloq-el.a.run.app/app/quote.js:792:68)
+PROBE: {
+  "hasQuickBuild": false,
+  "hasWizardOpen": true,
+  "qbState": true,
+  "qbStateRows": 88,
+  "title": "ZuildUp Quotation Builder",
+  "bodyFirst200": "ZuildUp\nQuotation Builder\nINTERNAL · V2\nCUSTOMER\nSalutation\nMr.\nMs.\nMr. & Mrs.\nDr.\nAr.\nFull name\nPlot address\nBUILD CONFIGURATION\nPlot (sq.yd)\nBreadth (ft)\nCoverage (%)\n↻\nCoverage auto-populates from ",
+  "btnIds": [
+    "far-reset",
+    "addl-custom-add",
+    "reset-default",
+    "add-custom",
+    "add-row",
+    "new-quote",
+    "wizard-open",
+    "ai-chat-open",
+    "save-quote",
+    "load-quote",
+    "export-quote",
+    "import-quote",
+    "dl",
+    "picker-close",
+    "save-cancel",
+    "save-as-new",
+    "save-confirm",
+    "load-close",
+    "wiz-prev",
+    "wiz-next",
+    "wiz-apply",
+    "wiz-close",
+    "ai-chat-close",
+    "ai-chat-send"
+  ]
+}

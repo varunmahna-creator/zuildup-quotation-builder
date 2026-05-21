@@ -1,0 +1,104 @@
+pdfjs-dist present: false
+
+=== live_basic.pdf → live_basic_p-*.png ===
+  [c] Warning: FormatError: Unsupported ShadingType: 1
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  ✓ pdfjs rendered 14 pages
+    → live_basic_p-01.png (1948245 bytes)
+    → live_basic_p-02.png (419993 bytes)
+    → live_basic_p-03.png (232276 bytes)
+    → live_basic_p-04.png (182828 bytes)
+    → live_basic_p-05.png (163116 bytes)
+    → live_basic_p-06.png (143493 bytes)
+    → live_basic_p-07.png (386939 bytes)
+    → live_basic_p-08.png (358958 bytes)
+    → live_basic_p-09.png (256984 bytes)
+    → live_basic_p-10.png (409739 bytes)
+    → live_basic_p-11.png (181059 bytes)
+    → live_basic_p-12.png (304383 bytes)
+    → live_basic_p-13.png (386289 bytes)
+    → live_basic_p-14.png (215648 bytes)
+
+=== live_mid_luxury.pdf → live_mid_p-*.png ===
+  [c] Warning: FormatError: Unsupported ShadingType: 1
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  ✓ pdfjs rendered 14 pages
+    → live_mid_p-01.png (1948252 bytes)
+    → live_mid_p-02.png (419993 bytes)
+    → live_mid_p-03.png (232278 bytes)
+    → live_mid_p-04.png (182855 bytes)
+    → live_mid_p-05.png (163801 bytes)
+    → live_mid_p-06.png (143493 bytes)
+    → live_mid_p-07.png (386103 bytes)
+    → live_mid_p-08.png (380869 bytes)
+    → live_mid_p-09.png (256417 bytes)
+    → live_mid_p-10.png (411256 bytes)
+    → live_mid_p-11.png (184575 bytes)
+    → live_mid_p-12.png (315550 bytes)
+    → live_mid_p-13.png (356545 bytes)
+    → live_mid_p-14.png (264560 bytes)
+
+=== live_luxury.pdf → live_lux_p-*.png ===
+  [c] Warning: FormatError: Unsupported ShadingType: 1
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  ✓ pdfjs rendered 14 pages
+    → live_lux_p-01.png (1948004 bytes)
+    → live_lux_p-02.png (419993 bytes)
+    → live_lux_p-03.png (232339 bytes)
+    → live_lux_p-04.png (183056 bytes)
+    → live_lux_p-05.png (163060 bytes)
+    → live_lux_p-06.png (143493 bytes)
+    → live_lux_p-07.png (379403 bytes)
+    → live_lux_p-08.png (378158 bytes)
+    → live_lux_p-09.png (261014 bytes)
+    → live_lux_p-10.png (380959 bytes)
+    → live_lux_p-11.png (186300 bytes)
+    → live_lux_p-12.png (326992 bytes)
+    → live_lux_p-13.png (392380 bytes)
+    → live_lux_p-14.png (208673 bytes)
+
+=== 01_basic.pdf → ref_basic_p-*.png ===
+  [c] Warning: FormatError: Unsupported ShadingType: 1
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  ✓ pdfjs rendered 15 pages
+    → ref_basic_p-01.png (1932871 bytes)
+    → ref_basic_p-02.png (419993 bytes)
+    → ref_basic_p-03.png (241141 bytes)
+    → ref_basic_p-04.png (171461 bytes)
+    → ref_basic_p-05.png (251074 bytes)
+    → ref_basic_p-06.png (143593 bytes)
+    → ref_basic_p-07.png (369147 bytes)
+    → ref_basic_p-08.png (236934 bytes)
+    → ref_basic_p-09.png (215412 bytes)
+    → ref_basic_p-10.png (308568 bytes)
+    → ref_basic_p-11.png (398215 bytes)
+    → ref_basic_p-12.png (181059 bytes)
+    → ref_basic_p-13.png (320538 bytes)
+    → ref_basic_p-14.png (309501 bytes)
+    → ref_basic_p-15.png (208945 bytes)
+
+=== 02_mid_luxury.pdf → ref_mid_p-*.png ===
+  [c] Warning: FormatError: Unsupported ShadingType: 1
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  [c] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+  ✓ pdfjs rendered 15 pages
+    → ref_mid_p-01.png (1934824 bytes)
+    → ref_mid_p-02.png (419993 bytes)
+    → ref_mid_p-03.png (241151 bytes)
+    → ref_mid_p-04.png (171691 bytes)
+    → ref_mid_p-05.png (268411 bytes)
+    → ref_mid_p-06.png (143593 bytes)
+    → ref_mid_p-07.png (368186 bytes)
+    → ref_mid_p-08.png (236934 bytes)
+    → ref_mid_p-09.png (237860 bytes)
+    → ref_mid_p-10.png (308029 bytes)
+    → ref_mid_p-11.png (399527 bytes)
+    → ref_mid_p-12.png (184575 bytes)
+    → ref_mid_p-13.png (329856 bytes)
+    → ref_mid_p-14.png (330949 bytes)
+    → ref_mid_p-15.png (209264 bytes)
+✗ Missing: /opt/ocplatform/workspace/zuildup/quotation-builder/reference_quotes/2026-05-21_canonical/03_luxury.pdf

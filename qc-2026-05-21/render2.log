@@ -1,0 +1,17 @@
+
+=== Rendering tier: basic ===
+[console:error] Failed to load resource: the server responded with a status of 404 ()
+[pageerror] state is not defined
+FATAL: TimeoutError: Waiting for selector `#qb-quick-build` failed
+    at CSSQueryHandler.waitFor (file:///opt/openclaw/workspace/zuildup/quotation-builder/node_modules/puppeteer-core/lib/puppeteer/common/QueryHandler.js:211:46)
+    at async CdpFrame.waitForSelector (file:///opt/openclaw/workspace/zuildup/quotation-builder/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:541:21)
+    at async CdpPage.waitForSelector (file:///opt/openclaw/workspace/zuildup/quotation-builder/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1387:20)
+    at async file:///opt/openclaw/workspace/zuildup/quotation-builder/qc-2026-05-21/render_live.mjs:38:7 {
+  cause: TimeoutError: Waiting failed: 30000ms exceeded
+      at new WaitTask (file:///opt/openclaw/workspace/zuildup/quotation-builder/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)
+      at IsolatedWorld.waitForFunction (file:///opt/openclaw/workspace/zuildup/quotation-builder/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)
+      at CSSQueryHandler.waitFor (file:///opt/openclaw/workspace/zuildup/quotation-builder/node_modules/puppeteer-core/lib/puppeteer/common/QueryHandler.js:176:95)
+      at async CdpFrame.waitForSelector (file:///opt/openclaw/workspace/zuildup/quotation-builder/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:541:21)
+      at async CdpPage.waitForSelector (file:///opt/openclaw/workspace/zuildup/quotation-builder/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1387:20)
+      at async file:///opt/openclaw/workspace/zuildup/quotation-builder/qc-2026-05-21/render_live.mjs:38:7
+}
