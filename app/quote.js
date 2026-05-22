@@ -18,7 +18,69 @@
 (function(){
 'use strict';
 
-const STORE_KEY = 'zuildup.quote.v2';
+// Phase 9B-2 (Issue 4): per-tab working state lives in sessionStorage keyed
+// by a URL `?qid=<id>` so two tabs can edit different quotes in parallel
+// without overwriting each other. localStorage saved-slots
+// (`zuildup.quotes.<id>` + index) are unchanged and remain shared across
+// tabs. Firestore sync is unchanged.
+//
+// Storage layout (post-9B-2):
+//   sessionStorage 'zuildup.quote.<qid>'  — per-tab working scratch (sessionStorage = per-tab)
+//   localStorage   'zuildup.quotes.<id>'  — canonical saved slot (shared)
+//   localStorage   'zuildup.quotes.index' — saved-slot index (shared)
+//   localStorage   'zuildup.quote.v2'     — LEGACY scratch (kept read-only for 30d migration)
+//   localStorage   'zuildup.migrated.9b2' — '1' once the legacy scratch has been
+//                                            migrated into a sessionStorage tab
+//   localStorage   'zuildup.active_quote_id' — LEGACY pointer (kept read-only / cleared)
+//
+// Source of truth for "which quote does this tab show" is the URL ?qid=.
+
+// LEGACY constant — only read for one-shot migration; no new writes.
+const LEGACY_STORE_KEY = 'zuildup.quote.v2';
+// Backwards-compat alias for code paths that still reference STORE_KEY
+// (these will be migrated to sessionStorage-aware helpers below).
+const STORE_KEY = LEGACY_STORE_KEY;
+const SESSION_PFX = 'zuildup.quote.';   // sessionStorage prefix (full key = SESSION_PFX + qid)
+const MIGRATED_FLAG = 'zuildup.migrated.9b2';
+
+// Resolve the current tab's qid. Order:
+//   1. window.__qbQid (set once at boot)
+//   2. window.parent.__qbQid (preview iframe inherits from its form parent)
+//   3. URL ?qid=
+//   4. null  (caller responsible for minting a draft id)
+function _getQid() {
+  try { if (window.__qbQid) return window.__qbQid; } catch(_){}
+  try {
+    if (window.parent && window.parent !== window && window.parent.__qbQid) {
+      return window.parent.__qbQid;
+    }
+  } catch(_){}
+  try {
+    const u = new URLSearchParams(location.search);
+    const q = u.get('qid');
+    if (q) return q;
+  } catch(_){}
+  return null;
+}
+function _sessionKey(qid) { return SESSION_PFX + qid; }
+function _isDraftQid(qid) { return typeof qid === 'string' && qid.indexOf('draft-') === 0; }
+function _mintDraftQid() {
+  let rand;
+  try {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      rand = window.crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+    } else if (window.crypto && window.crypto.getRandomValues) {
+      const buf = new Uint8Array(4);
+      window.crypto.getRandomValues(buf);
+      rand = Array.from(buf, b => ('0' + b.toString(16)).slice(-2)).join('');
+    } else {
+      rand = Math.random().toString(36).slice(2, 10);
+    }
+  } catch(_) {
+    rand = Math.random().toString(36).slice(2, 10);
+  }
+  return 'draft-' + rand;
+}
 
 // ============================================================================
 // Calculator constants (verbatim from zuildup-cost-calculator.html)
@@ -176,9 +238,82 @@ function _migrateLegacyRows(rows) {
   });
 }
 
+// Shared merge helper — applied to any raw state read from session/local storage
+// so newly-added schema fields get defaults. Extracted from the two duplicated
+// blocks that lived inside the pre-9B-2 loadState().
+function _mergeStateWithDefaults(s) {
+  const d = defaultState();
+  return {
+    ...d, ...s,
+    _isFreshQuote: false,
+    rows: _migrateLegacyRows(s.rows),
+    _uiCatOpen: {},
+    specsLayout: 'table',
+    customer: { ...d.customer, ...(s.customer||{}) },
+    build: (function(sb){
+      const merged = { ...d.build, ...(sb||{}) };
+      if (sb && !('hasWaterTank' in sb)) merged.hasWaterTank = true;
+      return merged;
+    })(s.build),
+    pricing: {
+      ...d.pricing, ...(s.pricing||{}),
+      itemRates: { ...(d.pricing.itemRates||{}), ...((s.pricing&&s.pricing.itemRates)||{}) },
+      additionalZones: {
+        elevation: { ...d.pricing.additionalZones.elevation, ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.elevation)||{}) },
+        gst:       { ...d.pricing.additionalZones.gst,       ...((s.pricing&&s.pricing.additionalZones&&s.pricing.additionalZones.gst)||{}) },
+        custom: (function(rawCustom){
+          if (Array.isArray(rawCustom)) return rawCustom.slice();
+          if (rawCustom && typeof rawCustom === 'object' && (rawCustom.enabled || rawCustom.name || rawCustom.cost)) {
+            return [{ ...rawCustom }];
+          }
+          return [];
+        })(s.pricing && s.pricing.additionalZones && s.pricing.additionalZones.custom),
+      },
+      zoneLineItems:     { ...(d.pricing.zoneLineItems||{}),     ...((s.pricing&&s.pricing.zoneLineItems)||{}) },
+      floorSummaryOverrides: { ...(d.pricing.floorSummaryOverrides||{}), ...((s.pricing&&s.pricing.floorSummaryOverrides)||{}) },
+      itemNameOverrides: { ...(d.pricing.itemNameOverrides||{}), ...((s.pricing&&s.pricing.itemNameOverrides)||{}) },
+      itemDescOverrides: { ...(d.pricing.itemDescOverrides||{}), ...((s.pricing&&s.pricing.itemDescOverrides)||{}) },
+      balconyPerFloor: {
+        ...d.pricing.balconyPerFloor,
+        ...((s.pricing&&s.pricing.balconyPerFloor)||{}),
+        rates: Array.isArray(s.pricing&&s.pricing.balconyPerFloor&&s.pricing.balconyPerFloor.rates)
+          ? s.pricing.balconyPerFloor.rates.slice() : [],
+      },
+    },
+  };
+}
+
 function loadState() {
-  // P1.5: prefer the active named slot. Falls back to scratch state (zuildup.quote.v2)
-  // when no active id is set, or the active id points to a missing slot.
+  // Phase 9B-2 (Issue 4): read order is sessionStorage by qid → localStorage
+  // saved slot (if qid is non-draft) → legacy active-id pointer → legacy
+  // scratch → defaults. The URL is the source of truth for "which quote does
+  // this tab show"; sessionStorage is per-tab so two tabs never share working
+  // state.
+  const qid = _getQid();
+
+  // 1) sessionStorage working copy (current tab's scratch for this qid)
+  if (qid) {
+    try {
+      const raw = sessionStorage.getItem(_sessionKey(qid));
+      if (raw) {
+        return _mergeStateWithDefaults(JSON.parse(raw));
+      }
+    } catch(_){}
+
+    // 2) For non-draft qids (real ZUI ids), fall back to the localStorage saved slot.
+    //    Copy into sessionStorage so subsequent saves stay tab-local.
+    if (!_isDraftQid(qid)) {
+      try {
+        const slotRaw = localStorage.getItem('zuildup.quotes.' + qid);
+        if (slotRaw) {
+          try { sessionStorage.setItem(_sessionKey(qid), slotRaw); } catch(_){}
+          return _mergeStateWithDefaults(JSON.parse(slotRaw));
+        }
+      } catch(_){}
+    }
+  }
+
+  // 3) Legacy fall-back: pre-9B-2 active_quote_id pointer (read-only).
   try {
     const aid = localStorage.getItem('zuildup.active_quote_id');
     if (aid) {
@@ -345,12 +480,26 @@ function _normaliseStateRupee(obj) {
 function saveState(s) {
   // 7H-D: normalise Rs.→₹ on every save so the stored copy is canonical.
   try { _normaliseStateRupee(s); } catch(_) {}
-  localStorage.setItem(STORE_KEY, JSON.stringify(s));
+
+  // Phase 9B-2 (Issue 4): write working state to sessionStorage keyed by qid
+  // so two tabs are independent. Saved slots (localStorage 'zuildup.quotes.<id>'
+  // + Firestore) still get touched for non-draft qids via QuoteStorage._touch.
+  const qid = _getQid();
+  try {
+    if (qid) {
+      sessionStorage.setItem(_sessionKey(qid), JSON.stringify(s));
+    } else {
+      // Defensive: no qid yet (e.g. very-early boot before resolve). Stash in
+      // a sentinel session key; bootForm will rewrite under the real qid.
+      sessionStorage.setItem(_sessionKey('__pending__'), JSON.stringify(s));
+    }
+  } catch(_){}
+
   // P1.5: if there's an active named quote, also persist into the named slot
   // and keep the index entry's modified_at fresh. This is what makes the
   // toolbar "Saved at HH:MM" indicator update on every keystroke once the
-  // user has explicitly Saved (or Loaded) into a named slot. If they're in
-  // scratch mode (no active id), we keep zuildup.quote.v2 as the only copy.
+  // user has explicitly Saved (or Loaded) into a named slot. With 9B-2 the
+  // "active id" is the URL qid itself (for non-draft qids).
   try {
     const aid = QuoteStorage.activeId();
     if (aid) QuoteStorage._touch(aid, s);
@@ -694,10 +843,22 @@ const QuoteStorage = {
     return this.save(parsed);
   },
 
+  // Phase 9B-2: "active id" is now the URL qid for non-draft (ZUI / q_*) qids.
+  // Draft qids (draft-*) represent scratch / unsaved tabs and report an empty
+  // active id, matching the pre-9B-2 "scratch" semantics for existing call
+  // sites (auto-save, save indicator, etc.).
   activeId() {
+    const qid = (typeof _getQid === 'function') ? _getQid() : null;
+    if (qid && !_isDraftQid(qid)) return qid;
+    // Legacy read-only fallback (in case something pre-9B-2 wrote here).
     return localStorage.getItem(this.ACTIVE_KEY) || '';
   },
   setActiveId(id) {
+    // Phase 9B-2: legacy callers may still call setActiveId. We no longer rely
+    // on the localStorage pointer (URL qid is the source of truth) but we
+    // continue to keep/clear the legacy key for hygiene + back-compat with any
+    // unmigrated code path that still reads it. URL updates happen at the
+    // call site (openSavedQuote, Save flow) because they need history.* APIs.
     if (id) localStorage.setItem(this.ACTIVE_KEY, id);
     else    localStorage.removeItem(this.ACTIVE_KEY);
   },
@@ -1574,6 +1735,57 @@ if (isPreviewPage) bootPreview();
 // ============================================================================
 async function bootForm() {
   await loadCatalog();
+
+  // ============================================================================
+  // Phase 9B-2 (Issue 4) — URL-qid + sessionStorage boot
+  // ============================================================================
+  // 1) Resolve / mint qid from URL.
+  // 2) One-shot legacy migration: copy localStorage[STORE_KEY] into sessionStorage
+  //    under the new qid (only if no sessionStorage entry exists yet for this qid).
+  // 3) Set window.__qbQid BEFORE any loadState() / saveState() call so all
+  //    storage helpers route through the new sessionStorage path.
+  (function _bootQid() {
+    let qid = null;
+    try {
+      const u = new URLSearchParams(location.search);
+      qid = u.get('qid');
+    } catch(_){}
+    if (!qid) {
+      qid = _mintDraftQid();
+      try {
+        const params = new URLSearchParams(location.search);
+        params.set('qid', qid);
+        const newUrl = location.pathname + '?' + params.toString() + location.hash;
+        history.replaceState({}, '', newUrl);
+      } catch(_){}
+    }
+    window.__qbQid = qid;
+
+    // One-shot migration of pre-9B-2 legacy scratch state.
+    try {
+      const alreadyMigrated = localStorage.getItem(MIGRATED_FLAG) === '1';
+      const haveSession = !!sessionStorage.getItem(_sessionKey(qid));
+      if (!alreadyMigrated && !haveSession && _isDraftQid(qid)) {
+        const legacy = localStorage.getItem(LEGACY_STORE_KEY);
+        if (legacy) {
+          sessionStorage.setItem(_sessionKey(qid), legacy);
+          localStorage.setItem(MIGRATED_FLAG, '1');
+          // Keep legacy key in localStorage for 30d (no delete) as recovery
+          // insurance. New writes go to sessionStorage only.
+          console.log('[9B-2] migrated legacy scratch into sessionStorage[' + _sessionKey(qid) + ']');
+        } else {
+          localStorage.setItem(MIGRATED_FLAG, '1');
+        }
+      }
+      // Adopt any pre-qid sentinel that early saveState() calls may have stashed.
+      const pending = sessionStorage.getItem(_sessionKey('__pending__'));
+      if (pending && !haveSession) {
+        sessionStorage.setItem(_sessionKey(qid), pending);
+        sessionStorage.removeItem(_sessionKey('__pending__'));
+      }
+    } catch(_){}
+  })();
+
   // Phase 4: pull team's cloud-stored quotes into local cache before reading state.
   // Best-effort — if it fails (offline / API down), we fall through to localStorage only.
   try {
@@ -2089,25 +2301,24 @@ async function bootForm() {
   $('picker-search').oninput = () => renderPicker();
   $('dl').onclick = downloadPdf;
 
-  // P1.4: New Quote — wipes current quote and reloads to empty state.
-  // Foundation for P1.5 (named save/load). Sales hits this when starting a fresh customer.
+  // Phase 9B-2 (Issue 4): New Quote opens a fresh draft in a NEW TAB. The
+  // current tab keeps whatever it's working on (its sessionStorage is untouched
+  // and the URL qid stays the same). This is what Varun's sales team needs:
+  // opening "new" must not silently wipe an in-progress draft in another tab.
   const newQuoteBtn = document.getElementById('new-quote');
   if (newQuoteBtn) {
     newQuoteBtn.onclick = () => {
-      const total = state.rows.length;
-      const customerName = (state.customer?.name || '').trim();
-      const msg = total === 0 && !customerName
-        ? 'Start a new quote? (Current state is already empty.)'
-        : 'Clear current quote and start fresh?\n\n' +
-          (customerName ? `Customer: ${customerName}\n` : '') +
-          `Rows: ${total}\n\nThis cannot be undone. (P1.5 will add Save/Load.)`;
-      if (!confirm(msg)) return;
+      const newQid = _mintDraftQid();
+      const url = location.pathname + '?qid=' + encodeURIComponent(newQid);
       try {
-        localStorage.removeItem(STORE_KEY);
-        // P1.5: also drop the active named-slot pointer so we go to scratch mode.
-        QuoteStorage.setActiveId('');
-      } catch (e) {}
-      location.reload();
+        const w = window.open(url, '_blank');
+        if (!w) {
+          // Pop-up blocked — fall back to same-tab navigation.
+          location.href = url;
+        }
+      } catch (e) {
+        location.href = url;
+      }
     };
   }
 
@@ -2221,6 +2432,28 @@ async function bootForm() {
 
   document.getElementById('save-cancel').onclick = () => closeModal(saveModal);
 
+  // Phase 9B-2 (Issue 4): when a draft tab promotes to a saved (q_*/ZUI) qid,
+  // we need to (a) move its sessionStorage entry under the new key and (b)
+  // rewrite the URL so subsequent loadState / saveState calls find it.
+  function _promoteDraftToSavedQid(newId) {
+    try {
+      const oldQid = window.__qbQid;
+      if (!oldQid || !newId || oldQid === newId) return;
+      if (!_isDraftQid(oldQid)) return;   // already on a real qid, no-op
+      const raw = sessionStorage.getItem(_sessionKey(oldQid));
+      if (raw) {
+        sessionStorage.setItem(_sessionKey(newId), raw);
+        sessionStorage.removeItem(_sessionKey(oldQid));
+      }
+      window.__qbQid = newId;
+      try {
+        const params = new URLSearchParams(location.search);
+        params.set('qid', newId);
+        history.replaceState({}, '', location.pathname + '?' + params.toString() + location.hash);
+      } catch(_){}
+    } catch(_){}
+  }
+
   document.getElementById('save-confirm').onclick = () => {
     setIndicator('saving', 'Saving…');
     let id;
@@ -2237,6 +2470,7 @@ async function bootForm() {
       }
       QuoteStorage.setActiveId(id);
       state.quoteId = id; // mirror into in-memory state
+      _promoteDraftToSavedQid(id);   // 9B-2: rewrite URL + sessionStorage key
       saveState(state);   // re-persist to scratch + named slot via _touch
       closeModal(saveModal);
       toast('Saved');
@@ -2259,6 +2493,7 @@ async function bootForm() {
       const id = QuoteStorage.save(state, cn + ' — ' + today + ' (copy)');
       QuoteStorage.setActiveId(id);
       state.quoteId = id;
+      _promoteDraftToSavedQid(id);   // 9B-2: rewrite URL + sessionStorage key
       saveState(state);
       closeModal(saveModal);
       toast('Saved as new copy');
@@ -2344,14 +2579,24 @@ async function bootForm() {
   }
 
   function openSavedQuote(id) {
-    // If current state has unsaved changes (no active id but state has any data), confirm first.
+    // Phase 9B-2 (Issue 4): switching to a saved quote changes the URL qid in
+    // the CURRENT tab. Other tabs are unaffected (their URLs stay the same).
+    // To open a saved quote in a NEW tab, sales reps can ctrl-click the
+    // list item (browser-native; supported by the <a href> rendering below)
+    // or use the New Quote button + Load there.
     const hasContent = (state.customer.name || (state.rows && state.rows.length));
-    const aid = QuoteStorage.activeId();
-    if (!aid && hasContent) {
-      if (!confirm('Open saved quote? Your current scratch quote will be discarded.\n\nClick Cancel and use Save first if you want to keep it.')) return;
+    const currentQid = window.__qbQid;
+    if (currentQid && _isDraftQid(currentQid) && hasContent) {
+      if (!confirm('Open saved quote in this tab? Your unsaved draft will be replaced in this tab.\n\nTip: ctrl-click the quote in the list to open it in a new tab instead.')) return;
     }
-    QuoteStorage.setActiveId(id);
+    try { QuoteStorage.setActiveId(id); } catch(_){}
     closeModal(loadModal);
+    try {
+      const newUrl = location.pathname + '?qid=' + encodeURIComponent(id);
+      history.pushState({}, '', newUrl);
+    } catch(_){}
+    // Reload in-place so the form re-bootstraps under the new qid (this only
+    // affects the current tab; other tabs keep their own qid + sessionStorage).
     location.reload();
   }
 
@@ -2437,11 +2682,15 @@ async function bootForm() {
       reader.onload = () => {
         try {
           const id = QuoteStorage.importJSON(String(reader.result));
-          QuoteStorage.setActiveId(id);
+          try { QuoteStorage.setActiveId(id); } catch(_){}
           const loaded = QuoteStorage.load(id);
           const cn = (loaded && loaded.customer && loaded.customer.name) || 'unknown';
           toast('Imported quote for ' + cn);
-          location.reload();
+          // Phase 9B-2 (Issue 4): navigate THIS tab to the imported qid.
+          // The new state lives in the localStorage saved slot; loadState()
+          // will copy it into sessionStorage on first read.
+          const url = location.pathname + '?qid=' + encodeURIComponent(id);
+          location.href = url;
         } catch (e) {
           toast('Import failed: ' + e.message, 'err');
         }
@@ -3794,6 +4043,16 @@ async function bootForm() {
 // ============================================================================
 async function bootPreview() {
   await loadCatalog();
+
+  // Phase 9B-2 (Issue 4): the preview iframe inherits qid from its parent form.
+  // _getQid() already checks window.parent.__qbQid, but we cache it locally
+  // and also fall through to the URL (?qid=) for standalone /preview opens.
+  try {
+    if (!window.__qbQid) {
+      window.__qbQid = _getQid();
+    }
+  } catch(_){}
+
   let aboutContent = null;
   try {
     const r = await fetch('/assets/about/about-content.json');
@@ -5173,15 +5432,24 @@ function renderNotesPage(state) {
 
       // Wipe the active slot pointer (so this becomes a scratch quote that the
       // rep then saves with a customer name), then persist new state and reload.
+      // Phase 9B-2 (Issue 4): wizard apply writes the new state into THIS
+      // tab's sessionStorage under a fresh draft qid, then navigates the
+      // current tab to that qid. Other tabs are NOT affected (pre-9B-2 this
+      // mutated the singleton STORE_KEY which corrupted every tab).
       try { QuoteStorage.setActiveId(''); } catch (_) {}
+      const wizQid = _mintDraftQid();
       try {
-        localStorage.setItem(STORE_KEY, JSON.stringify(newState));
+        sessionStorage.setItem(_sessionKey(wizQid), JSON.stringify(newState));
       } catch (e) {
         window.__qbToast('Wizard apply failed: ' + e.message, 'err');
         return;
       }
       window.__qbToast('Quote generated from ' + v.tier.replace('_',' ') + ' template');
-      setTimeout(() => location.reload(), 400);
+      // Navigate this tab to the new qid; sibling tabs are untouched.
+      setTimeout(() => {
+        const url = location.pathname + '?qid=' + encodeURIComponent(wizQid);
+        location.href = url;
+      }, 400);
     }).catch(err => {
       window.__qbToast('Wizard apply failed (catalog): ' + (err.message || err), 'err');
     });
@@ -5277,10 +5545,18 @@ function renderNotesPage(state) {
     return window.__qbState._aiChat;
   }
   function persistChatState() {
+    // Phase 9B-2 (Issue 4): AI chat history is part of state._aiChat; writing
+    // it must go through sessionStorage (current tab) not the cross-tab
+    // localStorage singleton. For saved (non-draft) qids we ALSO touch the
+    // localStorage named slot so the chat history survives a tab close.
     try {
-      const aid = QuoteStorage.activeId();
-      if (aid) localStorage.setItem('zuildup.quotes.' + aid, JSON.stringify(window.__qbState));
-      else localStorage.setItem(STORE_KEY, JSON.stringify(window.__qbState));
+      const qid = (typeof _getQid === 'function') ? _getQid() : (window.__qbQid || null);
+      if (qid) {
+        sessionStorage.setItem('zuildup.quote.' + qid, JSON.stringify(window.__qbState));
+        if (!_isDraftQid(qid)) {
+          try { localStorage.setItem('zuildup.quotes.' + qid, JSON.stringify(window.__qbState)); } catch(_){}
+        }
+      }
     } catch (_) {}
   }
 
