@@ -311,9 +311,24 @@ function loadState() {
         }
       } catch(_){}
     }
+
+    // Phase 9D (2026-05-22): HARD GUARD for fresh draft qids.
+    // If this is a draft qid (e.g. ?qid=draft-XXXXXXXX) and sessionStorage has
+    // nothing for it, return a clean defaultState() immediately. DO NOT fall
+    // through to the legacy active_quote_id / STORE_KEY hydration below — that
+    // path leaks the most-recently-saved quote into every new tab and is the
+    // root cause of the sales team's "new quote inherits previous values" bug.
+    //
+    // The one-shot legacy migration (pre-9B-2 scratch → first post-deploy
+    // draft) still runs in _bootQid() above, so that path is preserved.
+    if (_isDraftQid(qid)) {
+      return defaultState();
+    }
   }
 
   // 3) Legacy fall-back: pre-9B-2 active_quote_id pointer (read-only).
+  // NOTE (Phase 9D): only reachable when qid is missing entirely. Draft qids
+  // short-circuit above. Non-draft qids without a slot fall through here too.
   try {
     const aid = localStorage.getItem('zuildup.active_quote_id');
     if (aid) {
@@ -5281,6 +5296,11 @@ function renderNotesPage(state) {
       customB: parseFloat(document.getElementById('wiz-custom-B').value) || null,
       customC: parseFloat(document.getElementById('wiz-custom-C').value) || null,
       customD: parseFloat(document.getElementById('wiz-custom-D').value) || null,
+      // Phase 9D: Zone E (basement) rate override.
+      customE: (function(){
+        const el = document.getElementById('wiz-custom-E');
+        return el ? (parseFloat(el.value) || null) : null;
+      })(),
     };
   }
 
@@ -5355,9 +5375,21 @@ function renderNotesPage(state) {
   function applyWizard() {
     const v = getWizValues();
     loadTieredCatalog().then(cat => {
-      // Build the new state object that the live calc engine will consume.
-      // We pre-load existing state then surgically overwrite customer + build + pricing.
-      const newState = JSON.parse(JSON.stringify(window.__qbState)); // deep clone current
+      // Phase 9D (2026-05-22): Build the new state from defaultState() rather
+      // than deep-cloning __qbState. This was the root cause of the sales
+      // team's "Quick Build keeps stale data" report — deep-cloning carried
+      // forward the previous quote's row overrides, item rates, area
+      // overrides, floor summary overrides etc. Now we start from a clean
+      // canvas every Apply.
+      //
+      // The only thing we intentionally PRESERVE from current state is the
+      // server-assigned quoteId (so a partially-saved draft keeps its ZUI-...
+      // id if any), and the scope (full vs structure_only) which the rep
+      // picks via toolbar, not the wizard.
+      const cur = window.__qbState || {};
+      const newState = (typeof defaultState === 'function') ? defaultState() : JSON.parse(JSON.stringify(window.__qbState));
+      if (cur.quoteId) newState.quoteId = cur.quoteId;
+      if (cur.scope)   newState.scope   = cur.scope;
       newState.customer = {
         salutation: v.salutation,
         name: v.name,
@@ -5380,6 +5412,9 @@ function renderNotesPage(state) {
       const B = v.customB || z.B[v.tier];
       const C = v.customC || z.C[v.tier];
       const D = v.customD || z.D[v.tier];
+      // Phase 9D: Zone E (basement) rate — tier default = 2700, rep override
+      // via wiz-custom-E wins. Previously hardcoded 2700 with no override.
+      const E = v.customE || ((cat.zones && cat.zones.E_rate && cat.zones.E_rate[v.tier]) || 2700);
       newState.pricing = {
         ...newState.pricing,
         costPerSqft:  A,
@@ -5387,7 +5422,7 @@ function renderNotesPage(state) {
         zoneBRate:    B,
         zoneCRate:    C,
         zoneDRate:    D,
-        basementRate: (v.tier === 'luxury' || v.tier === 'mid_luxury') ? 2700 : 2700,
+        basementRate: E,
         liftCost:     lift,
       };
       // Phase 9A (2026-05-21): Build rows from catalog.tiered.json using the
@@ -5459,22 +5494,42 @@ function renderNotesPage(state) {
   openBtn.onclick = () => {
     // Pre-warm catalog fetch
     loadTieredCatalog().catch(()=>{});
-    // Pre-fill from current state if any
-    document.getElementById('wiz-salutation').value = window.__qbState.customer.salutation || 'Mr.';
-    document.getElementById('wiz-name').value       = window.__qbState.customer.name || '';
-    document.getElementById('wiz-address').value    = window.__qbState.customer.address || '';
-    document.getElementById('wiz-plot-sqyd').value  = window.__qbState.build.plotSqYards || '';
-    document.getElementById('wiz-breadth').value    = window.__qbState.build.breadth || '';
-    document.getElementById('wiz-coverage').value   = window.__qbState.build.coverage || 75;
-    document.getElementById('wiz-build-type').value = window.__qbState.build.buildType || 'stilt';
-    document.getElementById('wiz-floors').value     = window.__qbState.build.floors || 4;
-    document.getElementById('wiz-has-lift').checked     = !!window.__qbState.build.hasLift;
-    document.getElementById('wiz-has-basement').checked = !!window.__qbState.build.hasBasement;
-    document.getElementById('wiz-has-watertank').checked= window.__qbState.build.hasWaterTank !== false;
+    // Phase 9D (2026-05-22): Pre-fill source depends on whether THIS quote has
+    // ever been edited. If the current quote is a pristine draft (no customer
+    // name yet, no rep edits), open the wizard with BLANK inputs so each new
+    // quote starts truly fresh — don't carry over plot size / floors / build
+    // type from a previous (different customer's) quote in this tab session.
+    // If the rep has already entered customer info, treat this as "refining
+    // the current quote" and pre-fill from __qbState.
+    const cur = window.__qbState || {};
+    const curCustomer = cur.customer || {};
+    const curBuild = cur.build || {};
+    const isPristine = !curCustomer.name && !curBuild.plotSqYards && !curBuild.breadth;
+    const src = isPristine ? { customer: {}, build: {} } : { customer: curCustomer, build: curBuild };
+    document.getElementById('wiz-salutation').value = src.customer.salutation || 'Mr.';
+    document.getElementById('wiz-name').value       = src.customer.name || '';
+    document.getElementById('wiz-address').value    = src.customer.address || '';
+    document.getElementById('wiz-plot-sqyd').value  = src.build.plotSqYards || '';
+    document.getElementById('wiz-breadth').value    = src.build.breadth || '';
+    document.getElementById('wiz-coverage').value   = src.build.coverage || 75;
+    document.getElementById('wiz-build-type').value = src.build.buildType || 'stilt';
+    document.getElementById('wiz-floors').value     = src.build.floors || 4;
+    document.getElementById('wiz-has-lift').checked     = !!src.build.hasLift;
+    document.getElementById('wiz-has-basement').checked = !!src.build.hasBasement;
+    // Phase 9D: water tank defaults TRUE for pristine quote (matches reference
+    // quotes which all include 8000L tank by default), and reflects current
+    // state when refining an in-progress quote.
+    document.getElementById('wiz-has-watertank').checked = isPristine
+      ? true
+      : (src.build.hasWaterTank !== false);
     document.getElementById('wiz-custom-A').value = '';
     document.getElementById('wiz-custom-B').value = '';
     document.getElementById('wiz-custom-C').value = '';
     document.getElementById('wiz-custom-D').value = '';
+    // Phase 9D: Zone E basement rate override (was missing entirely — reps had
+    // no way to set the basement rate from the wizard, only after the fact).
+    const customEEl = document.getElementById('wiz-custom-E');
+    if (customEEl) customEEl.value = '';
     showStep(1);
     window.__qbOpenModal(modal);
     setTimeout(() => { try { document.getElementById('wiz-name').focus(); } catch(_){} }, 50);
