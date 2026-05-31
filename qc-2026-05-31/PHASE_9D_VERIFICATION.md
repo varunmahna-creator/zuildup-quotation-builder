@@ -2,7 +2,7 @@
 **Date:** 2026-05-31
 **Engineer:** Iraaj 🌀 (Opus 4.7)
 **Commit:** `0b2c305` — `Phase 9D: clean draft-qid state + wizard isolation + Zone E override`
-**Revision:** `zuildup-quotes-00062-449` (100% traffic, deployed 2026-05-31 11:30 UTC)
+**Revision:** `zuildup-quotes-00063-jgj` (100% traffic, deployed 2026-05-31 11:31 UTC; 00062-449 was a concurrent identical deploy that landed first)
 **Live URL:** https://zuildup-quotes-zim2owjloq-el.a.run.app/
 
 ---
