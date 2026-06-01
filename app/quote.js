@@ -1783,11 +1783,42 @@ async function bootForm() {
       if (!alreadyMigrated && !haveSession && _isDraftQid(qid)) {
         const legacy = localStorage.getItem(LEGACY_STORE_KEY);
         if (legacy) {
-          sessionStorage.setItem(_sessionKey(qid), legacy);
+          // Phase 9E (2026-06-01): purge stale overrides from legacy migration.
+          // If the user had area / floor-summary / item-rate overrides in their
+          // pre-9B-2 scratch state, those would silently re-apply to the first
+          // post-deploy draft. Strip them so the calc engine's output is what
+          // the rep sees on the first fresh quote after deploy.
+          try {
+            const legacyState = JSON.parse(legacy);
+            if (legacyState && typeof legacyState === 'object') {
+              legacyState.areaOverrides = {};
+              if (legacyState.pricing) {
+                legacyState.pricing.floorSummaryOverrides = {};
+                legacyState.pricing.itemRates = {};
+                legacyState.pricing.itemNameOverrides = {};
+                legacyState.pricing.itemDescOverrides = {};
+                legacyState.pricing.zoneLineItems = {};
+                if (legacyState.pricing.additionalZones) {
+                  legacyState.pricing.additionalZones.custom = [];
+                }
+                if (legacyState.pricing.balconyPerFloor) {
+                  legacyState.pricing.balconyPerFloor.rates = [];
+                  legacyState.pricing.balconyPerFloor.enabled = false;
+                }
+              }
+              sessionStorage.setItem(_sessionKey(qid), JSON.stringify(legacyState));
+            } else {
+              sessionStorage.setItem(_sessionKey(qid), legacy);
+            }
+          } catch(_) {
+            // If parse fails, fall back to copying raw — better to migrate
+            // dirty than lose work entirely.
+            sessionStorage.setItem(_sessionKey(qid), legacy);
+          }
           localStorage.setItem(MIGRATED_FLAG, '1');
           // Keep legacy key in localStorage for 30d (no delete) as recovery
           // insurance. New writes go to sessionStorage only.
-          console.log('[9B-2] migrated legacy scratch into sessionStorage[' + _sessionKey(qid) + ']');
+          console.log('[9E] migrated legacy scratch (overrides purged) into sessionStorage[' + _sessionKey(qid) + ']');
         } else {
           localStorage.setItem(MIGRATED_FLAG, '1');
         }
@@ -2769,6 +2800,37 @@ async function bootForm() {
     // Hide if no plot/coverage entered yet
     if (!state.build.plotSqYards || !state.build.coverage) { fs.style.display = 'none'; return; }
     fs.style.display = '';
+
+    // Phase 9E (2026-06-01): show a banner when overrides exist so the rep
+    // knows the displayed areas are NOT pure calc-engine output. Includes a
+    // one-click "Reset all" link.
+    const _totalOvr = Object.keys(state.areaOverrides || {}).filter(k => {
+      const v = state.areaOverrides[k];
+      return v != null && v !== '';
+    }).length;
+    const legend = fs.querySelector('legend');
+    if (legend) {
+      const existingBanner = legend.querySelector('.aov-banner');
+      if (existingBanner) existingBanner.remove();
+      if (_totalOvr > 0) {
+        const span = document.createElement('span');
+        span.className = 'aov-banner';
+        span.style.cssText = 'margin-left:10px;font-size:11px;font-weight:normal;color:#b91c1c;';
+        span.innerHTML = `<b>${_totalOvr}</b> manual area override${_totalOvr === 1 ? '' : 's'} active &nbsp; <a href="#" class="aov-reset-all" style="color:#b91c1c;text-decoration:underline;">Reset all to calculated</a>`;
+        legend.appendChild(span);
+        const link = span.querySelector('.aov-reset-all');
+        if (link) {
+          link.onclick = (e) => {
+            e.preventDefault();
+            if (!confirm(`Reset all ${_totalOvr} area override(s) to calculated values?\n\nThis cannot be undone.`)) return;
+            state.areaOverrides = {};
+            flush();
+            window.__qbToast(`Reset ${_totalOvr} area override${_totalOvr === 1 ? '' : 's'}`);
+          };
+        }
+      }
+    }
+
     state.areaOverrides ||= {};
     state.pricing.itemNameOverrides ||= {};
     state.pricing.itemDescOverrides ||= {};
@@ -2780,7 +2842,17 @@ async function bootForm() {
     for (const k of ['A','B','C','D','E']) {
       const z = c.zones?.[k];
       if (!z) continue; // zone disabled (D off, C in struct, E without basement)
-      html.push(`<div class="aov-zone"><div class="aov-zone-hdr">Zone ${k} <span class="aov-rate">${escapeHtml(z.rateLabel || '')}</span></div>`);
+      // Phase 9E (2026-06-01): per-zone "Reset to calculated" link. Wipes
+      // areaOverrides for this zone's items so calc engine's values display.
+      // Only shown when at least one item in this zone has an override.
+      const _hasOvr = (z.items || []).some(it => {
+        const okey = k + ':' + (it.origName || it.name);
+        return state.areaOverrides[okey] != null && state.areaOverrides[okey] !== '';
+      });
+      const resetBtnHtml = _hasOvr
+        ? `<button type="button" class="aov-reset" data-zone="${k}" title="Reset all overrides in this zone to calculated values" style="margin-left:8px;font-size:10px;padding:2px 6px;background:#fff5f5;color:#b91c1c;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;">Reset to calculated</button>`
+        : '';
+      html.push(`<div class="aov-zone"><div class="aov-zone-hdr">Zone ${k} <span class="aov-rate">${escapeHtml(z.rateLabel || '')}</span>${resetBtnHtml}</div>`);
       (z.items || []).forEach(it => {
         const origName = it.origName || it.name;
         const key = k + ':' + origName;
@@ -2876,6 +2948,29 @@ async function bootForm() {
       html.push('</div>');
     }
     list.innerHTML = html.join('');
+
+    // Phase 9E (2026-06-01): wire per-zone "Reset to calculated" buttons.
+    list.querySelectorAll('button.aov-reset').forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        const zone = btn.getAttribute('data-zone');
+        if (!zone) return;
+        if (!confirm(`Reset all area overrides in Zone ${zone} to calculated values?\n\nThis cannot be undone.`)) return;
+        // Wipe every override key whose prefix matches `Zone:`
+        const prefix = zone + ':';
+        let removed = 0;
+        Object.keys(state.areaOverrides || {}).forEach(key => {
+          if (key.startsWith(prefix)) {
+            delete state.areaOverrides[key];
+            removed++;
+          }
+        });
+        if (removed > 0) {
+          flush();
+          window.__qbToast(`Reset ${removed} area override${removed === 1 ? '' : 's'} in Zone ${zone}`);
+        }
+      };
+    });
 
     // Bind area-override numeric inputs (existing behaviour).
     list.querySelectorAll('input[data-aov-key]').forEach(inp => {
@@ -5464,6 +5559,25 @@ function renderNotesPage(state) {
       // Mark as fresh quote (for any rows we did NOT populate — e.g. future
       // basement add-ins). The wizard-set overrides will dominate regardless.
       newState._isFreshQuote = true;
+
+      // Phase 9E (2026-06-01): GOLDEN RULE — new quote = freshly calculated
+      // areas. Belt-and-suspenders purge every override container so the calc
+      // engine's output is what the rep sees. defaultState() already returns
+      // empty containers; this is defence-in-depth in case any future ref-
+      // merging path silently re-introduces stale data.
+      newState.areaOverrides = {};
+      newState.pricing.floorSummaryOverrides = {};
+      newState.pricing.itemRates = {};
+      newState.pricing.itemNameOverrides = {};
+      newState.pricing.itemDescOverrides = {};
+      newState.pricing.zoneLineItems = {};
+      if (newState.pricing.additionalZones) {
+        newState.pricing.additionalZones.custom = [];
+      }
+      if (newState.pricing.balconyPerFloor) {
+        newState.pricing.balconyPerFloor.rates = [];
+        newState.pricing.balconyPerFloor.enabled = false;
+      }
 
       // Wipe the active slot pointer (so this becomes a scratch quote that the
       // rep then saves with a customer name), then persist new state and reload.
