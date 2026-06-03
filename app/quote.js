@@ -500,6 +500,18 @@ function saveState(s) {
   // so two tabs are independent. Saved slots (localStorage 'zuildup.quotes.<id>'
   // + Firestore) still get touched for non-draft qids via QuoteStorage._touch.
   const qid = _getQid();
+
+  // Phase 9F (2026-06-03): defensive — ensure state.quoteId aligns with URL.
+  // If they mismatch, URL wins (URL qid is the canonical source of truth per
+  // Phase 9B-2). This catches any code path that mutates state.quoteId
+  // without rewriting the URL. Draft qids (`draft-*`) don't get mirrored
+  // into state.quoteId (they're tab-local scratch).
+  try {
+    if (qid && !_isDraftQid(qid)) {
+      if (s.quoteId !== qid) s.quoteId = qid;
+    }
+  } catch(_){}
+
   try {
     if (qid) {
       sessionStorage.setItem(_sessionKey(qid), JSON.stringify(s));
@@ -517,7 +529,39 @@ function saveState(s) {
   // "active id" is the URL qid itself (for non-draft qids).
   try {
     const aid = QuoteStorage.activeId();
-    if (aid) QuoteStorage._touch(aid, s);
+    if (aid) {
+      // Phase 9F (2026-06-03): anti-wipe local guard. If the in-memory state
+      // looks like a fresh template (no customer, no pricing, all rows
+      // _isFresh) but the active local slot has real content, REFUSE to
+      // persist. Better to lose 1 keystroke than wipe a finished quote.
+      const looksBlank = (function(){
+        const c = s.customer || {};
+        const p = s.pricing || {};
+        const rows = s.rows || [];
+        const noCust = !c.name && !c.address;
+        const noPrice = (p.costPerSqft == null) && (p.zoneARate == null);
+        const allFresh = rows.length === 0 || rows.every(r => r && r._isFresh === true && (!r.override || !Object.keys(r.override).length));
+        return noCust && noPrice && allFresh;
+      })();
+      if (looksBlank) {
+        try {
+          const slotRaw = localStorage.getItem('zuildup.quotes.' + aid);
+          if (slotRaw) {
+            const prev = JSON.parse(slotRaw);
+            const pc = prev.customer || {};
+            const pp = prev.pricing || {};
+            const prevHasContent = !!pc.name || (pp.costPerSqft != null) || (Array.isArray(prev.rows) && prev.rows.some(r => r && r.override && Object.keys(r.override).length));
+            if (prevHasContent) {
+              console.warn('[9F] anti-wipe: refusing to persist blank state into populated slot', aid);
+              // Don't _touch — don't push to cloud. Just bail.
+              window.dispatchEvent(new Event('quote-state-changed'));
+              return;
+            }
+          }
+        } catch(_) {}
+      }
+      QuoteStorage._touch(aid, s);
+    }
   } catch(_){}
   window.dispatchEvent(new Event('quote-state-changed'));
 }
@@ -5483,7 +5527,13 @@ function renderNotesPage(state) {
       // picks via toolbar, not the wizard.
       const cur = window.__qbState || {};
       const newState = (typeof defaultState === 'function') ? defaultState() : JSON.parse(JSON.stringify(window.__qbState));
-      if (cur.quoteId) newState.quoteId = cur.quoteId;
+      // Phase 9F (2026-06-03): DO NOT inherit cur.quoteId. This was the root
+      // cause of the saved-quote wipe bug — when a rep loaded a saved quote
+      // (state.quoteId = q_*) and then ran Quick Build, the new fresh-template
+      // state inherited that id, and the next save pushed blank data over the
+      // saved quote on the server. New quote = no id; one will be minted on
+      // first explicit Save.
+      newState.quoteId = '';
       if (cur.scope)   newState.scope   = cur.scope;
       newState.customer = {
         salutation: v.salutation,

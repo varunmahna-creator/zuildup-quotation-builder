@@ -700,6 +700,53 @@ const server = http.createServer((req, res) => {
           const ref = firestore.collection(QUOTES_COLLECTION).doc(id);
           const existing = await ref.get();
           const existingData = existing.exists ? existing.data() : {};
+          // Phase 9F (2026-06-03): anti-wipe guard.
+          // The applyWizard cur.quoteId leak (and any future similar bug)
+          // can cause a fresh-template state to be PUT against a saved
+          // quote's id, wiping it. Reject any PUT whose incoming state is
+          // a fresh template AND the existing doc has real content.
+          // Force the caller to explicitly opt-in via { allowOverwriteEmpty:
+          // true } in the body if they truly want this.
+          const existingState = existingData.state || {};
+          const existingHasContent = (function(){
+            const c = existingState.customer || {};
+            const p = existingState.pricing || {};
+            const rows = existingState.rows || [];
+            const hasCust = !!(c.name || c.address);
+            const hasPrice = (p.costPerSqft != null) || (p.zoneARate != null);
+            const hasOverrides = rows.some(r => r && r.override && Object.keys(r.override).length);
+            return hasCust || hasPrice || hasOverrides;
+          })();
+          const incomingIsBlank = (function(){
+            const c = state.customer || {};
+            const p = state.pricing || {};
+            const rows = state.rows || [];
+            const noCust = !c.name && !c.address;
+            const noPrice = (p.costPerSqft == null) && (p.zoneARate == null);
+            const allFresh = rows.length === 0 || rows.every(r => r && r._isFresh === true && (!r.override || !Object.keys(r.override).length));
+            return noCust && noPrice && allFresh;
+          })();
+          if (existingHasContent && incomingIsBlank && !body.allowOverwriteEmpty) {
+            console.warn('[api/quotes][PUT] BLOCKED wipe of', id, 'by', author, '— existing had content, incoming is blank');
+            return send(res, 409, JSON.stringify({ error: 'wipe_blocked', message: 'Refusing to overwrite a saved quote with a blank/fresh state. The existing quote has real content; the incoming state appears to be a fresh template. If this is intentional, retry with allowOverwriteEmpty: true.' }), { 'Content-Type': 'application/json' });
+          }
+          // Phase 9F: snapshot the previous state into a backup collection
+          // BEFORE overwriting. Best-effort, fire-and-forget — never block
+          // the write on backup failure.
+          if (existing.exists && existingData.state) {
+            try {
+              const backupRef = firestore.collection('quote_backups').doc();
+              backupRef.set({
+                quote_id: id,
+                prev_state: existingData.state,
+                prev_customer_name: existingData.customer_name || '',
+                prev_name: existingData.name || '',
+                prev_modified_at: existingData.modified_at || null,
+                replaced_by_author: author,
+                replaced_at: now,
+              }).catch(e => console.warn('[api/quotes][PUT] backup write failed:', e.message));
+            } catch(e) { /* never block primary write */ }
+          }
           const customer_name = (state.customer && state.customer.name) || existingData.customer_name || '';
           const name = (typeof body.name === 'string' && body.name.trim())
             ? body.name.trim()
