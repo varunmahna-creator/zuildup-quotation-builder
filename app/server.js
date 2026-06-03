@@ -44,6 +44,81 @@ try {
 }
 const QUOTES_COLLECTION = process.env.FIRESTORE_COLLECTION || 'quotes';
 
+// Phase 9G (2026-06-03): GCS-backed PDF attachments per quote.
+// Bucket created out-of-band: gs://zuildup-quotes-uploads (asia-south1, UBLA, PAP enforced).
+// IAM: Cloud Run default compute SA granted roles/storage.objectAdmin on the bucket.
+let gcsStorage = null;
+let gcsBucket = null;
+const PDF_BUCKET = process.env.PDF_BUCKET || 'zuildup-quotes-uploads';
+try {
+  const { Storage } = require('@google-cloud/storage');
+  gcsStorage = new Storage();
+  gcsBucket = gcsStorage.bucket(PDF_BUCKET);
+  console.log('[gcs] client initialized for bucket=' + PDF_BUCKET);
+} catch (e) { console.warn('[gcs] init failed:', e.message); }
+
+let Busboy = null;
+try { Busboy = require('busboy'); }
+catch (e) { console.warn('[busboy] not available:', e.message); }
+
+// FieldValue helper for arrayUnion (loaded lazily to tolerate missing firestore).
+let FieldValue = null;
+try { ({ FieldValue } = require('@google-cloud/firestore')); }
+catch (_) { /* already warned above */ }
+
+// Safe filename helper: lowercase, strip to [a-z0-9_.-], max 80 chars,
+// trim leading/trailing dots/underscores, fallback 'file'.
+function safePdfFilename(s) {
+  let v = String(s || '').toLowerCase();
+  v = v.replace(/[^a-z0-9_.-]+/g, '_').replace(/_+/g, '_');
+  v = v.replace(/^[._-]+|[._-]+$/g, '');
+  if (v.length > 80) v = v.slice(0, 80);
+  if (!v) v = 'file';
+  if (!/\.pdf$/i.test(v)) v += '.pdf';
+  return v;
+}
+
+// Base64url decode helper.
+function b64urlDecode(s) {
+  if (!s) return '';
+  let str = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  try { return Buffer.from(str, 'base64').toString('utf8'); }
+  catch (_) { return ''; }
+}
+
+// Parse a single-PDF multipart upload using busboy. Returns
+// { fields:{...}, file:{ filename, mimeType, buffer } } or rejects on error.
+function readSinglePdfMultipart(req, { maxBytes = 25 * 1024 * 1024 } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!Busboy) return reject(new Error('busboy unavailable'));
+    let bb;
+    try { bb = Busboy({ headers: req.headers, limits: { fileSize: maxBytes, files: 1 } }); }
+    catch (e) { return reject(new Error('bad multipart: ' + e.message)); }
+    const fields = {};
+    let fileObj = null;
+    let aborted = false;
+    bb.on('field', (name, val) => { fields[name] = val; });
+    bb.on('file', (name, stream, info) => {
+      if (name !== 'pdf') { stream.resume(); return; }
+      const chunks = [];
+      let total = 0;
+      let truncated = false;
+      stream.on('data', c => { chunks.push(c); total += c.length; });
+      stream.on('limit', () => { truncated = true; });
+      stream.on('end', () => {
+        if (aborted) return;
+        if (truncated) { aborted = true; reject(new Error('file too large (max ' + maxBytes + ' bytes)')); return; }
+        fileObj = { filename: info.filename || 'upload.pdf', mimeType: info.mimeType || info.mediaType || 'application/octet-stream', buffer: Buffer.concat(chunks) };
+      });
+      stream.on('error', e => { if (!aborted) { aborted = true; reject(e); } });
+    });
+    bb.on('error', e => { if (!aborted) { aborted = true; reject(e); } });
+    bb.on('close', () => { if (!aborted) resolve({ fields, file: fileObj }); });
+    req.pipe(bb);
+  });
+}
+
 
 const PORT  = process.env.PORT || 8124;
 const ROOT  = path.resolve(__dirname, '..');           // workspace root for assets
@@ -523,6 +598,10 @@ function indexEntryFromDoc(doc) {
     created_at: doc.created_at || '',
     modified_at: doc.modified_at || '',
     row_count: doc.row_count || 0,
+    // Phase 9G: surface uploaded PDF count + flags on the index so the Load
+    // modal can render the 📎 chip without an extra round-trip per row.
+    uploaded_pdfs: Array.isArray(doc.uploaded_pdfs) ? doc.uploaded_pdfs : [],
+    pdf_is_authoritative: !!doc.pdf_is_authoritative,
   };
 }
 
@@ -1095,6 +1174,248 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+
+  // ==========================================================================
+  // Phase 9G (2026-06-03): PDF upload / attach / list / download / delete +
+  // create-from-PDF endpoints. All multipart uploads via busboy, single-file,
+  // max 25 MB, content sniffed for %PDF magic. Storage: gs://zuildup-quotes-uploads.
+  // Object key shape: <quote_id>/<isoTS-no-colons>_<safe_filename>.pdf
+  // Firestore doc field: uploaded_pdfs: [{filename, gcs_object, gcs_uri, uploaded_by, uploaded_at, size_bytes, content_type}]
+  // Download endpoint streams through the server so existing Basic Auth gates access.
+  // ==========================================================================
+
+  // POST /api/quotes/:id/attach-pdf — multipart, field 'pdf'
+  {
+    const m = pathname.match(/^\/api\/quotes\/([A-Za-z0-9_-]+)\/attach-pdf$/);
+    if (req.method === 'POST' && m) {
+      const id = m[1];
+      if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+      if (!gcsBucket) return send(res, 503, JSON.stringify({ error: 'gcs unavailable' }), { 'Content-Type': 'application/json' });
+      (async () => {
+        try {
+          const author = getAuthUser(req);
+          const ref = firestore.collection(QUOTES_COLLECTION).doc(id);
+          const snap = await ref.get();
+          if (!snap.exists) return send(res, 404, JSON.stringify({ error: 'quote not found' }), { 'Content-Type': 'application/json' });
+          let parsed;
+          try { parsed = await readSinglePdfMultipart(req); }
+          catch (e) { return send(res, 400, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' }); }
+          if (!parsed.file || !parsed.file.buffer || !parsed.file.buffer.length) {
+            return send(res, 400, JSON.stringify({ error: 'no pdf field' }), { 'Content-Type': 'application/json' });
+          }
+          const buf = parsed.file.buffer;
+          if (buf.length < 4 || buf.slice(0,4).toString('ascii') !== '%PDF') {
+            return send(res, 400, JSON.stringify({ error: 'not a PDF (missing %PDF magic)' }), { 'Content-Type': 'application/json' });
+          }
+          const safe = safePdfFilename(parsed.file.filename);
+          const ts = new Date().toISOString().replace(/[:.]/g, '-');
+          const gcs_object = id + '/' + ts + '_' + safe;
+          const gcs_uri = 'gs://' + PDF_BUCKET + '/' + gcs_object;
+          const file = gcsBucket.file(gcs_object);
+          await file.save(buf, {
+            resumable: false,
+            contentType: 'application/pdf',
+            metadata: { contentType: 'application/pdf', cacheControl: 'private, max-age=86400' },
+          });
+          const now = new Date().toISOString();
+          const entry = {
+            filename: parsed.file.filename || safe,
+            gcs_object,
+            gcs_uri,
+            uploaded_by: author,
+            uploaded_at: now,
+            size_bytes: buf.length,
+            content_type: 'application/pdf',
+          };
+          if (FieldValue && FieldValue.arrayUnion) {
+            await ref.update({ uploaded_pdfs: FieldValue.arrayUnion(entry), modified_at: now });
+          } else {
+            const cur = (snap.data() || {}).uploaded_pdfs || [];
+            await ref.update({ uploaded_pdfs: cur.concat([entry]), modified_at: now });
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: true, pdf: entry }));
+        } catch (e) {
+          console.error('[api/quotes][attach-pdf] FAIL:', e.message);
+          send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+        }
+      })();
+      return;
+    }
+  }
+
+  // GET /api/quotes/:id/pdfs — list pdf entries on a quote
+  {
+    const m = pathname.match(/^\/api\/quotes\/([A-Za-z0-9_-]+)\/pdfs$/);
+    if (req.method === 'GET' && m) {
+      const id = m[1];
+      if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+      (async () => {
+        try {
+          const snap = await firestore.collection(QUOTES_COLLECTION).doc(id).get();
+          if (!snap.exists) return send(res, 404, JSON.stringify({ error: 'not found' }), { 'Content-Type': 'application/json' });
+          const pdfs = (snap.data() || {}).uploaded_pdfs || [];
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ pdfs }));
+        } catch (e) {
+          console.error('[api/quotes][list-pdfs] FAIL:', e.message);
+          send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+        }
+      })();
+      return;
+    }
+  }
+
+  // GET /api/quotes/:id/pdfs/:b64/download — stream a single PDF (auth-gated proxy)
+  {
+    const m = pathname.match(/^\/api\/quotes\/([A-Za-z0-9_-]+)\/pdfs\/([A-Za-z0-9_\-=]+)\/download$/);
+    if (req.method === 'GET' && m) {
+      const id = m[1];
+      const b64 = m[2];
+      if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+      if (!gcsBucket) return send(res, 503, JSON.stringify({ error: 'gcs unavailable' }), { 'Content-Type': 'application/json' });
+      (async () => {
+        try {
+          const gcs_object = b64urlDecode(b64);
+          if (!gcs_object || !gcs_object.startsWith(id + '/') || gcs_object.indexOf('..') !== -1) {
+            return send(res, 400, JSON.stringify({ error: 'invalid object key' }), { 'Content-Type': 'application/json' });
+          }
+          const snap = await firestore.collection(QUOTES_COLLECTION).doc(id).get();
+          if (!snap.exists) return send(res, 404, JSON.stringify({ error: 'not found' }), { 'Content-Type': 'application/json' });
+          const pdfs = (snap.data() || {}).uploaded_pdfs || [];
+          const entry = pdfs.find(p => p && p.gcs_object === gcs_object);
+          if (!entry) return send(res, 404, JSON.stringify({ error: 'pdf not listed on this quote' }), { 'Content-Type': 'application/json' });
+          const file = gcsBucket.file(gcs_object);
+          const [exists] = await file.exists();
+          if (!exists) return send(res, 404, JSON.stringify({ error: 'object missing in storage' }), { 'Content-Type': 'application/json' });
+          const safeName = safePdfFilename(entry.filename || gcs_object.split('/').pop() || 'quote.pdf');
+          res.writeHead(200, {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': 'inline; filename="' + safeName + '"',
+            'Cache-Control': 'private, max-age=300',
+          });
+          file.createReadStream().on('error', e => {
+            console.error('[api/quotes][download-pdf] stream FAIL:', e.message);
+            try { res.destroy(); } catch (_) {}
+          }).pipe(res);
+        } catch (e) {
+          console.error('[api/quotes][download-pdf] FAIL:', e.message);
+          send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+        }
+      })();
+      return;
+    }
+  }
+
+  // DELETE /api/quotes/:id/pdfs/:b64
+  {
+    const m = pathname.match(/^\/api\/quotes\/([A-Za-z0-9_-]+)\/pdfs\/([A-Za-z0-9_\-=]+)$/);
+    if (req.method === 'DELETE' && m) {
+      const id = m[1];
+      const b64 = m[2];
+      if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+      if (!gcsBucket) return send(res, 503, JSON.stringify({ error: 'gcs unavailable' }), { 'Content-Type': 'application/json' });
+      (async () => {
+        try {
+          const gcs_object = b64urlDecode(b64);
+          if (!gcs_object || !gcs_object.startsWith(id + '/') || gcs_object.indexOf('..') !== -1) {
+            return send(res, 400, JSON.stringify({ error: 'invalid object key' }), { 'Content-Type': 'application/json' });
+          }
+          const ref = firestore.collection(QUOTES_COLLECTION).doc(id);
+          const snap = await ref.get();
+          if (!snap.exists) return send(res, 404, JSON.stringify({ error: 'not found' }), { 'Content-Type': 'application/json' });
+          const data = snap.data() || {};
+          const pdfs = data.uploaded_pdfs || [];
+          if (!pdfs.find(p => p && p.gcs_object === gcs_object)) {
+            return send(res, 404, JSON.stringify({ error: 'pdf not listed' }), { 'Content-Type': 'application/json' });
+          }
+          await gcsBucket.file(gcs_object).delete({ ignoreNotFound: true });
+          const remaining = pdfs.filter(p => !p || p.gcs_object !== gcs_object);
+          await ref.update({ uploaded_pdfs: remaining, modified_at: new Date().toISOString() });
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+          console.error('[api/quotes][delete-pdf] FAIL:', e.message);
+          send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+        }
+      })();
+      return;
+    }
+  }
+
+  // POST /api/quotes/create-from-pdf — multipart: pdf + customer_name (+ optional label)
+  if (req.method === 'POST' && pathname === '/api/quotes/create-from-pdf') {
+    if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+    if (!gcsBucket) return send(res, 503, JSON.stringify({ error: 'gcs unavailable' }), { 'Content-Type': 'application/json' });
+    (async () => {
+      try {
+        const author = getAuthUser(req);
+        let parsed;
+        try { parsed = await readSinglePdfMultipart(req); }
+        catch (e) { return send(res, 400, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' }); }
+        if (!parsed.file || !parsed.file.buffer || !parsed.file.buffer.length) {
+          return send(res, 400, JSON.stringify({ error: 'no pdf field' }), { 'Content-Type': 'application/json' });
+        }
+        const buf = parsed.file.buffer;
+        if (buf.length < 4 || buf.slice(0,4).toString('ascii') !== '%PDF') {
+          return send(res, 400, JSON.stringify({ error: 'not a PDF (missing %PDF magic)' }), { 'Content-Type': 'application/json' });
+        }
+        const customer_name = String(parsed.fields.customer_name || '').trim();
+        if (!customer_name) return send(res, 400, JSON.stringify({ error: 'customer_name required' }), { 'Content-Type': 'application/json' });
+        const label = String(parsed.fields.label || '').trim();
+        const id = genQuoteId();
+        const now = new Date().toISOString();
+        const safe = safePdfFilename(parsed.file.filename);
+        const ts = now.replace(/[:.]/g, '-');
+        const gcs_object = id + '/' + ts + '_' + safe;
+        const gcs_uri = 'gs://' + PDF_BUCKET + '/' + gcs_object;
+        await gcsBucket.file(gcs_object).save(buf, {
+          resumable: false,
+          contentType: 'application/pdf',
+          metadata: { contentType: 'application/pdf', cacheControl: 'private, max-age=86400' },
+        });
+        const state = {
+          customer: { name: customer_name, salutation: '', address: '' },
+          build: {},
+          pricing: {},
+          rows: [],
+          scope: 'full',
+          _isFreshQuote: false,
+          quoteId: id,
+          notes: 'Created from uploaded PDF. See attachment for details.',
+        };
+        const name = label || (customer_name + ' — PDF — ' + now.slice(0,10));
+        const doc = {
+          id,
+          name,
+          customer_name,
+          author,
+          last_edited_by: author,
+          created_at: now,
+          modified_at: now,
+          row_count: 0,
+          state,
+          pdf_is_authoritative: true,
+          uploaded_pdfs: [{
+            filename: parsed.file.filename || safe,
+            gcs_object,
+            gcs_uri,
+            uploaded_by: author,
+            uploaded_at: now,
+            size_bytes: buf.length,
+            content_type: 'application/pdf',
+          }],
+        };
+        await firestore.collection(QUOTES_COLLECTION).doc(id).set(doc);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, id, name }));
+      } catch (e) {
+        console.error('[api/quotes][create-from-pdf] FAIL:', e.message);
+        send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+      }
+    })();
+    return;
+  }
 
   // GET /  ->  index.html
   if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {

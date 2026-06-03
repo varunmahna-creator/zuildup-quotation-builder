@@ -641,6 +641,10 @@ const QuoteStorage = {
           created_at: doc.created_at || '',
           modified_at: doc.modified_at || '',
           row_count: doc.row_count || 0,
+          // Phase 9G: surface attached PDFs on the index so Load modal can
+          // render the 📎 chip without an extra round-trip per quote.
+          uploaded_pdfs: Array.isArray(doc.uploaded_pdfs) ? doc.uploaded_pdfs : [],
+          pdf_is_authoritative: !!doc.pdf_is_authoritative,
         };
         this._writeIndex([entry, ...idx]);
       }
@@ -689,6 +693,9 @@ const QuoteStorage = {
             created_at: r.created_at || local.created_at,
             modified_at: r.modified_at || local.modified_at,
             row_count: (r.row_count !== undefined) ? r.row_count : local.row_count,
+            // Phase 9G: keep PDF metadata fresh on local index
+            uploaded_pdfs: Array.isArray(r.uploaded_pdfs) ? r.uploaded_pdfs : (local.uploaded_pdfs || []),
+            pdf_is_authoritative: (r.pdf_is_authoritative !== undefined) ? !!r.pdf_is_authoritative : !!local.pdf_is_authoritative,
           });
           const others = this._readIndex().filter(e => e.id !== r.id);
           this._writeIndex([merged, ...others]);
@@ -2641,12 +2648,22 @@ async function bootForm() {
       const cn = e.customer_name || '(no customer name)';
       const date = (e.modified_at || '').slice(0, 10);
       const author = e.author ? ('by ' + e.author + ' · ') : '';
+      // Phase 9G: PDF attachment chips. Shows 📎 N count when N>0; clicking
+      // opens a small popover with download/delete links. 📎+ button uploads.
+      const pdfs = Array.isArray(e.uploaded_pdfs) ? e.uploaded_pdfs : [];
+      const pdfCount = pdfs.length;
+      const isPdfAuth = !!e.pdf_is_authoritative;
+      const chipHtml = pdfCount
+        ? `<button data-act="pdfs" class="qm-pdf-chip" title="${pdfCount} attached PDF${pdfCount===1?'':'s'}" style="background:#0A1F44;color:#fff;border:none;padding:2px 8px;border-radius:10px;font-size:11px;cursor:pointer;margin-right:6px;">📎 ${pdfCount}${isPdfAuth ? ' ★' : ''}</button>`
+        : '';
+      const attachBtn = `<button data-act="attach-pdf" title="Attach a PDF to this quote" style="background:none;border:1px solid #ccc;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;">📎+ PDF</button>`;
       li.innerHTML = `
         <span class="meta">
-          <span class="name">${escapeHtml(e.name || cn)}</span>
+          <span class="name">${chipHtml}${escapeHtml(e.name || cn)}</span>
           <span class="sub">${escapeHtml(cn)} · ${escapeHtml(author)}saved ${escapeHtml(date)} · ${e.row_count || 0} rows</span>
         </span>
         <span class="row-acts">
+          ${attachBtn}
           <button data-act="open" class="btn-primary">Open</button>
           <button data-act="dup" title="Duplicate">⎘</button>
           <button data-act="del" class="btn-danger" title="Delete">×</button>
@@ -2662,6 +2679,12 @@ async function bootForm() {
         try { QuoteStorage.delete(e.id); toast('Deleted'); renderLoadList(); refreshIndicatorIdle(); }
         catch (err) { toast('Delete failed: ' + err.message, 'err'); }
       };
+      // Phase 9G: attach PDF button — opens file picker, uploads to server.
+      const attachBtnEl = li.querySelector('[data-act="attach-pdf"]');
+      if (attachBtnEl) attachBtnEl.onclick = () => _attachPdfToQuote(e.id, e.name || cn);
+      // Phase 9G: chip click — show inline list of PDFs.
+      const chipBtnEl = li.querySelector('[data-act="pdfs"]');
+      if (chipBtnEl) chipBtnEl.onclick = (ev) => { ev.stopPropagation(); _togglePdfPopover(li, e.id); };
       ul.appendChild(li);
     }
     body.innerHTML = '';
@@ -2790,6 +2813,166 @@ async function bootForm() {
     };
   }
 
+
+  // ============================================================================
+  // Phase 9G (2026-06-03): PDF attachment helpers + Import-from-PDF toolbar
+  // ============================================================================
+  // Helpers used by the Load modal list rows.
+  function _b64urlEncode(str) {
+    try { return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+    catch (_) { return ''; }
+  }
+  async function _attachPdfToQuote(quoteId, label) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/pdf';
+    input.onchange = async () => {
+      const f = input.files && input.files[0];
+      if (!f) return;
+      if (f.size > 25 * 1024 * 1024) { toast('PDF too large (max 25 MB)', 'err'); return; }
+      const fd = new FormData();
+      fd.append('pdf', f, f.name);
+      toast('Uploading PDF…');
+      try {
+        const r = await fetch('/api/quotes/' + encodeURIComponent(quoteId) + '/attach-pdf', {
+          method: 'POST', credentials: 'same-origin', body: fd,
+        });
+        if (!r.ok) {
+          const t = await r.text().catch(() => '');
+          throw new Error('http ' + r.status + ' ' + t.slice(0, 200));
+        }
+        toast('PDF attached to ' + (label || quoteId));
+        // Refresh the index entry from the server so the chip count updates.
+        try { await QuoteStorage._apiFetch(quoteId); } catch (_) {}
+        renderLoadList();
+      } catch (e) {
+        toast('Attach failed: ' + e.message, 'err');
+      }
+    };
+    input.click();
+  }
+  async function _togglePdfPopover(li, quoteId) {
+    const existing = li.querySelector('.qm-pdf-popover');
+    if (existing) { existing.remove(); return; }
+    const box = document.createElement('div');
+    box.className = 'qm-pdf-popover';
+    box.style.cssText = 'background:#f9faf7;border:1px solid #ccc;border-radius:8px;padding:8px;margin-top:6px;font-size:12px;';
+    box.innerHTML = '<div style="color:#888">Loading…</div>';
+    li.appendChild(box);
+    let pdfs = [];
+    try {
+      const r = await fetch('/api/quotes/' + encodeURIComponent(quoteId) + '/pdfs', { credentials: 'same-origin' });
+      if (r.ok) { const j = await r.json(); pdfs = j.pdfs || []; }
+    } catch (_) {}
+    if (!pdfs.length) { box.innerHTML = '<div style="color:#888">No PDFs attached.</div>'; return; }
+    box.innerHTML = '';
+    pdfs.forEach(p => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #eee;';
+      const b64 = _b64urlEncode(p.gcs_object);
+      const dlUrl = '/api/quotes/' + encodeURIComponent(quoteId) + '/pdfs/' + b64 + '/download';
+      const size = p.size_bytes ? (Math.round(p.size_bytes / 1024) + ' KB') : '';
+      row.innerHTML = '<a href="' + dlUrl + '" target="_blank" rel="noopener" style="flex:1;color:#0A1F44;text-decoration:none;">📄 ' + escapeHtml(p.filename || '(unnamed)') + '</a>' +
+        '<span style="color:#888;font-size:11px;">' + escapeHtml(size) + '</span>' +
+        '<button class="qm-pdf-del" title="Delete this PDF" style="background:none;border:none;color:#a00;cursor:pointer;font-size:14px;">×</button>';
+      const delBtn = row.querySelector('.qm-pdf-del');
+      delBtn.onclick = async () => {
+        if (!confirm('Delete attachment "' + (p.filename || p.gcs_object) + '"?')) return;
+        try {
+          const r2 = await fetch('/api/quotes/' + encodeURIComponent(quoteId) + '/pdfs/' + b64, {
+            method: 'DELETE', credentials: 'same-origin',
+          });
+          if (!r2.ok) throw new Error('http ' + r2.status);
+          toast('PDF deleted');
+          try { await QuoteStorage._apiFetch(quoteId); } catch (_) {}
+          renderLoadList();
+        } catch (e) {
+          toast('Delete failed: ' + e.message, 'err');
+        }
+      };
+      box.appendChild(row);
+    });
+  }
+
+  // Toolbar: 📎 Import PDF — create a brand-new quote from an uploaded PDF.
+  // Recovery path for the 5 wiped quotes (and any future PDF-only situations).
+  (function wireImportPdf(){
+    const btn = document.getElementById('import-pdf');
+    const file = document.getElementById('import-pdf-file');
+    if (!btn || !file) return;
+    btn.onclick = () => {
+      const cn = prompt('Customer name for this PDF?');
+      if (!cn || !cn.trim()) return;
+      file.dataset.customerName = cn.trim();
+      file.value = '';
+      file.click();
+    };
+    file.onchange = async () => {
+      const f = file.files && file.files[0];
+      if (!f) return;
+      const customer_name = file.dataset.customerName || '';
+      if (!customer_name) { toast('Customer name required', 'err'); return; }
+      if (f.size > 25 * 1024 * 1024) { toast('PDF too large (max 25 MB)', 'err'); return; }
+      const fd = new FormData();
+      fd.append('pdf', f, f.name);
+      fd.append('customer_name', customer_name);
+      toast('Uploading PDF…');
+      try {
+        const r = await fetch('/api/quotes/create-from-pdf', {
+          method: 'POST', credentials: 'same-origin', body: fd,
+        });
+        if (!r.ok) {
+          const t = await r.text().catch(() => '');
+          throw new Error('http ' + r.status + ' ' + t.slice(0, 200));
+        }
+        const j = await r.json();
+        toast('Imported. Opening…');
+        try { QuoteStorage.setActiveId(j.id); } catch(_){}
+        // Force the new quote into local index so it shows up immediately.
+        try { await QuoteStorage._apiFetch(j.id); } catch (_) {}
+        setTimeout(() => { location.href = location.pathname + '?qid=' + encodeURIComponent(j.id); }, 250);
+      } catch (e) {
+        toast('Import PDF failed: ' + e.message, 'err');
+      }
+    };
+  })();
+
+  // Restored-from-PDF banner: fetch the current quote doc and render an
+  // inline notice if pdf_is_authoritative is set. Sales reps see this for
+  // any quote that was created via the PDF-import recovery path.
+  (async function renderPdfAuthoritativeBanner(){
+    try {
+      const qid = window.__qbQid;
+      if (!qid || !/^q_/.test(qid)) return;
+      const r = await fetch('/api/quotes/' + encodeURIComponent(qid), { credentials: 'same-origin' });
+      if (!r.ok) return;
+      const doc = await r.json();
+      window.__qbQuoteMeta = {
+        uploaded_pdfs: doc.uploaded_pdfs || [],
+        pdf_is_authoritative: !!doc.pdf_is_authoritative,
+      };
+      if (!doc.pdf_is_authoritative) return;
+      const pdfs = doc.uploaded_pdfs || [];
+      const first = pdfs[0];
+      const banner = document.createElement('div');
+      banner.id = 'pdf-authoritative-banner';
+      banner.style.cssText = 'background:#fffae6;border:1px solid #C9A24D;color:#5a3e00;padding:10px 14px;margin:10px 0;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:12px;';
+      let openBtn = '';
+      if (first && first.gcs_object) {
+        const b64 = _b64urlEncode(first.gcs_object);
+        const url = '/api/quotes/' + encodeURIComponent(qid) + '/pdfs/' + b64 + '/download';
+        openBtn = '<a href="' + url + '" target="_blank" rel="noopener" style="background:#0A1F44;color:#fff;padding:6px 12px;border-radius:6px;text-decoration:none;font-weight:600;">Open PDF</a>';
+      }
+      banner.innerHTML = '<span style="flex:1;">⚠️ This quote was restored from an uploaded PDF. The form fields below are intentionally blank — the PDF is the source of truth. Open the PDF to view the original quotation.</span>' + openBtn;
+      // Insert at top of the form area.
+      const target = document.querySelector('main') || document.body.firstElementChild;
+      if (target) target.insertBefore(banner, target.firstChild);
+      // Hide on first form edit (one-shot).
+      const hideOnEdit = () => { try { banner.remove(); } catch(_){} document.removeEventListener('input', hideOnEdit, true); };
+      // Wait a tick so the banner doesn't dismiss on the bootstrap render.
+      setTimeout(() => document.addEventListener('input', hideOnEdit, true), 1500);
+    } catch (e) { /* silent */ }
+  })();
 
   // ---- Auto-save (3-second debounce) ----
   // Only fires when there's an active named slot. In scratch mode user must explicitly Save.
