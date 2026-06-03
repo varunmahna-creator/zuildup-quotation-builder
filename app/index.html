@@ -132,7 +132,17 @@ textarea { resize: vertical; min-height: 60px; }
 .qb-modal .panel header h3 { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500; margin: 0; color: var(--navy); }
 .qb-modal .panel .body { flex: 1; overflow-y: auto; padding: 14px 18px; font-size: 13px; }
 .qb-modal .panel .body label { font-size: 11px; color: var(--muted); margin: 0 0 4px; display: block; }
-.qb-modal .panel .body input[type=text] { width: 100%; padding: 9px 11px; border: 1px solid var(--rule); border-radius: 7px; font: inherit; font-size: 13px; }
+.qb-modal .panel .body input[type=text], .qb-modal .panel .body input[type=password] { width: 100%; padding: 9px 11px; border: 1px solid var(--rule); border-radius: 7px; font: inherit; font-size: 13px; }
+.qb-modal .panel .body .users-row { display: grid; grid-template-columns: 1.2fr 0.6fr 1.4fr 0.6fr auto; gap: 8px; align-items: center; padding: 8px 6px; border-bottom: 1px solid var(--rule); }
+.qb-modal .panel .body .users-row.header { font-weight: 600; color: var(--muted); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.qb-modal .panel .body .users-row .role-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10.5px; font-weight: 600; }
+.qb-modal .panel .body .users-row .role-pill.admin { background: rgba(201,162,77,0.18); color: #8a6a23; }
+.qb-modal .panel .body .users-row .role-pill.rep { background: rgba(10,31,68,0.08); color: var(--navy); }
+.qb-modal .panel .body .users-row .source-pill { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #f0f2f5; color: var(--muted); }
+.qb-modal .panel .body .users-row button.reset-pw { background: white; color: var(--navy); border: 1px solid var(--rule); padding: 5px 10px; border-radius: 5px; cursor: pointer; font: inherit; font-size: 11.5px; }
+.qb-modal .panel .body .users-row button.reset-pw:hover { border-color: var(--navy); }
+.qb-modal .panel .body .users-row .inline-reset { display: none; grid-column: 1/-1; padding: 8px 6px; background: #f6f8fb; border-radius: 6px; margin-top: 6px; display: none; }
+.qb-modal .panel .body .users-row .inline-reset.open { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
 .qb-modal .panel footer { padding: 10px 18px; border-top: 1px solid var(--rule); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .qb-modal .panel footer button { font: inherit; font-size: 12px; padding: 7px 14px; border: 1px solid var(--rule); border-radius: 6px; background: white; cursor: pointer; color: var(--ink); }
 .qb-modal .panel footer button.btn-primary { background: var(--navy); color: white; border-color: var(--navy); }
@@ -460,6 +470,20 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
     </label>
     <span class="saved-indicator" id="saved-indicator" aria-live="polite"></span>
     <input type="file" id="import-file" accept="application/json,.json" hidden>
+    <!-- Phase 9H: Account menu pill (username + dropdown for password change / admin) -->
+    <span id="acct-wrap" style="position:relative;display:inline-flex;align-items:center;margin:0 6px;">
+      <button class="secondary" id="acct-btn" title="Account" style="display:inline-flex;align-items:center;gap:6px;">
+        <span>👤</span><span id="acct-name" style="font-weight:600;">…</span>
+      </button>
+      <div id="acct-menu" style="display:none;position:absolute;top:calc(100% + 4px);right:0;background:white;border:1px solid var(--rule);border-radius:7px;box-shadow:0 6px 24px rgba(10,31,68,0.12);min-width:220px;z-index:1000;padding:6px;">
+        <div style="padding:8px 10px;border-bottom:1px solid var(--rule);margin-bottom:4px;">
+          <div style="font-size:12.5px;font-weight:600;color:var(--ink);" id="acct-menu-name">—</div>
+          <div style="font-size:10.5px;color:var(--muted);" id="acct-menu-role">—</div>
+        </div>
+        <button class="acct-menu-item" id="acct-change-pw" style="display:block;width:100%;text-align:left;background:transparent;border:0;padding:8px 10px;border-radius:5px;cursor:pointer;font:inherit;font-size:12.5px;color:var(--ink);">Change my password</button>
+        <button class="acct-menu-item" id="acct-manage-users" style="display:none;width:100%;text-align:left;background:transparent;border:0;padding:8px 10px;border-radius:5px;cursor:pointer;font:inherit;font-size:12.5px;color:var(--ink);">Manage users (admin)</button>
+      </div>
+    </span>
     <button class="download" id="dl">Download PDF</button>
   </div>
   <div class="preview-stack">
@@ -639,6 +663,58 @@ input.invalid, select.invalid { border-color: #c0392b !important; box-shadow: 0 
       <button id="ai-chat-send" class="btn-primary" style="padding:8px 14px;align-self:stretch">Send</button>
     </div>
     <div style="font-size:11px;color:#6b7280;margin-top:6px">Examples: "rename customer to X", "set Zone B to 1500", "change kitchen brand to Hettich" · <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> newline</div>
+  </div>
+</div>
+
+<!-- Phase 9H: Change-password modal -->
+<div class="qb-modal" id="pw-modal" role="dialog" aria-label="Change password">
+  <div class="panel" style="max-width:420px;">
+    <header><h3>Change my password</h3></header>
+    <div class="body" style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <label for="pw-current">Current password</label>
+        <input type="password" id="pw-current" autocomplete="current-password">
+      </div>
+      <div>
+        <label for="pw-new">New password (min 6 chars)</label>
+        <input type="password" id="pw-new" autocomplete="new-password" minlength="6">
+      </div>
+      <div>
+        <label for="pw-confirm">Confirm new password</label>
+        <input type="password" id="pw-confirm" autocomplete="new-password" minlength="6">
+      </div>
+      <div id="pw-err" style="display:none;font-size:12px;color:#c0392b;"></div>
+    </div>
+    <footer>
+      <button id="pw-cancel">Cancel</button>
+      <button id="pw-save" class="btn-primary">Save</button>
+    </footer>
+  </div>
+</div>
+
+<!-- Phase 9H: Admin user-management modal -->
+<div class="qb-modal" id="users-modal" role="dialog" aria-label="Manage users">
+  <div class="panel" style="max-width:720px;">
+    <header><h3>Manage users (admin)</h3></header>
+    <div class="body">
+      <div style="background:#f6f8fb;border:1px solid var(--rule);border-radius:7px;padding:10px 12px;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px;">➕ Add new user (or reset existing)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;">
+          <div>
+            <label for="add-username">Username</label>
+            <input type="text" id="add-username" placeholder="e.g. amit" autocomplete="off">
+          </div>
+          <div>
+            <label for="add-password">Initial password (min 6)</label>
+            <input type="text" id="add-password" placeholder="min 6 chars" autocomplete="off">
+          </div>
+          <button id="add-user-btn" class="btn-primary" style="height:36px;">Save</button>
+        </div>
+        <div id="add-user-err" style="display:none;font-size:12px;color:#c0392b;margin-top:6px;"></div>
+      </div>
+      <div id="users-list" style="font-size:12.5px;"></div>
+    </div>
+    <footer><button id="users-close">Close</button></footer>
   </div>
 </div>
 

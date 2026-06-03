@@ -66,6 +66,13 @@ let FieldValue = null;
 try { ({ FieldValue } = require('@google-cloud/firestore')); }
 catch (_) { /* already warned above */ }
 
+// Phase 9H (2026-06-03): bcryptjs for password hashing.
+// Pure-JS implementation (no native bindings) — safer for Cloud Run image.
+let bcrypt = null;
+try { bcrypt = require('bcryptjs'); console.log('[auth] bcryptjs loaded'); }
+catch (e) { console.warn('[auth] bcryptjs not available:', e.message); }
+const USERS_COLLECTION = process.env.USERS_COLLECTION || 'users';
+
 // Safe filename helper: lowercase, strip to [a-z0-9_.-], max 80 chars,
 // trim leading/trailing dots/underscores, fallback 'file'.
 function safePdfFilename(s) {
@@ -505,9 +512,62 @@ function _loadAuthUsers() {
   return _AUTH_USERS;
 }
 
-function requireAuth(req, res) {
+// Phase 9H (2026-06-03): Firestore-backed user store with env-var fallback.
+// Cache layer: per-username, TTL 60s, prevents hammering Firestore on every request.
+// Cache shape: { username: { doc: {password_hash, role, ...} | null, ts: ms } }.
+const _USER_CACHE = new Map();
+const USER_CACHE_TTL_MS = 60 * 1000;
+function _invalidateUserCache(username) {
+  if (username) _USER_CACHE.delete(username);
+  else _USER_CACHE.clear();
+}
+async function _getUserDoc(username) {
+  if (!username) return null;
+  const cached = _USER_CACHE.get(username);
+  if (cached && (Date.now() - cached.ts) < USER_CACHE_TTL_MS) return cached.doc;
+  if (!firestore) return null;
+  try {
+    const snap = await firestore.collection(USERS_COLLECTION).doc(username).get();
+    const doc = snap.exists ? snap.data() : null;
+    _USER_CACHE.set(username, { doc, ts: Date.now() });
+    return doc;
+  } catch (e) {
+    console.warn('[auth] getUserDoc failed for', username, ':', e.message);
+    return null;
+  }
+}
+// Default-admin fallback: if no Firestore doc exists for varun, treat as admin.
+// This keeps admin endpoints usable during cold boot / Firestore outage.
+function _isHardcodedAdmin(username) { return username === 'varun'; }
+async function _resolveUserRole(username) {
+  const doc = await _getUserDoc(username);
+  if (doc && doc.role) return doc.role;
+  if (_isHardcodedAdmin(username)) return 'admin';
+  return 'rep';
+}
+// Verify supplied password against (1) Firestore hash if doc exists, else (2) env plaintext.
+async function _verifyPassword(username, password) {
+  if (!username || password == null) return false;
+  const doc = await _getUserDoc(username);
+  if (doc && doc.password_hash && bcrypt) {
+    if (doc.active === false) return false;
+    try { return await bcrypt.compare(password, doc.password_hash); }
+    catch (e) { console.warn('[auth] bcrypt.compare fail:', e.message); return false; }
+  }
+  // Fallback: env-var plaintext (legacy / pre-migration).
   const users = _loadAuthUsers();
-  if (!users || Object.keys(users).length === 0) return true;
+  if (!users || Object.keys(users).length === 0) {
+    // No auth configured at all → allow (dev mode).
+    return true;
+  }
+  const expected = users[username];
+  return !!(expected && expected === password);
+}
+// Phase 9H: async auth wrapper. Returns a Promise<boolean>; callers must `await`.
+async function requireAuth(req, res) {
+  const users = _loadAuthUsers();
+  // Dev mode: no users configured AND no firestore → wide open.
+  if ((!users || Object.keys(users).length === 0) && !firestore) return true;
   const header = req.headers['authorization'] || '';
   if (!header.startsWith('Basic ')) {
     res.writeHead(401, {
@@ -524,8 +584,8 @@ function requireAuth(req, res) {
   const idx = decoded.indexOf(':');
   const u = idx >= 0 ? decoded.slice(0, idx) : '';
   const p = idx >= 0 ? decoded.slice(idx + 1) : '';
-  const expected = users[u];
-  if (!expected || expected !== p) {
+  const ok = await _verifyPassword(u, p);
+  if (!ok) {
     res.writeHead(401, {
       'WWW-Authenticate': 'Basic realm="ZuildUp"',
       'Content-Type': 'text/plain; charset=utf-8',
@@ -632,8 +692,12 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  // Phase 9H: requireAuth is now async (Firestore-backed). Wrap the rest
+  // of the handler in an async IIFE so we can await it without changing
+  // every existing branch.
+  (async () => {
   // Production auth gate (no-op in dev when AUTH_USER/AUTH_PASS unset).
-  if (!requireAuth(req, res)) return;
+  if (!(await requireAuth(req, res))) return;
   const pathname = earlyPath;
 
   // POST /pdf  ->  body is HTML, return PDF
@@ -1417,6 +1481,168 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ============================================================================
+  // Phase 9H (2026-06-03): self-serve password change + admin password reset.
+  // ============================================================================
+  // GET  /api/auth/me                      -> { username, role, password_changed_at }
+  // POST /api/auth/change-password         -> { current_password, new_password }
+  // POST /api/auth/admin/reset-password    -> admin-only: { username, new_password }
+  // GET  /api/auth/users                   -> admin-only: list of users (firestore + env)
+  //
+  // Backed by Firestore `users` collection. Env-var fallback preserved for
+  // legacy / unmigrated reps so the cutover is zero-downtime.
+
+  if (req.method === 'GET' && pathname === '/api/auth/me') {
+    (async () => {
+      try {
+        const me = getAuthUser(req);
+        const role = await _resolveUserRole(me);
+        const doc = await _getUserDoc(me);
+        const password_changed_at = doc && doc.password_changed_at ? doc.password_changed_at : null;
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ username: me, role, password_changed_at }));
+      } catch (e) {
+        console.error('[api/auth/me] FAIL:', e.message);
+        send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+      }
+    })();
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/auth/change-password') {
+    (async () => {
+      try {
+        if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+        if (!bcrypt) return send(res, 503, JSON.stringify({ error: 'bcrypt unavailable' }), { 'Content-Type': 'application/json' });
+        const me = getAuthUser(req);
+        const body = await readJsonBody(req);
+        if (!body || typeof body !== 'object') return send(res, 400, JSON.stringify({ error: 'body required' }), { 'Content-Type': 'application/json' });
+        const cur = (body.current_password || '').toString();
+        const next = (body.new_password || '').toString();
+        if (!cur) return send(res, 400, JSON.stringify({ error: 'current_password required' }), { 'Content-Type': 'application/json' });
+        if (!next || next.length < 6) return send(res, 400, JSON.stringify({ error: 'new_password must be at least 6 characters' }), { 'Content-Type': 'application/json' });
+        if (next.length > 100) return send(res, 400, JSON.stringify({ error: 'new_password too long (max 100)' }), { 'Content-Type': 'application/json' });
+        if (cur === next) return send(res, 400, JSON.stringify({ error: 'new_password must differ from current' }), { 'Content-Type': 'application/json' });
+        // Re-verify the current password (defense in depth — header already passed requireAuth,
+        // but the request body might supply a different "current_password" than the header).
+        const verified = await _verifyPassword(me, cur);
+        if (!verified) return send(res, 400, JSON.stringify({ error: 'current_password incorrect' }), { 'Content-Type': 'application/json' });
+        const hash = await bcrypt.hash(next, 10);
+        const now = new Date().toISOString();
+        const role = await _resolveUserRole(me);
+        const ref = firestore.collection(USERS_COLLECTION).doc(me);
+        const existing = await ref.get();
+        const doc = {
+          username: me,
+          password_hash: hash,
+          password_changed_at: now,
+          password_changed_by: 'self',
+          role: (existing.exists && existing.data().role) || role,
+          active: true,
+        };
+        if (!existing.exists) doc.created_at = now;
+        await ref.set(doc, { merge: true });
+        _invalidateUserCache(me);
+        console.log('[auth] password changed by self for', me);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        console.error('[api/auth/change-password] FAIL:', e.message);
+        send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+      }
+    })();
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/auth/admin/reset-password') {
+    (async () => {
+      try {
+        if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
+        if (!bcrypt) return send(res, 503, JSON.stringify({ error: 'bcrypt unavailable' }), { 'Content-Type': 'application/json' });
+        const caller = getAuthUser(req);
+        const callerRole = await _resolveUserRole(caller);
+        if (callerRole !== 'admin') return send(res, 403, JSON.stringify({ error: 'admin required' }), { 'Content-Type': 'application/json' });
+        const body = await readJsonBody(req);
+        if (!body || typeof body !== 'object') return send(res, 400, JSON.stringify({ error: 'body required' }), { 'Content-Type': 'application/json' });
+        const username = (body.username || '').toString().trim();
+        const next = (body.new_password || '').toString();
+        if (!username || !/^[a-z0-9_-]{2,40}$/i.test(username)) return send(res, 400, JSON.stringify({ error: 'invalid username (allowed: a-z, 0-9, _, -, 2-40 chars)' }), { 'Content-Type': 'application/json' });
+        if (!next || next.length < 6) return send(res, 400, JSON.stringify({ error: 'new_password must be at least 6 characters' }), { 'Content-Type': 'application/json' });
+        if (next.length > 100) return send(res, 400, JSON.stringify({ error: 'new_password too long (max 100)' }), { 'Content-Type': 'application/json' });
+        const hash = await bcrypt.hash(next, 10);
+        const now = new Date().toISOString();
+        const ref = firestore.collection(USERS_COLLECTION).doc(username);
+        const existing = await ref.get();
+        const role = (existing.exists && existing.data().role) || (_isHardcodedAdmin(username) ? 'admin' : 'rep');
+        const doc = {
+          username,
+          password_hash: hash,
+          password_changed_at: now,
+          password_changed_by: 'admin:' + caller,
+          role,
+          active: true,
+        };
+        if (!existing.exists) doc.created_at = now;
+        await ref.set(doc, { merge: true });
+        _invalidateUserCache(username);
+        console.log('[auth] password reset by admin ' + caller + ' for ' + username);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, username }));
+      } catch (e) {
+        console.error('[api/auth/admin/reset-password] FAIL:', e.message);
+        send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+      }
+    })();
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/auth/users') {
+    (async () => {
+      try {
+        const caller = getAuthUser(req);
+        const callerRole = await _resolveUserRole(caller);
+        if (callerRole !== 'admin') return send(res, 403, JSON.stringify({ error: 'admin required' }), { 'Content-Type': 'application/json' });
+        const fsUsers = new Map();
+        if (firestore) {
+          try {
+            const snap = await firestore.collection(USERS_COLLECTION).get();
+            snap.docs.forEach(d => {
+              const data = d.data() || {};
+              fsUsers.set(d.id, {
+                username: d.id,
+                role: data.role || 'rep',
+                password_changed_at: data.password_changed_at || null,
+                password_changed_by: data.password_changed_by || null,
+                active: data.active !== false,
+                source: 'firestore',
+              });
+            });
+          } catch (e) { console.warn('[api/auth/users] firestore list failed:', e.message); }
+        }
+        const envUsers = _loadAuthUsers() || {};
+        Object.keys(envUsers).forEach(u => {
+          if (!fsUsers.has(u)) {
+            fsUsers.set(u, {
+              username: u,
+              role: _isHardcodedAdmin(u) ? 'admin' : 'rep',
+              password_changed_at: null,
+              password_changed_by: null,
+              active: true,
+              source: 'env',
+            });
+          }
+        });
+        const items = Array.from(fsUsers.values()).sort((a, b) => a.username.localeCompare(b.username));
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ items }));
+      } catch (e) {
+        console.error('[api/auth/users] FAIL:', e.message);
+        send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });
+      }
+    })();
+    return;
+  }
+
   // GET /  ->  index.html
   if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {
     return serveStatic(req, res, '/app/index.html');
@@ -1430,10 +1656,56 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET') return serveStatic(req, res, pathname);
 
   send(res, 405, 'Method not allowed');
+  })().catch(e => {
+    // Phase 9H: top-level handler safety net — never leak an unhandled
+    // rejection. Most async branches already have their own try/catch;
+    // this is the last line of defense.
+    console.error('[server] async handler error:', e && e.message);
+    try { send(res, 500, 'internal error'); } catch (_) { /* res may already be ended */ }
+  });
 });
+
+// Phase 9H (2026-06-03): one-shot idempotent migration of env-var users into
+// Firestore. Runs once per cold boot; safe to run repeatedly because we only
+// write a doc if it doesn't already exist.
+async function _migrateEnvUsersToFirestore() {
+  if (!firestore || !bcrypt) {
+    console.warn('[migration] skipped — firestore or bcrypt unavailable');
+    return;
+  }
+  const users = _loadAuthUsers() || {};
+  const names = Object.keys(users);
+  if (names.length === 0) { console.log('[migration] no env users to migrate'); return; }
+  let migrated = 0, skipped = 0, failed = 0;
+  for (const u of names) {
+    try {
+      const ref = firestore.collection(USERS_COLLECTION).doc(u);
+      const snap = await ref.get();
+      if (snap.exists) { skipped++; continue; }
+      const hash = await bcrypt.hash(users[u], 10);
+      const now = new Date().toISOString();
+      await ref.set({
+        username: u,
+        password_hash: hash,
+        password_changed_at: now,
+        password_changed_by: 'system:migration',
+        role: _isHardcodedAdmin(u) ? 'admin' : 'rep',
+        active: true,
+        created_at: now,
+      });
+      migrated++;
+    } catch (e) {
+      failed++;
+      console.warn('[migration] user', u, 'FAILED:', e.message);
+    }
+  }
+  console.log('[migration] users — migrated:', migrated, 'skipped:', skipped, 'failed:', failed);
+}
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`ZuildUp Quotation Builder listening on http://0.0.0.0:${PORT}`);
   console.log(`  ROOT = ${ROOT}`);
   console.log(`  open  http://127.0.0.1:${PORT}/`);
+  // Kick off the migration in the background — don't block startup probe.
+  _migrateEnvUsersToFirestore().catch(e => console.warn('[migration] FAIL:', e.message));
 });

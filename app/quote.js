@@ -6351,4 +6351,237 @@ function renderNotesPage(state) {
 })();
 
 
+// ============================================================================
+// Phase 9H (2026-06-03): Account menu — self-serve password change + admin reset.
+// ============================================================================
+(function initAccountMenu() {
+  const acctBtn = document.getElementById('acct-btn');
+  const acctMenu = document.getElementById('acct-menu');
+  const acctName = document.getElementById('acct-name');
+  const acctMenuName = document.getElementById('acct-menu-name');
+  const acctMenuRole = document.getElementById('acct-menu-role');
+  const changePwItem = document.getElementById('acct-change-pw');
+  const manageUsersItem = document.getElementById('acct-manage-users');
+  if (!acctBtn || !acctMenu) return;
+
+  let _me = null; // { username, role, password_changed_at }
+
+  function toast(msg, kind) {
+    if (window.__qbToast) window.__qbToast(msg, kind);
+    else console.log('[toast]', msg);
+  }
+
+  function openMenu() { acctMenu.style.display = 'block'; }
+  function closeMenu() { acctMenu.style.display = 'none'; }
+  function toggleMenu() { acctMenu.style.display = (acctMenu.style.display === 'block' ? 'none' : 'block'); }
+  acctBtn.addEventListener('click', (ev) => { ev.stopPropagation(); toggleMenu(); });
+  document.addEventListener('click', (ev) => {
+    if (acctMenu.style.display === 'block' && !acctMenu.contains(ev.target) && ev.target !== acctBtn && !acctBtn.contains(ev.target)) {
+      closeMenu();
+    }
+  });
+
+  async function loadMe() {
+    try {
+      const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      if (!r.ok) throw new Error('me failed: ' + r.status);
+      _me = await r.json();
+      acctName.textContent = _me.username || '?';
+      acctMenuName.textContent = _me.username || '?';
+      acctMenuRole.textContent = (_me.role === 'admin' ? 'Admin' : 'Rep') +
+        (_me.password_changed_at ? ' · pwd set ' + (_me.password_changed_at || '').slice(0,10) : ' · default pwd');
+      if (_me.role === 'admin') manageUsersItem.style.display = 'block';
+      else manageUsersItem.style.display = 'none';
+    } catch (e) {
+      console.warn('[acct] loadMe failed:', e.message);
+      acctName.textContent = '?';
+    }
+  }
+
+  // ---- Change-password modal ----
+  const pwModal = document.getElementById('pw-modal');
+  const pwCurrent = document.getElementById('pw-current');
+  const pwNew = document.getElementById('pw-new');
+  const pwConfirm = document.getElementById('pw-confirm');
+  const pwErr = document.getElementById('pw-err');
+  const pwSave = document.getElementById('pw-save');
+  const pwCancel = document.getElementById('pw-cancel');
+
+  function openPwModal() {
+    pwCurrent.value = ''; pwNew.value = ''; pwConfirm.value = '';
+    pwErr.style.display = 'none'; pwErr.textContent = '';
+    pwModal.classList.add('open');
+    setTimeout(() => pwCurrent.focus(), 50);
+  }
+  function closePwModal() { pwModal.classList.remove('open'); }
+  function pwShowErr(msg) { pwErr.textContent = msg; pwErr.style.display = 'block'; }
+
+  pwCancel.addEventListener('click', closePwModal);
+  pwSave.addEventListener('click', async () => {
+    const cur = pwCurrent.value;
+    const next = pwNew.value;
+    const conf = pwConfirm.value;
+    if (!cur) return pwShowErr('Enter your current password.');
+    if (!next || next.length < 6) return pwShowErr('New password must be at least 6 characters.');
+    if (next !== conf) return pwShowErr('New passwords don\u2019t match.');
+    if (cur === next) return pwShowErr('New password must differ from current.');
+    pwSave.disabled = true;
+    try {
+      const r = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ current_password: cur, new_password: next }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { pwShowErr(j.error || ('failed: ' + r.status)); return; }
+      closePwModal();
+      toast('Password updated. Use your new password on next browser session / reload.');
+      loadMe();
+    } catch (e) {
+      pwShowErr(e.message || 'network error');
+    } finally {
+      pwSave.disabled = false;
+    }
+  });
+
+  changePwItem.addEventListener('click', () => { closeMenu(); openPwModal(); });
+
+  // ---- Admin user-management modal ----
+  const usersModal = document.getElementById('users-modal');
+  const usersList = document.getElementById('users-list');
+  const usersClose = document.getElementById('users-close');
+  const addUsername = document.getElementById('add-username');
+  const addPassword = document.getElementById('add-password');
+  const addUserBtn = document.getElementById('add-user-btn');
+  const addUserErr = document.getElementById('add-user-err');
+
+  function addErr(msg) { addUserErr.textContent = msg; addUserErr.style.display = msg ? 'block' : 'none'; }
+
+  async function loadUsers() {
+    usersList.innerHTML = '<div style="padding:10px;color:var(--muted);">Loading\u2026</div>';
+    try {
+      const r = await fetch('/api/auth/users', { credentials: 'same-origin' });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        usersList.innerHTML = '<div style="padding:10px;color:#c0392b;">Failed: ' + (j.error || r.status) + '</div>';
+        return;
+      }
+      const { items } = await r.json();
+      const rows = [
+        '<div class="users-row header"><div>Username</div><div>Role</div><div>Pwd changed</div><div>Source</div><div></div></div>',
+      ];
+      items.forEach(u => {
+        const pwd = u.password_changed_at ? u.password_changed_at.slice(0,10) : '<em style="color:var(--muted);">never (env)</em>';
+        rows.push(
+          '<div class="users-row" data-username="' + u.username + '">' +
+            '<div><b>' + u.username + '</b></div>' +
+            '<div><span class="role-pill ' + (u.role === 'admin' ? 'admin' : 'rep') + '">' + u.role + '</span></div>' +
+            '<div style="font-size:11.5px;color:var(--muted);">' + pwd + '</div>' +
+            '<div><span class="source-pill">' + u.source + '</span></div>' +
+            '<div><button class="reset-pw" data-username="' + u.username + '">Reset password</button></div>' +
+            '<div class="inline-reset" data-username="' + u.username + '">' +
+              '<input type="text" placeholder="new password (min 6)" data-new-pw="' + u.username + '">' +
+              '<button class="btn-primary do-reset" data-username="' + u.username + '" style="padding:6px 14px;background:var(--navy);color:white;border:none;border-radius:5px;cursor:pointer;">Save</button>' +
+              '<button class="cancel-reset" data-username="' + u.username + '" style="padding:6px 10px;background:white;border:1px solid var(--rule);border-radius:5px;cursor:pointer;">Cancel</button>' +
+            '</div>' +
+          '</div>'
+        );
+      });
+      usersList.innerHTML = rows.join('');
+      // Wire reset buttons
+      usersList.querySelectorAll('button.reset-pw').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const uname = btn.getAttribute('data-username');
+          const inline = usersList.querySelector('.inline-reset[data-username="' + uname + '"]');
+          if (inline) {
+            inline.classList.toggle('open');
+            const inp = inline.querySelector('input');
+            if (inp && inline.classList.contains('open')) setTimeout(() => inp.focus(), 30);
+          }
+        });
+      });
+      usersList.querySelectorAll('button.cancel-reset').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const uname = btn.getAttribute('data-username');
+          const inline = usersList.querySelector('.inline-reset[data-username="' + uname + '"]');
+          if (inline) inline.classList.remove('open');
+        });
+      });
+      usersList.querySelectorAll('button.do-reset').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const uname = btn.getAttribute('data-username');
+          const inp = usersList.querySelector('input[data-new-pw="' + uname + '"]');
+          const newPw = inp ? inp.value : '';
+          if (!newPw || newPw.length < 6) { toast('Password must be at least 6 chars', 'err'); return; }
+          btn.disabled = true;
+          try {
+            const r = await fetch('/api/auth/admin/reset-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'same-origin',
+              body: JSON.stringify({ username: uname, new_password: newPw }),
+            });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) { toast('Reset failed: ' + (j.error || r.status), 'err'); return; }
+            toast('Password reset for ' + uname);
+            loadUsers();
+          } catch (e) {
+            toast('Reset failed: ' + e.message, 'err');
+          } finally {
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch (e) {
+      usersList.innerHTML = '<div style="padding:10px;color:#c0392b;">Error: ' + e.message + '</div>';
+    }
+  }
+
+  function openUsersModal() {
+    addErr('');
+    addUsername.value = ''; addPassword.value = '';
+    usersModal.classList.add('open');
+    loadUsers();
+  }
+  function closeUsersModal() { usersModal.classList.remove('open'); }
+  usersClose.addEventListener('click', closeUsersModal);
+
+  manageUsersItem.addEventListener('click', () => { closeMenu(); openUsersModal(); });
+
+  addUserBtn.addEventListener('click', async () => {
+    const uname = (addUsername.value || '').trim();
+    const pw = addPassword.value || '';
+    if (!uname || !/^[a-z0-9_-]{2,40}$/i.test(uname)) return addErr('Username: 2-40 chars, a-z, 0-9, _, -');
+    if (!pw || pw.length < 6) return addErr('Password must be at least 6 chars');
+    addErr('');
+    addUserBtn.disabled = true;
+    try {
+      const r = await fetch('/api/auth/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ username: uname, new_password: pw }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { addErr(j.error || ('failed: ' + r.status)); return; }
+      toast('User ' + uname + ' saved');
+      addUsername.value = ''; addPassword.value = '';
+      loadUsers();
+    } catch (e) {
+      addErr(e.message || 'network error');
+    } finally {
+      addUserBtn.disabled = false;
+    }
+  });
+
+  // Close modals on backdrop click
+  pwModal.addEventListener('click', (ev) => { if (ev.target === pwModal) closePwModal(); });
+  usersModal.addEventListener('click', (ev) => { if (ev.target === usersModal) closeUsersModal(); });
+
+  // Boot
+  loadMe();
+})();
+
+
 })();
