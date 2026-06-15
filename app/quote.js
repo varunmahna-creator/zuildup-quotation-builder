@@ -3680,11 +3680,13 @@ async function bootForm() {
     inp.addEventListener('click', (e) => e.stopPropagation());
   }
 
-  // Phase 6.4 #9: clone every row in this category as a NEW category with
-  // catalog defaults (override reset to {}). Per Varun: "Clone with default" —
-  // we deliberately do NOT carry over the rep's per-row tweaks. Each cloned
-  // row gets the same catalog `id` (so it pulls fresh defaults from the
-  // catalog) but its own array slot, so it's independently editable.
+  // Phase 6.4 #9 (REVISED 2026-06-15, Varun directive): clone every row in this
+  // category as a NEW category, CARRYING OVER the rep's already-entered values.
+  // Previously we reset override to {} ("clone with default"), which left the
+  // left-side editor blank and forced the team to re-type everything. New
+  // behaviour: deep-copy src.override so the copied tab is pre-filled with the
+  // exact values the rep entered, and is independently editable (its own array
+  // slot + its own override object — edits to the clone never touch the source).
   // The new group name auto-suffixes to avoid collisions: "X (Copy)",
   // "X (Copy 2)", etc. Rep can rename via the ✎ button.
   function copyCategory(currentCat, sourceIndices) {
@@ -3696,13 +3698,14 @@ async function bootForm() {
     while (existingGroups.has(newCat)) { newCat = currentCat + ' (Copy ' + n + ')'; n++; }
     const clones = sourceIndices.map(i => {
       const src = state.rows[i];
-      const clone = { id: src.id, override: {}, categoryGroup: newCat };
+      // Deep-copy the source override so the clone inherits every rep-entered
+      // value (label, rate, rate_text, brands, description, location, ...) while
+      // remaining a fully independent object.
+      const clonedOverride = JSON.parse(JSON.stringify(src.override || {}));
+      const clone = { id: src.id, override: clonedOverride, categoryGroup: newCat };
       if (src._custom) {
         clone._custom = true;
-        // For custom rows, label is part of the row's identity (not in
-        // catalog), so preserve it. Drop everything else.
-        const so = src.override || {};
-        if (so.label) clone.override.label = so.label;
+        // For custom rows, the category_label must point at the new group.
         clone.override.category_label = newCat;
       }
       return clone;
