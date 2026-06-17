@@ -813,14 +813,44 @@ const server = http.createServer((req, res) => {
       return;
     }
     // DELETE /api/quotes/:id
+    // 2026-06-17 (Varun directive): COMPLETE backend delete. Admin-only
+    // (varun + karan). Purges the Firestore doc AND every attached PDF in
+    // GCS so nothing is left behind. Reps can no longer delete quotes.
     if (req.method === 'DELETE' && m) {
       const id = m[1];
       if (!firestore) return send(res, 503, JSON.stringify({ error: 'firestore unavailable' }), { 'Content-Type': 'application/json' });
       (async () => {
         try {
-          await firestore.collection(QUOTES_COLLECTION).doc(id).delete();
+          // --- Authorization: admins only ---
+          const caller = getAuthUser(req);
+          const callerRole = await _resolveUserRole(caller);
+          if (callerRole !== 'admin') {
+            console.warn('[api/quotes][DELETE] denied for non-admin ' + caller + ' on ' + id);
+            return send(res, 403, JSON.stringify({ error: 'admin required to delete quotes' }), { 'Content-Type': 'application/json' });
+          }
+          const ref = firestore.collection(QUOTES_COLLECTION).doc(id);
+          const snap = await ref.get();
+          if (!snap.exists) return send(res, 404, JSON.stringify({ error: 'not found' }), { 'Content-Type': 'application/json' });
+          // --- Purge attached PDFs from GCS (complete delete) ---
+          const pdfs = (snap.data() || {}).uploaded_pdfs || [];
+          let pdfsDeleted = 0;
+          if (gcsBucket && pdfs.length) {
+            for (const p of pdfs) {
+              const obj = p && p.gcs_object;
+              if (!obj || obj.indexOf('..') !== -1 || !obj.startsWith(id + '/')) continue;
+              try {
+                await gcsBucket.file(obj).delete({ ignoreNotFound: true });
+                pdfsDeleted++;
+              } catch (ge) {
+                console.warn('[api/quotes][DELETE] gcs purge failed for ' + obj + ': ' + ge.message);
+              }
+            }
+          }
+          // --- Delete the Firestore doc ---
+          await ref.delete();
+          console.log('[api/quotes][DELETE] quote ' + id + ' deleted by admin ' + caller + ' (pdfs purged: ' + pdfsDeleted + '/' + pdfs.length + ')');
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ ok: true }));
+          res.end(JSON.stringify({ ok: true, pdfs_deleted: pdfsDeleted }));
         } catch (e) {
           console.error('[api/quotes][DELETE] FAIL:', e.message);
           send(res, 500, JSON.stringify({ error: e.message }), { 'Content-Type': 'application/json' });

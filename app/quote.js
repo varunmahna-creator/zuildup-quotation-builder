@@ -17,6 +17,7 @@
 
 (function(){
 'use strict';
+var _isAdmin = false; // set by loadMe(); gates the quote-library delete button (admin-only: varun + karan)
 
 // Phase 9B-2 (Issue 4): per-tab working state lives in sessionStorage keyed
 // by a URL `?qid=<id>` so two tabs can edit different quotes in parallel
@@ -2666,7 +2667,7 @@ async function bootForm() {
           ${attachBtn}
           <button data-act="open" class="btn-primary">Open</button>
           <button data-act="dup" title="Duplicate">⎘</button>
-          <button data-act="del" class="btn-danger" title="Delete">×</button>
+          ${_isAdmin ? '<button data-act="del" class="btn-danger" title="Delete">\u00d7</button>' : ''}
         </span>
       `;
       li.querySelector('[data-act="open"]').onclick = () => openSavedQuote(e.id);
@@ -2674,8 +2675,9 @@ async function bootForm() {
         try { const newId = QuoteStorage.duplicate(e.id); toast('Duplicated'); renderLoadList(); }
         catch (err) { toast('Duplicate failed: ' + err.message, 'err'); }
       };
-      li.querySelector('[data-act="del"]').onclick  = () => {
-        if (!confirm('Delete "' + (e.name || cn) + '"? This cannot be undone.')) return;
+      const _delBtn = li.querySelector('[data-act="del"]');
+      if (_delBtn) _delBtn.onclick  = () => {
+        if (!confirm('Permanently DELETE "' + (e.name || cn) + '" from the backend?\n\nThis removes the quote and all attached PDFs. It cannot be undone.')) return;
         try { QuoteStorage.delete(e.id); toast('Deleted'); renderLoadList(); refreshIndicatorIdle(); }
         catch (err) { toast('Delete failed: ' + err.message, 'err'); }
       };
@@ -6389,6 +6391,7 @@ function renderNotesPage(state) {
       const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
       if (!r.ok) throw new Error('me failed: ' + r.status);
       _me = await r.json();
+      _isAdmin = (_me && _me.role === 'admin');
       acctName.textContent = _me.username || '?';
       acctMenuName.textContent = _me.username || '?';
       acctMenuRole.textContent = (_me.role === 'admin' ? 'Admin' : 'Rep') +
