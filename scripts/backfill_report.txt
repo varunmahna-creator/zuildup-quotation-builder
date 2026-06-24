@@ -1,4 +1,4 @@
-=== backfill_versions.js [DRY-RUN] 2026-06-24T07:47:27.450Z ===
+=== backfill_versions.js [APPLY] 2026-06-24T09:16:17.939Z ===
 project=zuildup-quotes collection=quotes
 Total docs read: 116
 Client groups (with derivable name): 51
@@ -190,4 +190,4 @@ Total quotes:        116
 Total client groups: 51 (+9 nameless docs untouched)
 Docs that would change: 107
 Index retitles:         107
-Mode: DRY-RUN (no writes)
+Mode: APPLY (writing changes)

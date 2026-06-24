@@ -658,6 +658,12 @@ function indexEntryFromDoc(doc) {
     created_at: doc.created_at || '',
     modified_at: doc.modified_at || '',
     row_count: doc.row_count || 0,
+    // Phase 9I (2026-06-24): surface clientKey + version so the Load modal can
+    // group quotes into V1/V2/V3 per client without re-deriving from names.
+    client_key: doc.client_key || (doc.state && doc.state.clientKey) || '',
+    version: (typeof doc.version === 'number' && doc.version >= 1)
+      ? doc.version
+      : ((doc.state && typeof doc.state.version === 'number' && doc.state.version >= 1) ? doc.state.version : 1),
     // Phase 9G: surface uploaded PDF count + flags on the index so the Load
     // modal can render the 📎 chip without an extra round-trip per row.
     uploaded_pdfs: Array.isArray(doc.uploaded_pdfs) ? doc.uploaded_pdfs : [],

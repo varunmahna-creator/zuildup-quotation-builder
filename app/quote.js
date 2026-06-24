@@ -680,6 +680,12 @@ const QuoteStorage = {
           created_at: doc.created_at || '',
           modified_at: doc.modified_at || '',
           row_count: doc.row_count || 0,
+          // Phase 9I (2026-06-24): carry clientKey + version into the local index
+          // so version grouping survives a cloud refresh.
+          client_key: doc.client_key || (doc.state && doc.state.clientKey) || '',
+          version: (typeof doc.version === 'number' && doc.version >= 1)
+            ? doc.version
+            : ((doc.state && typeof doc.state.version === 'number' && doc.state.version >= 1) ? doc.state.version : 1),
           // Phase 9G: surface attached PDFs on the index so Load modal can
           // render the 📎 chip without an extra round-trip per quote.
           uploaded_pdfs: Array.isArray(doc.uploaded_pdfs) ? doc.uploaded_pdfs : [],
