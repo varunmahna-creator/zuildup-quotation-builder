@@ -1,0 +1,193 @@
+=== backfill_versions.js [DRY-RUN] 2026-06-24T07:47:27.450Z ===
+project=zuildup-quotes collection=quotes
+Total docs read: 116
+Client groups (with derivable name): 51
+Docs with NO derivable state.customer.name: 9
+
+--- PER-CLIENT VERSION PLAN ---
+[ajay-sandeep-madan] (3 versions)
+    V1  q_mpbofeof_5lg5gs  created=2026-05-18  "Mr.Uppal — 2026-05-12"  ->  "Ajay & Sandeep Madan — V1"
+    V2  q_mpc9k9n5_yl04hk  created=2026-05-19  "Ajay & Sandeep Madan — 2026-05-19 (copy)"  ->  "Ajay & Sandeep Madan — V2"
+    V3  q_mqantat3_dhosog  created=2026-06-12  "Ajay & Sandeep Madan — 2026-06-12 (copy)"  ->  "Ajay & Sandeep Madan — V3"
+[amandeep-singh-pahwa] (2 versions)
+    V1  q_mpb0qrfv_ndvi36  created=2026-05-18  "Sample Mid Luxury — 2026-05-18 (copy)"  ->  "Amandeep Singh Pahwa — V1"
+    V2  q_mpb163eo_szq9lc  created=2026-05-18  "Amandeep Pahwa - Janakpuri 200 Sq. yrds"  ->  "Amandeep Singh Pahwa — V2"
+[amit-mathur] (1 version)
+    V1  q_mpuu0qfd_i6rmyt  created=2026-06-01  "Amit Mathur - Basic"  ->  "Amit Mathur — V1"
+[anuj-hasija] (2 versions)
+    V1  q_moponpia_1c7wbr  created=2026-05-03  "Gurucharan Singh — 2026-05-03 (copy)"  ->  "Anuj Hasija — V1"
+    V2  q_mpuung0h_gus2ut  created=2026-06-01  "Anuj Hasija Sec 57 GGN"  ->  "Anuj Hasija — V2"
+[arindam-chakraborty] (1 version)
+    V1  q_mor38z92_tfm5ex  created=2026-05-04  "Arindam Chakraborty — 2026-05-04"  ->  "Arindam Chakraborty — V1"
+[ashok] (2 versions)
+    V1  q_mp024aw4_ms39fm  created=2026-05-10  "Ashok — 2026-05-10"  ->  "Ashok — V1"
+    V2  q_mp28qvvd_0rybay  created=2026-05-12  "Ashok Kumar — 2026-05-10"  ->  "Ashok — V2"
+[ashutosh-verma] (5 versions)
+    V1  q_mp2ct0lo_fdegm0  created=2026-05-12  "Ashutosh — 2026-05-12"  ->  "Ashutosh Verma — V1"
+    V2  q_mp2jm974_cfsthx  created=2026-05-12  "Ashutosh — 2026-05-12"  ->  "Ashutosh Verma — V2"
+    V3  q_mp6wmuk7_4b77l9  created=2026-05-15  "Sample Basic"  ->  "Ashutosh Verma — V3"
+    V4  q_mpaxx773_qubpm9  created=2026-05-18  "Ashutosh Verma — 2026-05-12"  ->  "Ashutosh Verma — V4"
+    V5  q_mpb2dfiv_2rvq3x  created=2026-05-18  "Ashutosh Verma — 2026-05-12"  ->  "Ashutosh Verma — V5"
+[binod-kumar-singh] (1 version)
+    V1  q_movlwdp9_m4uhna  created=2026-05-07  "Davinder Juneja — 2026-05-07"  ->  "Binod Kumar Singh — V1"
+[davinder-juneja] (15 versions)
+    V1  q_movdijs6_v4ld1d  created=2026-05-07  "Hardik  — 2026-05-07"  ->  "Davinder Juneja — V1"
+    V2  q_movilg9f_159yvt  created=2026-05-07  "Davinder Juneja — 2026-05-07"  ->  "Davinder Juneja — V2"
+    V3  q_movj7rv0_lih7zg  created=2026-05-07  "Davinder Juneja — 2026-05-07 (copy)"  ->  "Davinder Juneja — V3"
+    V4  q_mowy4mjd_cu1rza  created=2026-05-08  "Davinder Juneja — 2026-05-08 (copy)"  ->  "Davinder Juneja — V4"
+    V5  q_mowzlpa5_dbzgw6  created=2026-05-08  "Davinder Juneja — 2026-05-08"  ->  "Davinder Juneja — V5"
+    V6  q_mox0tfez_4llwpc  created=2026-05-08  "Davinder Juneja — 2026-05-08"  ->  "Davinder Juneja — V6"
+    V7  q_moy6i279_3os4ps  created=2026-05-09  "Davinder Juneja — 2026-05-09"  ->  "Davinder Juneja — V7"
+    V8  q_moy6m0k9_1gy6ef  created=2026-05-09  "Davinder Juneja — 2026-05-09"  ->  "Davinder Juneja — V8"
+    V9  q_moy6n4ny_yxwj9l  created=2026-05-09  "Davinder Juneja — 2026-05-09"  ->  "Davinder Juneja — V9"
+    V10  q_moy6wrlr_ho4vad  created=2026-05-29  "Davinder Juneja — 2026-05-09"  ->  "Davinder Juneja — V10"
+    V11  q_moy6yfs9_bxetzv  created=2026-05-29  "Davinder Juneja — 2026-05-09"  ->  "Davinder Juneja — V11"
+    V12  q_moy70m23_6sfnna  created=2026-05-30  "Davinder Juneja — 2026-05-09"  ->  "Davinder Juneja — V12"
+    V13  q_mqb13vc2_hqbrlb  created=2026-06-12  "Davinder Juneja Sir Latest"  ->  "Davinder Juneja — V13"
+    V14  q_mqb85her_8mq279  created=2026-06-12  "Davinder Juneja — 2026-05-08 (copy)"  ->  "Davinder Juneja — V14"
+    V15  q_mqdhfugb_ys2pxy  created=2026-06-14  "Sneh Gupta — 2026-06-14"  ->  "Davinder Juneja — V15"
+[devi-ram-bansal] (2 versions)
+    V1  q_mpuvegsb_us8omb  created=2026-06-01  "Sample Luxury (copy)"  ->  "Devi Ram Bansal — V1"
+    V2  q_mpy37q3h_5w3c26  created=2026-06-03  "Devi Ram Bansal — 2026-06-03"  ->  "Devi Ram Bansal — V2"
+[gaurav-kumar] (1 version)
+    V1  q_moo9yfqy_ilb9ao  created=2026-05-02  "Kumar — 2026-05-02"  ->  "Gaurav Kumar — V1"
+[gurucharan-singh] (1 version)
+    V1  q_mon7pi7n_oofi8r  created=2026-05-01  "Pankaj Joshi — 2026-05-01"  ->  "Gurucharan Singh — V1"
+[hardik] (2 versions)
+    V1  q_mor8eaku_jc0yd0  created=2026-05-04  "Hardik — 2026-05-04"  ->  "Hardik — V1"
+    V2  q_mowwbywq_l5xrcs  created=2026-05-23  "Hardik  — 2026-05-08"  ->  "Hardik — V2"
+[harish-narula] (4 versions)
+    V1  q_moq04lif_m6g5sy  created=2026-05-03  "Harish Narula — 2026-05-03"  ->  "Harish Narula — V1"
+    V2  q_mp51cpzu_dsydpj  created=2026-05-14  "Harish Narula — 2026-05-03"  ->  "Harish Narula — V2"
+    V3  q_mp57ppkf_bnr4sm  created=2026-05-14  "Harish Narula — 2026-05-03"  ->  "Harish Narula — V3"
+    V4  q_mp57qn00_y2kq4l  created=2026-05-14  "Harish Narula — 2026-05-03"  ->  "Harish Narula — V4"
+[hershula] (2 versions)
+    V1  q_mpgt54ml_1fhxwt  created=2026-05-22  "Hershula"  ->  "Hershula — V1"
+    V2  q_mpgu13j7_f8zryo  created=2026-05-22  "Hershula"  ->  "Hershula — V2"
+[jain] (1 version)
+    V1  q_momwft72_zhmci3  created=2026-05-13  "Jain — 2026-05-01"  ->  "Jain — V1"
+[jitender-kumar] (2 versions)
+    V1  q_movj69ng_2ruxl6  created=2026-05-07  "Jitender Kumar — 2026-05-07"  ->  "Jitender Kumar — V1"
+    V2  q_movlgsut_gn9nas  created=2026-05-07  "Jitender Kumar — 2026-05-07"  ->  "Jitender Kumar — V2"
+[jitender-kumar-nagpal] (2 versions)
+    V1  q_movjo4j0_3i73t8  created=2026-05-07  "Jitender Kumar — 2026-05-07"  ->  "Jitender Kumar Nagpal — V1"
+    V2  q_mpclozfi_27sx8q  created=2026-05-19  "Jitender Kumar — 2026-05-07"  ->  "Jitender Kumar Nagpal — V2"
+[k-l-malik] (1 version)
+    V1  q_moy4m0j2_52lych  created=2026-05-09  "Hardik — 2026-05-09 (copy)"  ->  "K.L Malik — V1"
+[karan-test] (1 version)
+    V1  q_mor7u7sq_gfjrme  created=2026-05-04  "Karan Test — 2026-05-04"  ->  "Karan Test — V1"
+[karan-wadhwa] (1 version)
+    V1  q_mqcdi91e_vqlypu  created=2026-06-13  "Karan Wadhwa — 2026-06-13"  ->  "Karan Wadhwa — V1"
+[keshav-gupta] (2 versions)
+    V1  q_moy1alfo_mmjs90  created=2026-05-09  "Keshav Gupta — 2026-05-09"  ->  "Keshav Gupta — V1"
+    V2  q_moy82385_tvlqc5  created=2026-05-09  "Keshav Gupta — 2026-05-09"  ->  "Keshav Gupta — V2"
+[kumar] (1 version)
+    V1  q_moo85zwf_db3xob  created=2026-05-02  "Gupta — 2026-05-02"  ->  "Kumar — V1"
+[lokender] (1 version)
+    V1  q_mphzd8g7_ywgemy  created=2026-05-23  "Lokender — 2026-05-23"  ->  "Lokender — V1"
+[mehra] (1 version)
+    V1  q_mqexhz6x_zwza87  created=2026-06-15  "Mehra — 2026-06-15"  ->  "Mehra — V1"
+[mk-midha] (1 version)
+    V1  q_mpi3ihr7_16gvhe  created=2026-05-23  "Deepesh Sachdeva — 2026-05-23"  ->  "MK Midha — V1"
+[mr-jain] (2 versions)
+    V1  q_momzqfet_q147a8  created=2026-05-01  "Jain — 2026-05-01"  ->  "Mr. Jain — V1"
+    V2  q_moo4u58a_tcg5y5  created=2026-05-02  "Mr. Jain — 2026-05-02"  ->  "Mr. Jain — V2"
+[pankaj-joshi] (1 version)
+    V1  q_mon7mokh_cqnco4  created=2026-05-01  "Pankaj Joshi — 2026-05-01"  ->  "Pankaj Joshi — V1"
+[praveen-bansal] (1 version)
+    V1  q_momzu2kv_k6k8ca  created=2026-05-01  "Bansal Sohna — 2026-05-01"  ->  "Praveen Bansal — V1"
+[preet-vihar] (1 version)
+    V1  q_mp289wq8_luckch  created=2026-05-12  "Preet Vihar — 2026-05-12"  ->  "Preet Vihar — V1"
+[r-k-saxena] (3 versions)
+    V1  q_mpzfh3fy_03xnkc  created=2026-06-04  "Vasant kathal, Jasola Delhi— 2026-06-04"  ->  "R K Saxena — V1"
+    V2  q_mpzhijav_0djhr2  created=2026-06-04  "R K Saxena Structure — 2026-06-04"  ->  "R K Saxena — V2"
+    V3  q_mpzhp69m_fsyea0  created=2026-06-04  "R K Saxena Mid Luxury — 2026-06-04"  ->  "R K Saxena — V3"
+[raghav-mohta] (5 versions)
+    V1  q_mq2cmjvu_umzrc3  created=2026-06-06  "Sohail Dhir Structure — 2026-06-06"  ->  "Raghav Mohta — V1"
+    V2  q_mq7o91kt_0ekn8r  created=2026-06-10  "Vicky Dhir Ji — 2026-06-08 (copy)"  ->  "Raghav Mohta — V2"
+    V3  q_mq95ktz1_po7r3g  created=2026-06-11  "Raghav Mohta — 2026-06-11 (copy)"  ->  "Raghav Mohta — V3"
+    V4  q_mq97a380_vpy7cc  created=2026-06-11  "Raghav Mohta — 2026-06-11 (copy)"  ->  "Raghav Mohta — V4"
+    V5  q_mq993rhr_56o8j8  created=2026-06-11  "Raghav Mohta — 2026-06-11 (copy)"  ->  "Raghav Mohta — V5"
+[rahul] (5 versions)
+    V1  q_mopls3ea_nzlxx1  created=2026-05-03  "Rahul 170 gaj Paschim Vihaar — 2026-05-03"  ->  "Rahul — V1"
+    V2  q_moq0bkv3_kz7o7e  created=2026-05-03  "Rahul — 2026-05-03"  ->  "Rahul — V2"
+    V3  q_mozl4ymx_3z0nj1  created=2026-05-10  "Rahul — 2026-05-03"  ->  "Rahul — V3"
+    V4  q_mp54xfcv_wg9roh  created=2026-05-14  "Mr. Rahul — 2026-05-03"  ->  "Rahul — V4"
+    V5  q_mpdrbr5g_akhjps  created=2026-05-20  "Mr. Rahul — 2026-05-03"  ->  "Rahul — V5"
+[rahul-sharma] (2 versions)
+    V1  q_mp3zi2ut_vrrjrb  created=2026-05-13  "Mr. Rahul Sharma — 2026-05-13"  ->  "Rahul Sharma — V1"
+    V2  q_mp3zqhkp_apf7x0  created=2026-05-13  "Rahul Sharma — 2026-05-13"  ->  "Rahul Sharma — V2"
+[raja] (1 version)
+    V1  q_mpnwrd6j_65phmz  created=2026-05-27  "Raja"  ->  "Raja — V1"
+[rajinder-abott] (1 version)
+    V1  q_mptoifbb_zk1mzx  created=2026-05-31  "Rajinder Abott — 2026-05-31"  ->  "Rajinder Abott — V1"
+[rakesh-jain] (1 version)
+    V1  q_mpb51bxu_91y70l  created=2026-05-18  "Amit Mathur — 2026-05-18 (copy)"  ->  "Rakesh Jain — V1"
+[sachin-jain] (2 versions)
+    V1  q_mq0jziok_2ub6cn  created=2026-06-05  "Sachin Jain Turnkey  — 2026-06-05"  ->  "Sachin Jain — V1"
+    V2  q_mq0k1aut_k1ug4m  created=2026-06-05  "Sachin Jain Turnkey  — 2026-06-05 (copy)"  ->  "Sachin Jain — V2"
+[sample-luxury] (1 version)
+    V1  q_mp6w36hb_olikn4  created=2026-05-15  "Sample Luxury"  ->  "Sample Luxury — V1"
+[sample-mid-luxury] (2 versions)
+    V1  q_mp6spn2f_6nceo5  created=2026-05-15  "Sample Mid Luxury"  ->  "Sample Mid Luxury — V1"
+    V2  q_mp6wlb19_v6b2us  created=2026-05-15  "Sample Mid Luxury"  ->  "Sample Mid Luxury — V2"
+[sarabjeet-singh-kohli] (2 versions)
+    V1  q_mq0rzmv8_31mt6d  created=2026-06-05  "Mr. Sarabjeet Singh Kohli — 2026-06-05"  ->  "Sarabjeet Singh Kohli — V1"
+    V2  q_mq2d3w5a_h3qfqa  created=2026-06-06  "Mr. Sarabjeet Singh Kohli — 2026-06-05"  ->  "Sarabjeet Singh Kohli — V2"
+[singal] (4 versions)
+    V1  q_mp5ixya3_coatn8  created=2026-05-14  "Singal — 2026-05-14"  ->  "Singal — V1"
+    V2  q_mp82ijfg_9nt3jh  created=2026-05-16  "Singal — 2026-05-14"  ->  "Singal — V2"
+    V3  q_mp831z6k_ijs6pp  created=2026-05-16  "Singal — 2026-05-16"  ->  "Singal — V3"
+    V4  q_mp832yj1_wujud3  created=2026-05-16  "Singal — 2026-05-16 (copy)"  ->  "Singal — V4"
+[sohail-dhir] (1 version)
+    V1  q_mq2cmrtp_hkssjk  created=2026-06-06  "Sohail Dhir Structure — 2026-06-06 (copy)"  ->  "Sohail Dhir — V1"
+[sohail-vicky-dhir-ji] (1 version)
+    V1  q_mq7nw9v4_jql65v  created=2026-06-10  "Vicky Dhir Ji — 2026-06-08 (copy)"  ->  "Sohail & Vicky Dhir Ji — V1"
+[subhash-aggarwal] (1 version)
+    V1  q_mqqh7un2_yky4k9  created=2026-06-23  "Subhash Aggarwal — 2026-06-23"  ->  "Subhash Aggarwal — V1"
+[sudhir-mahajan] (1 version)
+    V1  q_mpuu0vh1_fxgxk5  created=2026-06-01  "Sample Basic (copy)"  ->  "Sudhir Mahajan — V1"
+[tanmeet-thukral] (6 versions)
+    V1  q_mooalxwm_ykw3q6  created=2026-05-02  "Gaurav Kumar — 2026-05-02"  ->  "Tanmeet Thukral — V1"
+    V2  q_motqyljn_ltz1e0  created=2026-05-06  "Tanmeet Thukral — 2026-05-06 (copy)"  ->  "Tanmeet Thukral — V2"
+    V3  q_mova5ebh_s5c49n  created=2026-05-07  "Tanmeet Thukral — 2026-05-07"  ->  "Tanmeet Thukral — V3"
+    V4  q_movehfpa_wtd9mh  created=2026-05-07  "Tanmeet Thukral — 2026-05-07 (copy)"  ->  "Tanmeet Thukral — V4"
+    V5  q_movgiqcx_xwen1f  created=2026-05-07  "Tanmeet Thukral — 2026-05-07"  ->  "Tanmeet Thukral — V5"
+    V6  q_mp2gorpn_tfuwdb  created=2026-05-12  "Rahul Sir — 2026-05-03"  ->  "Tanmeet Thukral — V6"
+[uppal] (2 versions)
+    V1  q_mp2sq9pp_t53cdr  created=2026-05-12  "Mr.Uppal — 2026-05-12"  ->  "Uppal — V1"
+    V2  q_mpicgdmh_r4w7ph  created=2026-05-23  "Mr.Uppal — 2026-05-23"  ->  "Uppal — V2"
+[vasant-kathal] (1 version)
+    V1  q_mpz5icak_glcfuy  created=2026-06-04  "Anuraag Sir Sec 16 Faridabad"  ->  "Vasant kathal — V1"
+[vicky-dhir-ji] (1 version)
+    V1  q_mq58eg4z_ym1jjg  created=2026-06-08  "Vicky Dhir Ji — 2026-06-08 (copy)"  ->  "Vicky Dhir Ji — V1"
+[vinayak-garg] (1 version)
+    V1  q_mqev2fxc_wrkzs3  created=2026-06-15  "Mr. Sarabjeet Singh Kohli — 2026-06-05"  ->  "Vinayak Garg — V1"
+
+--- DOCS WITH NO state.customer.name (left untouched, flagged) ---
+    q_mp6tm2to_5eg45f  index_name="Sample Basic"  index_customer_name="Amit Mathur"
+    q_mpnzam1f_z3t7cp  index_name="Deepesh Sachdeva — 2026-05-27 (copy)"  index_customer_name="MK Midha"
+    q_mpuu1brp_7uhsav  index_name="Anuj Hasija Sec 57 GGN"  index_customer_name="Anuj Hasija"
+    q_mpv0urpl_eh19kz  index_name="Rajinder Abott — 2026-06-01"  index_customer_name="XYZ"
+    q_mpv1ov9f_bnilgp  index_name="Devi Ram Bansal — 2026-06-01 (copy)"  index_customer_name="Devi Ram Bansal"
+    q_mpv8781d_6icyii  index_name="Sudhir Mahajan — 2026-06-01 (copy)"  index_customer_name="Sudhir Mahajan"
+    q_mq0k5hq4_3zhwn0  index_name="Sachin Jain Structure  — 2026-06-05"  index_customer_name="Sachin Jain"
+    q_mq18s9oj_ihj4uq  index_name="Sohail Dhir Structural  — 2026-06-05"  index_customer_name="Sohail Dhir"
+    q_mq1whrn7_10or0i  index_name="Davinder Juneja — 2026-05-09 (copy)"  index_customer_name="Davinder Juneja"
+
+--- SOHAIL DHIR SPECIAL CASE ---
+INTACT quote q_mq7nw9v4_jql65v: state.customer.name="Sohail & Vicky Dhir Ji"
+  -> clientKey="sohail-vicky-dhir-ji", will be retitled to "Sohail & Vicky Dhir Ji — V1". STATE LEFT UNTOUCHED.
+CORRUPT doc q_mq2cmjvu_umzrc3 (index titled "Sohail Dhir Structure — 2026-06-06")
+  -> its state.customer.name is actually "Raghav Mohta" (Raghav Mohta's data).
+  -> NOT recoverable to Sohail (corruption predates PITR window). This backfill will
+     retitle it to match its ACTUAL state owner ("Raghav Mohta — V<n>"), NOT Sohail.
+  -> FLAG: a quote titled "Sohail Dhir Structure" containing Raghav Mohta data is
+     unrecoverable; if a real Sohail structure quote is needed it must be rebuilt.
+
+--- SUMMARY ---
+Total quotes:        116
+Total client groups: 51 (+9 nameless docs untouched)
+Docs that would change: 107
+Index retitles:         107
+Mode: DRY-RUN (no writes)
