@@ -4499,7 +4499,33 @@ async function bootForm() {
     btn.disabled = true; btn.textContent = 'Building PDF…';
     try {
       const iframe = document.getElementById('preview');
-      const doc = iframe.contentDocument;
+      // Phase 9I (2026-06-24): GUARD against capturing an empty/unpainted preview.
+      // Symptom we fixed: the preview iframe sometimes hadn't rendered #preview-root
+      // when the rep clicked Download, so we posted near-empty HTML and the server
+      // produced a blank PDF (logs: "inlined assets=0 stylesheets=0"). We now wait
+      // for the preview to actually contain rendered content (up to ~6s), nudging a
+      // repaint, before reading its HTML.
+      async function waitForPreview() {
+        for (let i = 0; i < 30; i++) {
+          try {
+            const d = iframe.contentDocument;
+            const root = d && d.getElementById('preview-root');
+            // Painted = preview-root exists AND has real content (a quote page renders
+            // hundreds of chars; empty is < 40).
+            if (root && root.innerHTML && root.innerHTML.length > 200) return d;
+          } catch (_) {}
+          // Nudge a repaint via the same event the preview listens on.
+          try { window.dispatchEvent(new CustomEvent('quote-state-changed')); } catch(_){}
+          await new Promise(r => setTimeout(r, 200));
+        }
+        return iframe.contentDocument; // fall through with whatever we have
+      }
+      const doc = await waitForPreview();
+      const root = doc && doc.getElementById('preview-root');
+      if (!root || !root.innerHTML || root.innerHTML.length < 200) {
+        alert('The preview has not finished loading yet. Please wait a moment for the quote preview on the right to appear, then click Download PDF again.');
+        return;
+      }
       const html = '<!doctype html>' + doc.documentElement.outerHTML;
       // Derive last name (final whitespace-separated token of customer.name) for filename.
       const fullName = (state.customer.name || '').trim();
@@ -4509,9 +4535,27 @@ async function bootForm() {
         customer_last: lastName,
         date: dateStr,
       }).toString();
-      const r = await fetch('/pdf?' + qs, {
-        method: 'POST', headers: { 'Content-Type': 'text/html' }, body: html,
-      });
+      // Phase 9I (2026-06-24): timeout + one cold-start retry. Cloud Run cold
+      // boot of Chromium can take ~9s; a slow proxy used to drop the connection
+      // with no retry, so reps saw a generic failure. AbortController gives a
+      // clean 75s ceiling and we retry once on network error / abort.
+      async function postPdf() {
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 75000);
+        try {
+          return await fetch('/pdf?' + qs, {
+            method: 'POST', headers: { 'Content-Type': 'text/html' }, body: html, signal: ctrl.signal,
+          });
+        } finally { clearTimeout(to); }
+      }
+      let r;
+      try {
+        r = await postPdf();
+      } catch (netErr) {
+        btn.textContent = 'Retrying…';
+        await new Promise(res => setTimeout(res, 1500));
+        r = await postPdf(); // one retry on cold-start drop
+      }
       if (!r.ok) {
         const t = await r.text();
         alert('PDF render failed:\n' + t.slice(0,400));
