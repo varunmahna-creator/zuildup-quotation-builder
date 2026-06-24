@@ -579,6 +579,44 @@ function saveState(s) {
 // The storage layer is intentionally side-effect-free w.r.t. the global state:
 // callers pass a full state object in, get it back out. The bootForm code is
 // the only place that reconciles QuoteStorage with the in-memory `state` var.
+// ============================================================================
+// Phase 9I (2026-06-24): clientKey slug + frozen-total snapshot helpers.
+// ----------------------------------------------------------------------------
+// clientKey: stable slug from a customer name. Groups quotes into V1/V2/V3
+// versions per client (replaces the scattered "(copy)" mess). Rules:
+// lowercase, strip punctuation (keep [a-z0-9 ]), collapse whitespace, join '-'.
+function clientKeySlug(name) {
+  const s = String(name == null ? '' : name)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return s ? s.replace(/ /g, '-') : '';
+}
+// computeFrozenTotals: run the SAME calc the cost page uses; return a frozen
+// snapshot. Never throws -- returns null on failure.
+function computeFrozenTotals(state) {
+  try {
+    const isStruct = state && (state.scope === 'structure' || state.scope === 'structure_only'
+      || (state.build && state.build.buildType === 'structure'));
+    const c = isStruct ? calcStructure(state) : calcPackage(state);
+    if (!c || typeof c.grandTotal !== 'number' || isNaN(c.grandTotal)) return null;
+    return {
+      grandTotal: c.grandTotal,
+      zoneSubtotal: (typeof c.zoneSubtotal === 'number' && !isNaN(c.zoneSubtotal)) ? c.zoneSubtotal : 0,
+      scope: state.scope || 'full',
+      computedAt: new Date().toISOString(),
+      schemaVer: 1,
+    };
+  } catch (_) { return null; }
+}
+try {
+  if (typeof window !== 'undefined') {
+    window.clientKeySlug = clientKeySlug;
+    window.computeFrozenTotals = computeFrozenTotals;
+  }
+} catch (_) {}
+
 const QuoteStorage = {
   IDX_KEY:    'zuildup.quotes.index',
   ACTIVE_KEY: 'zuildup.active_quote_id',
@@ -754,23 +792,55 @@ const QuoteStorage = {
    *  - `name` is the human-friendly label (e.g. "Aanya — Gurgaon"). If omitted on
    *    a brand-new save, we synthesize from customer_name + date.
    */
-  save(state, name) {
+  save(state, name, opts) {
+    opts = opts || {};
     const idx = this._readIndex();
     const now = new Date().toISOString();
     let id = (state && state.quoteId && state.quoteId.startsWith('q_')) ? state.quoteId : null;
     let entry = id ? idx.find(e => e.id === id) : null;
 
+    // Phase 9I (2026-06-24): freeze a deliberate grand-total snapshot on every
+    // EXPLICIT Save / Save-As-New (NOT on autosave _touch). The snapshot lets
+    // load-time drift detection warn the rep if specs/inputs later change.
+    const liveCustomerName = (state && state.customer && state.customer.name) || '';
+
     // Overwrite path. 7G-A Bug #4: when `name` is provided AND non-empty AND
     // differs from the current entry.name, update the entry name (rename).
     // When name is undefined OR empty/whitespace, leave entry.name as-is.
     if (entry) {
+      // Phase 9I Part B: guard against accidental cross-client overwrite. If the
+      // existing entry is saved under a DIFFERENT non-empty customer name than
+      // the live state, the rep almost certainly meant Save-As-New. Require an
+      // explicit allowCustomerChange opt to proceed; else throw CUSTOMER_MISMATCH.
+      const existingCust = (entry.customer_name || '').trim();
+      const incomingCust = liveCustomerName.trim();
+      if (existingCust && incomingCust
+          && existingCust.toLowerCase() !== incomingCust.toLowerCase()
+          && !opts.allowCustomerChange) {
+        const err = new Error('CUSTOMER_MISMATCH');
+        err.code = 'CUSTOMER_MISMATCH';
+        err.existingCustomer = existingCust;
+        err.incomingCustomer = incomingCust;
+        throw err;
+      }
       const cloned = JSON.parse(JSON.stringify(state));
       cloned.quoteId = id;
       cloned.modifiedAt = now;
+      // Freeze totals (explicit save only).
+      const ft = computeFrozenTotals(cloned);
+      if (ft) cloned.savedTotals = ft;
+      // Preserve / backfill clientKey + version from the existing entry.
+      cloned.clientKey = cloned.clientKey || entry.client_key
+        || clientKeySlug(entry.customer_name || liveCustomerName);
+      if (typeof cloned.version !== 'number' || cloned.version < 1) {
+        cloned.version = (typeof entry.version === 'number' && entry.version >= 1) ? entry.version : 1;
+      }
       localStorage.setItem(this._slotKey(id), JSON.stringify(cloned));
       entry.modified_at  = now;
       entry.customer_name = (cloned.customer && cloned.customer.name) || entry.customer_name || '';
       entry.row_count    = (cloned.rows || []).length;
+      entry.client_key   = cloned.clientKey;
+      entry.version      = cloned.version;
       const trimmed = (typeof name === 'string') ? name.trim() : '';
       if (trimmed && trimmed !== entry.name) {
         entry.name = trimmed;
@@ -790,6 +860,13 @@ const QuoteStorage = {
     cloned.createdAt = cloned.createdAt || now;
     cloned.modifiedAt = now;
     const customer_name = (cloned.customer && cloned.customer.name) || '';
+    // Freeze totals (explicit save only).
+    const ftNew = computeFrozenTotals(cloned);
+    if (ftNew) cloned.savedTotals = ftNew;
+    // clientKey: stable slug from customer name. version: caller may pre-set
+    // cloned.version (Save-As-New-Version computes max+1); else default 1.
+    cloned.clientKey = cloned.clientKey || clientKeySlug(customer_name);
+    if (typeof cloned.version !== 'number' || cloned.version < 1) cloned.version = 1;
     const date_str = now.slice(0, 10);
     const finalName = (name && name.trim())
       ? name.trim()
@@ -798,6 +875,8 @@ const QuoteStorage = {
     const newEntry = {
       id, name: finalName,
       customer_name,
+      client_key: cloned.clientKey,
+      version: cloned.version,
       created_at: cloned.createdAt,
       modified_at: now,
       row_count: (cloned.rows || []).length,
@@ -872,17 +951,48 @@ const QuoteStorage = {
     this._apiPush('DELETE', id);
   },
 
-  /** Clone an existing slot's state into a brand-new slot. Returns the new id. */
-  duplicate(id) {
+  /** Highest existing version number for a clientKey (0 if none). */
+  maxVersionFor(clientKey) {
+    if (!clientKey) return 0;
+    let max = 0;
+    for (const e of this._readIndex()) {
+      const ck = e.client_key || clientKeySlug(e.customer_name || '');
+      if (ck === clientKey) {
+        const v = (typeof e.version === 'number' && e.version >= 1) ? e.version : 1;
+        if (v > max) max = v;
+      }
+    }
+    return max;
+  },
+
+  /** Phase 9I Part C: "Save As New Version" — deep-clone an existing quote into
+   *  a brand-new slot under the SAME clientKey with version = max+1 and name
+   *  "<Customer Name> — V<n>". Replaces the old "(copy)" duplicate UX while
+   *  keeping the duplicate() deep-clone + new-id mechanics. Returns new id. */
+  saveAsNewVersion(id) {
     const src = this.load(id);
     if (!src) throw new Error('quote not found: ' + id);
     const idx = this._readIndex();
     const srcEntry = idx.find(e => e.id === id);
-    const newName = (srcEntry ? srcEntry.name : 'Quote') + ' (copy)';
-    // Reset id so save() takes the create-new path
     const cloned = JSON.parse(JSON.stringify(src));
-    cloned.quoteId = null;
+    cloned.quoteId = null;   // force create-new path
+    const custName = (cloned.customer && cloned.customer.name)
+      || (srcEntry && srcEntry.customer_name) || 'Untitled';
+    const clientKey = cloned.clientKey || (srcEntry && srcEntry.client_key)
+      || clientKeySlug(custName);
+    const nextVer = this.maxVersionFor(clientKey) + 1;
+    cloned.clientKey = clientKey;
+    cloned.version   = nextVer;
+    const newName = custName + ' — V' + nextVer;
+    // allowCustomerChange not needed: create-new path has no existing entry.
     return this.save(cloned, newName);
+  },
+
+  /** Clone an existing slot into a brand-new slot. Returns the new id.
+   *  Phase 9I: now routed through saveAsNewVersion so "duplicate" produces a
+   *  properly-versioned sibling (V2, V3...) instead of a "(copy)" orphan. */
+  duplicate(id) {
+    return this.saveAsNewVersion(id);
   },
 
   exportJSON(id) {
@@ -2558,13 +2668,28 @@ async function bootForm() {
     try {
       const aid = QuoteStorage.activeId();
       const nameInputVal = (document.getElementById('save-name-input').value || '').trim();
-      if (aid) {
-        // 7G-A Bug #4: overwrite path now also accepts a (possibly renamed)
-        // name. QuoteStorage.save() updates entry.name if the second arg is
-        // non-undefined on an existing slot.
-        id = QuoteStorage.save(state, nameInputVal || undefined);
-      } else {
-        id = QuoteStorage.save(state, nameInputVal);
+      // Phase 9I Part B: a save() throws CUSTOMER_MISMATCH when overwriting a
+      // quote saved under a DIFFERENT client. Catch it, confirm intent, and
+      // only retry with allowCustomerChange:true if the rep insists.
+      const _doSave = (allowCust) => {
+        if (aid) {
+          // 7G-A Bug #4: overwrite path now also accepts a (possibly renamed)
+          // name. QuoteStorage.save() updates entry.name if the second arg is
+          // non-undefined on an existing slot.
+          return QuoteStorage.save(state, nameInputVal || undefined, { allowCustomerChange: allowCust });
+        }
+        return QuoteStorage.save(state, nameInputVal, { allowCustomerChange: allowCust });
+      };
+      try {
+        id = _doSave(false);
+      } catch (mm) {
+        if (mm && mm.code === 'CUSTOMER_MISMATCH') {
+          const ok = confirm("This quote is saved under client '" + mm.existingCustomer
+            + "'. You're about to overwrite it with '" + mm.incomingCustomer
+            + "'. This usually means you meant to Save As New. Overwrite anyway?");
+          if (!ok) { setIndicator('', ''); toast('Save cancelled — use Save As New Version instead.'); return; }
+          id = _doSave(true);
+        } else { throw mm; }
       }
       QuoteStorage.setActiveId(id);
       state.quoteId = id; // mirror into in-memory state
@@ -2583,18 +2708,22 @@ async function bootForm() {
   document.getElementById('save-as-new').onclick = () => {
     setIndicator('saving', 'Saving…');
     try {
-      // Force create-new path by clearing in-state quoteId
+      // Phase 9I Part C: "Save As New Version". Force create-new path by
+      // clearing in-state quoteId, then mint version = max+1 for this client.
       const orig = state.quoteId;
       state.quoteId = null;
       const cn = (state.customer.name || '').trim() || 'Untitled';
-      const today = new Date().toISOString().slice(0,10);
-      const id = QuoteStorage.save(state, cn + ' — ' + today + ' (copy)');
+      const clientKey = clientKeySlug(cn);
+      const nextVer = QuoteStorage.maxVersionFor(clientKey) + 1;
+      state.clientKey = clientKey;
+      state.version   = nextVer;
+      const id = QuoteStorage.save(state, cn + ' — V' + nextVer);
       QuoteStorage.setActiveId(id);
       state.quoteId = id;
       _promoteDraftToSavedQid(id);   // 9B-2: rewrite URL + sessionStorage key
       saveState(state);
       closeModal(saveModal);
-      toast('Saved as new copy');
+      toast('Saved as V' + nextVer);
       refreshIndicatorIdle();
       checkStoragePressure();
     } catch (e) {
@@ -2624,6 +2753,59 @@ async function bootForm() {
     const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
     return tokens.every(t => hay.indexOf(t) !== -1);
   }
+  // Phase 9I Part C: backfill a clientKey for legacy entries (no client_key)
+  // on read so they group with their siblings.
+  function _entryClientKey(e) {
+    return e.client_key || clientKeySlug(e.customer_name || e.name || '');
+  }
+  function _entryVersion(e) {
+    return (typeof e.version === 'number' && e.version >= 1) ? e.version : 1;
+  }
+  // Build a single version row <li>. Shared by grouped + ungrouped rendering.
+  function _buildQuoteRow(e) {
+    const li = document.createElement('li');
+    const cn = e.customer_name || '(no customer name)';
+    const date = (e.modified_at || '').slice(0, 10);
+    const author = e.author ? ('by ' + e.author + ' · ') : '';
+    const ver = _entryVersion(e);
+    const pdfs = Array.isArray(e.uploaded_pdfs) ? e.uploaded_pdfs : [];
+    const pdfCount = pdfs.length;
+    const isPdfAuth = !!e.pdf_is_authoritative;
+    const chipHtml = pdfCount
+      ? `<button data-act="pdfs" class="qm-pdf-chip" title="${pdfCount} attached PDF${pdfCount===1?'':'s'}" style="background:#0A1F44;color:#fff;border:none;padding:2px 8px;border-radius:10px;font-size:11px;cursor:pointer;margin-right:6px;">📎 ${pdfCount}${isPdfAuth ? ' ★' : ''}</button>`
+      : '';
+    const attachBtn = `<button data-act="attach-pdf" title="Attach a PDF to this quote" style="background:none;border:1px solid #ccc;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;">📎+ PDF</button>`;
+    const verBadge = `<span class="qm-ver-badge" style="background:#C9A24D;color:#0A1F44;font-weight:700;font-size:11px;padding:1px 7px;border-radius:8px;margin-right:6px;">V${ver}</span>`;
+    li.innerHTML = `
+      <span class="meta">
+        <span class="name">${chipHtml}${verBadge}${escapeHtml(e.name || cn)}</span>
+        <span class="sub">${escapeHtml(cn)} · ${escapeHtml(author)}saved ${escapeHtml(date)} · ${e.row_count || 0} rows</span>
+      </span>
+      <span class="row-acts">
+        ${attachBtn}
+        <button data-act="open" class="btn-primary">Open</button>
+        <button data-act="dup" title="Save As New Version">⎘ +V</button>
+        ${_isAdmin ? '<button data-act="del" class="btn-danger" title="Delete">\u00d7</button>' : ''}
+      </span>
+    `;
+    li.querySelector('[data-act="open"]').onclick = () => openSavedQuote(e.id);
+    li.querySelector('[data-act="dup"]').onclick  = () => {
+      try { QuoteStorage.saveAsNewVersion(e.id); toast('Saved as new version'); renderLoadList(); }
+      catch (err) { toast('New version failed: ' + err.message, 'err'); }
+    };
+    const _delBtn = li.querySelector('[data-act="del"]');
+    if (_delBtn) _delBtn.onclick  = () => {
+      if (!confirm('Permanently DELETE "' + (e.name || cn) + '" from the backend?\n\nThis removes the quote and all attached PDFs. It cannot be undone.')) return;
+      try { QuoteStorage.delete(e.id); toast('Deleted'); renderLoadList(); refreshIndicatorIdle(); }
+      catch (err) { toast('Delete failed: ' + err.message, 'err'); }
+    };
+    const attachBtnEl = li.querySelector('[data-act="attach-pdf"]');
+    if (attachBtnEl) attachBtnEl.onclick = () => _attachPdfToQuote(e.id, e.name || cn);
+    const chipBtnEl = li.querySelector('[data-act="pdfs"]');
+    if (chipBtnEl) chipBtnEl.onclick = (ev) => { ev.stopPropagation(); _togglePdfPopover(li, e.id); };
+    return li;
+  }
+
   function renderLoadList() {
     const body = document.getElementById('load-modal-body');
     const searchInput = document.getElementById('load-search');
@@ -2642,55 +2824,63 @@ async function bootForm() {
       body.innerHTML = '<div class="qm-empty">No matches for <b>' + escapeHtml(q) + '</b>. Try a different search.</div>';
       return;
     }
-    const ul = document.createElement('ul');
-    ul.className = 'qm-list';
+    // Phase 9I Part C: GROUP by clientKey. Each client renders ONCE as a
+    // collapsible header "<Customer Name> (N versions)" expanding to V-desc rows.
+    const groups = new Map();   // clientKey -> { name, items[] }
     for (const e of list) {
-      const li = document.createElement('li');
-      const cn = e.customer_name || '(no customer name)';
-      const date = (e.modified_at || '').slice(0, 10);
-      const author = e.author ? ('by ' + e.author + ' · ') : '';
-      // Phase 9G: PDF attachment chips. Shows 📎 N count when N>0; clicking
-      // opens a small popover with download/delete links. 📎+ button uploads.
-      const pdfs = Array.isArray(e.uploaded_pdfs) ? e.uploaded_pdfs : [];
-      const pdfCount = pdfs.length;
-      const isPdfAuth = !!e.pdf_is_authoritative;
-      const chipHtml = pdfCount
-        ? `<button data-act="pdfs" class="qm-pdf-chip" title="${pdfCount} attached PDF${pdfCount===1?'':'s'}" style="background:#0A1F44;color:#fff;border:none;padding:2px 8px;border-radius:10px;font-size:11px;cursor:pointer;margin-right:6px;">📎 ${pdfCount}${isPdfAuth ? ' ★' : ''}</button>`
-        : '';
-      const attachBtn = `<button data-act="attach-pdf" title="Attach a PDF to this quote" style="background:none;border:1px solid #ccc;border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;">📎+ PDF</button>`;
-      li.innerHTML = `
-        <span class="meta">
-          <span class="name">${chipHtml}${escapeHtml(e.name || cn)}</span>
-          <span class="sub">${escapeHtml(cn)} · ${escapeHtml(author)}saved ${escapeHtml(date)} · ${e.row_count || 0} rows</span>
-        </span>
-        <span class="row-acts">
-          ${attachBtn}
-          <button data-act="open" class="btn-primary">Open</button>
-          <button data-act="dup" title="Duplicate">⎘</button>
-          ${_isAdmin ? '<button data-act="del" class="btn-danger" title="Delete">\u00d7</button>' : ''}
-        </span>
-      `;
-      li.querySelector('[data-act="open"]').onclick = () => openSavedQuote(e.id);
-      li.querySelector('[data-act="dup"]').onclick  = () => {
-        try { const newId = QuoteStorage.duplicate(e.id); toast('Duplicated'); renderLoadList(); }
-        catch (err) { toast('Duplicate failed: ' + err.message, 'err'); }
+      const ck = _entryClientKey(e) || ('__id_' + e.id);  // singletons get unique key
+      if (!groups.has(ck)) groups.set(ck, { name: e.customer_name || e.name || '(no customer name)', items: [] });
+      const g = groups.get(ck);
+      // Prefer the customer name from the highest-version item for the header.
+      if (e.customer_name) g.name = e.customer_name;
+      g.items.push(e);
+    }
+    // Sort groups by most-recent modified within group (desc).
+    const groupArr = Array.from(groups.entries()).map(([ck, g]) => {
+      g.items.sort((a, b) => {
+        const va = _entryVersion(a), vb = _entryVersion(b);
+        if (vb !== va) return vb - va;                       // version desc
+        return (b.modified_at || '').localeCompare(a.modified_at || '');
+      });
+      g.clientKey = ck;
+      g.latest = g.items[0] ? (g.items[0].modified_at || '') : '';
+      return g;
+    });
+    groupArr.sort((a, b) => (b.latest || '').localeCompare(a.latest || ''));
+
+    const container = document.createElement('div');
+    container.className = 'qm-groups';
+    // When searching, auto-expand all groups so matches are visible.
+    const autoExpand = !!q;
+    for (const g of groupArr) {
+      const n = g.items.length;
+      const grp = document.createElement('div');
+      grp.className = 'qm-group';
+      grp.style.cssText = 'margin-bottom:8px;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden;';
+      const header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'qm-group-hdr';
+      header.style.cssText = 'width:100%;text-align:left;background:#f7f7f4;border:none;padding:9px 12px;cursor:pointer;font-weight:600;color:#0A1F44;display:flex;justify-content:space-between;align-items:center;';
+      const caret = document.createElement('span');
+      caret.textContent = autoExpand ? '▾' : '▸';
+      caret.style.cssText = 'margin-right:8px;color:#888;';
+      header.innerHTML = `<span><span class="qm-caret">${autoExpand ? '▾' : '▸'}</span> ${escapeHtml(g.name)} <span style="color:#888;font-weight:400;font-size:12px;">(${n} version${n===1?'':'s'})</span></span>`;
+      const ul = document.createElement('ul');
+      ul.className = 'qm-list';
+      ul.style.display = autoExpand ? '' : 'none';
+      for (const e of g.items) ul.appendChild(_buildQuoteRow(e));
+      header.onclick = () => {
+        const open = ul.style.display !== 'none';
+        ul.style.display = open ? 'none' : '';
+        const c = header.querySelector('.qm-caret');
+        if (c) c.textContent = open ? '▸' : '▾';
       };
-      const _delBtn = li.querySelector('[data-act="del"]');
-      if (_delBtn) _delBtn.onclick  = () => {
-        if (!confirm('Permanently DELETE "' + (e.name || cn) + '" from the backend?\n\nThis removes the quote and all attached PDFs. It cannot be undone.')) return;
-        try { QuoteStorage.delete(e.id); toast('Deleted'); renderLoadList(); refreshIndicatorIdle(); }
-        catch (err) { toast('Delete failed: ' + err.message, 'err'); }
-      };
-      // Phase 9G: attach PDF button — opens file picker, uploads to server.
-      const attachBtnEl = li.querySelector('[data-act="attach-pdf"]');
-      if (attachBtnEl) attachBtnEl.onclick = () => _attachPdfToQuote(e.id, e.name || cn);
-      // Phase 9G: chip click — show inline list of PDFs.
-      const chipBtnEl = li.querySelector('[data-act="pdfs"]');
-      if (chipBtnEl) chipBtnEl.onclick = (ev) => { ev.stopPropagation(); _togglePdfPopover(li, e.id); };
-      ul.appendChild(li);
+      grp.appendChild(header);
+      grp.appendChild(ul);
+      container.appendChild(grp);
     }
     body.innerHTML = '';
-    body.appendChild(ul);
+    body.appendChild(container);
   }
 
   function openSavedQuote(id) {
@@ -2974,6 +3164,44 @@ async function bootForm() {
       // Wait a tick so the banner doesn't dismiss on the bootstrap render.
       setTimeout(() => document.addEventListener('input', hideOnEdit, true), 1500);
     } catch (e) { /* silent */ }
+  })();
+
+  // Phase 9I Part A: TOTALS DRIFT GUARD.
+  // Saved quotes freeze a grand-total snapshot (state.savedTotals) on explicit
+  // Save / Save-As-New. On load we recompute the live grand total and, if it
+  // diverges by > ₹1 from the frozen value, show a non-destructive dismissible
+  // banner so the rep knows the saved specs/inputs may have changed. Legacy
+  // quotes (no savedTotals) get no banner. Never crashes the page.
+  (function renderTotalsDriftBanner(){
+    try {
+      const st = state && state.savedTotals;
+      if (!st || typeof st.grandTotal !== 'number') return;   // legacy / no snapshot
+      const live = computeFrozenTotals(state);
+      if (!live || typeof live.grandTotal !== 'number') return;
+      if (Math.abs(st.grandTotal - live.grandTotal) <= 1) return;   // no meaningful drift
+      const banner = document.createElement('div');
+      banner.id = 'totals-drift-banner';
+      banner.style.cssText = 'background:#fff3f3;border:1px solid #d33;color:#7a1a1a;padding:10px 14px;margin:10px 0;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;';
+      const msg = document.createElement('span');
+      msg.style.flex = '1';
+      msg.innerHTML = '⚠️ This quote was saved at <b>' + fmtINR(st.grandTotal)
+        + '</b> but now calculates to <b>' + fmtINR(live.grandTotal)
+        + '</b>. The saved specs/inputs may have changed.';
+      const keepBtn = document.createElement('button');
+      keepBtn.textContent = 'Keep saved value';
+      keepBtn.style.cssText = 'background:#0A1F44;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-weight:600;cursor:pointer;';
+      const dismissBtn = document.createElement('button');
+      dismissBtn.textContent = 'Dismiss';
+      dismissBtn.style.cssText = 'background:none;border:1px solid #d33;color:#7a1a1a;padding:6px 12px;border-radius:6px;cursor:pointer;';
+      // "Keep saved value": non-destructive. The live recompute still drives
+      // the form (we never silently rewrite inputs); we just leave the banner
+      // up as a flag for the rep to review, then let them dismiss.
+      keepBtn.onclick = () => { try { banner.remove(); } catch(_){} toast('Noted — review the specs; the form shows the live recalculated total.'); };
+      dismissBtn.onclick = () => { try { banner.remove(); } catch(_){} };
+      banner.appendChild(msg); banner.appendChild(keepBtn); banner.appendChild(dismissBtn);
+      const target = document.querySelector('main') || document.body.firstElementChild;
+      if (target) target.insertBefore(banner, target.firstChild);
+    } catch (e) { /* never crash the page on a banner */ }
   })();
 
   // ---- Auto-save (3-second debounce) ----
